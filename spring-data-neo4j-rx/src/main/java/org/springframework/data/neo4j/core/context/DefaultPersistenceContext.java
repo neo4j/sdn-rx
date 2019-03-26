@@ -18,8 +18,70 @@
  */
 package org.springframework.data.neo4j.core.context;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.data.neo4j.core.context.tracking.EntityChangeEvent;
+import org.springframework.data.neo4j.core.context.tracking.EntityState;
+
 /**
  * @author Michael J. Simons
  */
 public class DefaultPersistenceContext implements PersistenceContext {
+
+	private final EntityTrackingStrategy entityTrackingStrategy;
+
+	public DefaultPersistenceContext() {
+		//todo choose the right / fitting implementation
+		entityTrackingStrategy = new EntityComparisonStrategy();
+	}
+
+	private void somethingToGetCalledBeforeSave() {
+		getDeltasForEachEntity();
+	}
+
+	private Collection<EntityChangeEvent> getDeltasForEachEntity() {
+		return entityTrackingStrategy.getAggregatedDelta(new Object());
+	}
+
+	interface EntityTrackingStrategy {
+		void registerEntity(Object entity);
+
+		Collection<EntityChangeEvent> getAggregatedDelta(Object entity);
+
+		default int getObjectIdentifier(Object entity) {
+			return System.identityHashCode(entity);
+		}
+	}
+
+	class PropertyBasedTrackingStrategy implements EntityTrackingStrategy {
+
+		@Override
+		public void registerEntity(Object entity) {
+			// React to events propagated from the enhanced class and store them
+		}
+
+		@Override
+		public Collection<EntityChangeEvent> getAggregatedDelta(Object entity) {
+			// Aggregate collected events and return it
+			return null;
+		}
+	}
+
+	class EntityComparisonStrategy implements EntityTrackingStrategy {
+
+		private final Map<Integer, EntityState> statesOfEntities = new HashMap<>();
+
+		@Override
+		public void registerEntity(Object entity) {
+			statesOfEntities.put(getObjectIdentifier(entity), new EntityState(entity));
+		}
+
+		@Override
+		public Collection<EntityChangeEvent> getAggregatedDelta(Object entity) {
+			return statesOfEntities.get(getObjectIdentifier(entity)).computeDelta(entity);
+		}
+
+	}
 }
