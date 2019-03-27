@@ -38,13 +38,18 @@ public class EntityState {
 
 	private final Map<String, Object> oldState;
 	private final Field[] objectFields;
+	private final Object identifier;
 
 	public EntityState(Object oldEntity) {
 		objectFields = oldEntity.getClass().getDeclaredFields();
+		this.identifier = computeIdentifier(oldEntity);
 		this.oldState = retrieveStateFrom(oldEntity);
 	}
 
 	public Set<EntityChangeEvent> computeDelta(Object newObject) {
+		if (!sameObject(newObject)) {
+			throw new IllegalArgumentException("The objects to compare are not the same.");
+		}
 		Set<EntityChangeEvent> changes = new HashSet<>();
 
 		for (Field field : objectFields) {
@@ -55,6 +60,14 @@ public class EntityState {
 		}
 
 		return changes;
+	}
+
+	private boolean sameObject(Object objectToCompare) {
+		return this.identifier.equals(computeIdentifier(objectToCompare));
+	}
+
+	private Object computeIdentifier(Object object) {
+		return System.identityHashCode(object);
 	}
 
 	private Map<String, Object> retrieveStateFrom(Object entity) {

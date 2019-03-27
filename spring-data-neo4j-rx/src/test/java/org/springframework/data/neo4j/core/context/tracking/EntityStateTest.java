@@ -19,6 +19,7 @@
 package org.springframework.data.neo4j.core.context.tracking;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -82,6 +83,19 @@ class EntityStateTest {
 		EntityChangeEvent changeEvent = changeEvents.iterator().next();
 		assertThat(changeEvent.getPropertyField()).isEqualTo(fieldName);
 		assertThat(changeEvent.getValue()).isInstanceOf(Integer.class);
+	}
+
+	@Test
+	void failOnComparingDifferentObjectsOfTheSameType() {
+
+		assertThrows(IllegalArgumentException.class, () -> {
+			Something something1 = new Something("blubb");
+			Something something2 = new Something("bla");
+
+			EntityState entityState = new EntityState(something1);
+
+			entityState.computeDelta(something2);
+		});
 	}
 
 	class Something {
