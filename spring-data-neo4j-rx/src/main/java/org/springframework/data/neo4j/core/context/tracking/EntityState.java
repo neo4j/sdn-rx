@@ -26,27 +26,24 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apiguardian.api.API;
-
 /**
  * Compares two entities of the same instance and creates a delta {@link EntityChangeEvent}.
  *
  * @author Gerrit Meier
  */
-@API(status = API.Status.INTERNAL, since = "1.0")
-public class EntityState {
+class EntityState {
 
 	private final Map<String, Object> oldState;
 	private final Field[] objectFields;
 	private final Object identifier;
 
-	public EntityState(Object oldEntity) {
+	EntityState(Object oldEntity) {
 		objectFields = oldEntity.getClass().getDeclaredFields();
 		this.identifier = computeIdentifier(oldEntity);
 		this.oldState = retrieveStateFrom(oldEntity);
 	}
 
-	public Set<EntityChangeEvent> computeDelta(Object newObject) {
+	Set<EntityChangeEvent> computeDelta(Object newObject) {
 		if (!sameObject(newObject)) {
 			throw new IllegalArgumentException("The objects to compare are not the same.");
 		}
