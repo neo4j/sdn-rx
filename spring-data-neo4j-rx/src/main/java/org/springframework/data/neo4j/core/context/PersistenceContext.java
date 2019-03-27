@@ -19,6 +19,7 @@
 package org.springframework.data.neo4j.core.context;
 
 import org.apiguardian.api.API;
+import org.springframework.data.neo4j.core.mapping.Neo4jPersistentEntity;
 
 /**
  * Represents the state of varies instances being tracked. Those include:
@@ -34,4 +35,6 @@ import org.apiguardian.api.API;
  */
 @API(status = API.Status.INTERNAL, since = "1.0")
 public interface PersistenceContext {
+
+	void registerEntity(Neo4jPersistentEntity entity);
 }

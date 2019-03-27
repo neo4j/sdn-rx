@@ -32,7 +32,7 @@ import org.springframework.data.domain.Sort;
  **/
 class SimpleNeo4jRepositoryTest {
 
-	private SimpleNeo4jRepository repository = new SimpleNeo4jRepository(null);
+	private SimpleNeo4jRepository repository = new SimpleNeo4jRepository(null, null);
 
 	@Test
 	void saveNotImplemented() {
@@ -77,7 +77,7 @@ class SimpleNeo4jRepositoryTest {
 	@Test
 	void deleteAll1NotImplemented() {
 		assertThatExceptionOfType(UnsupportedOperationException.class)
-			.isThrownBy(() -> repository.deleteAll(Collections.emptyList()));
+				.isThrownBy(() -> repository.deleteAll(Collections.emptyList()));
 	}
 
 	@Test
