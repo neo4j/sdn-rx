@@ -23,6 +23,7 @@ import java.util.Collection;
 import org.springframework.data.neo4j.core.context.tracking.EntityChangeEvent;
 import org.springframework.data.neo4j.core.context.tracking.EntityComparisonStrategy;
 import org.springframework.data.neo4j.core.context.tracking.EntityTrackingStrategy;
+import org.springframework.data.neo4j.core.mapping.Neo4jPersistentEntity;
 
 /**
  * @author Michael J. Simons
@@ -34,6 +35,11 @@ public class DefaultPersistenceContext implements PersistenceContext {
 	public DefaultPersistenceContext() {
 		//todo choose the right / fitting implementation
 		entityTrackingStrategy = new EntityComparisonStrategy();
+	}
+
+	@Override
+	public void registerEntity(Neo4jPersistentEntity entity) {
+		entityTrackingStrategy.registerEntity(entity);
 	}
 
 	private void somethingToGetCalledBeforeSave() {

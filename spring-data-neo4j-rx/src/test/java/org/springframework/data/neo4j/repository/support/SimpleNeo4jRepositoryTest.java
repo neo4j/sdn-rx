@@ -32,7 +32,7 @@ import org.springframework.data.domain.Sort;
  **/
 class SimpleNeo4jRepositoryTest {
 
-	private SimpleNeo4jRepository repository = new SimpleNeo4jRepository(null, null);
+	private SimpleNeo4jRepository repository = new SimpleNeo4jRepository(null);
 
 	@Test
 	void saveNotImplemented() {
