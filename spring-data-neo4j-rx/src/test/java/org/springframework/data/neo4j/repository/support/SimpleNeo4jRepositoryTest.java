@@ -19,24 +19,36 @@
 package org.springframework.data.neo4j.repository.support;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import java.util.Collections;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.neo4j.core.NodeManager;
 
 /**
  * @author Gerrit Meier
  **/
 class SimpleNeo4jRepositoryTest {
 
-	private SimpleNeo4jRepository repository = new SimpleNeo4jRepository(null);
+	private NodeManager nodeManager;
+
+	private SimpleNeo4jRepository repository;
+
+	@BeforeEach
+	void setupMock() {
+		nodeManager = mock(NodeManager.class);
+		repository = new SimpleNeo4jRepository(this.nodeManager);
+	}
 
 	@Test
 	void saveNotImplemented() {
-		assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(() -> repository.save(null));
+		repository.save(null); // todo this should throw an exception upfront
+		verify(nodeManager).save(any());
 	}
 
 	@Test

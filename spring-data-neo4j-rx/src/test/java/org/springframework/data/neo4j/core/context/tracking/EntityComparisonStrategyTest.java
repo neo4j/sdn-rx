@@ -18,32 +18,36 @@
  */
 package org.springframework.data.neo4j.core.context.tracking;
 
+import static java.util.Collections.*;
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.data.neo4j.core.schema.NodeDescription;
 
 /**
  * @author Gerrit Meier
  */
-class EntityStateTest {
+class EntityComparisonStrategyTest {
 
 	@Test
 	void trackSimplePropertyChange() {
+		EntityComparisonStrategy strategy = new EntityComparisonStrategy();
 		Something something = new Something("oldValue");
-		EntityState entityState = new EntityState(something);
+		NodeDescription description = NodeDescription.builder().primaryLabel("Something").properties(emptyList())
+			.relationships(emptyList()).underlyingClass(Something.class).build();
+		strategy.track(description, something);
 
 		String fieldName = "value";
 		String newValue = "newValue";
 		something.value = newValue;
 
-		Set<EntityChangeEvent> changeEvents = entityState.computeDelta(something);
+		Collection<EntityChangeEvent> changeEvents = strategy.getAggregatedDelta(something);
 
 		EntityChangeEvent changeEvent = changeEvents.iterator().next();
 		assertThat(changeEvent.getPropertyField()).isEqualTo(fieldName);
@@ -52,14 +56,17 @@ class EntityStateTest {
 
 	@Test
 	void trackCollectionPropertyChange() {
-		Something something = new Something("blubb");
-		EntityState entityState = new EntityState(something);
+		EntityComparisonStrategy strategy = new EntityComparisonStrategy();
+		Something something = new Something("oldValue");
+		NodeDescription description = NodeDescription.builder().primaryLabel("Something").properties(emptyList())
+			.relationships(emptyList()).underlyingClass(Something.class).build();
+		strategy.track(description, something);
 
 		String fieldName = "information";
 
 		something.information.add("additional entry");
 
-		Set<EntityChangeEvent> changeEvents = entityState.computeDelta(something);
+		Collection<EntityChangeEvent> changeEvents = strategy.getAggregatedDelta(something);
 
 		EntityChangeEvent changeEvent = changeEvents.iterator().next();
 		assertThat(changeEvent.getPropertyField()).isEqualTo(fieldName);
@@ -73,29 +80,20 @@ class EntityStateTest {
 		something.information.add("entry 1");
 		something.information.add("entry 2");
 
-		EntityState entityState = new EntityState(something);
+		EntityComparisonStrategy strategy = new EntityComparisonStrategy();
+		NodeDescription description = NodeDescription.builder().primaryLabel("Something").properties(emptyList())
+			.relationships(emptyList()).underlyingClass(Something.class).build();
+		strategy.track(description, something);
+
 		something.information.sort(Comparator.reverseOrder());
 
 		String fieldName = "information";
 
-		Set<EntityChangeEvent> changeEvents = entityState.computeDelta(something);
+		Collection<EntityChangeEvent> changeEvents = strategy.getAggregatedDelta(something);
 
 		EntityChangeEvent changeEvent = changeEvents.iterator().next();
 		assertThat(changeEvent.getPropertyField()).isEqualTo(fieldName);
 		assertThat(changeEvent.getValue()).isInstanceOf(Integer.class);
-	}
-
-	@Test
-	void failOnComparingDifferentObjectsOfTheSameType() {
-
-		assertThrows(IllegalArgumentException.class, () -> {
-			Something something1 = new Something("blubb");
-			Something something2 = new Something("bla");
-
-			EntityState entityState = new EntityState(something1);
-
-			entityState.computeDelta(something2);
-		});
 	}
 
 	class Something {

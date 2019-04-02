@@ -26,6 +26,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.data.neo4j.core.schema.NodeDescription;
+
 /**
  * @author Gerrit Meier
  */
@@ -34,8 +36,8 @@ public class EntityComparisonStrategy implements EntityTrackingStrategy {
 	private final Map<Integer, EntityState> statesOfEntities = new HashMap<>();
 
 	@Override
-	public void registerEntity(Object entity) {
-		statesOfEntities.put(getObjectIdentifier(entity), new EntityState(entity));
+	public void track(NodeDescription nodeDescription, Object entity) {
+		statesOfEntities.put(getObjectIdentifier(entity), new EntityState(nodeDescription, entity));
 	}
 
 	@Override
@@ -52,7 +54,9 @@ public class EntityComparisonStrategy implements EntityTrackingStrategy {
 		private final Field[] objectFields;
 		private final Object identifier;
 
-		EntityState(Object oldEntity) {
+		EntityState(NodeDescription nodeDescription, Object oldEntity) {
+
+			// TODO compute fields based on description
 			objectFields = oldEntity.getClass().getDeclaredFields();
 			this.identifier = computeIdentifier(oldEntity);
 			this.oldState = retrieveStateFrom(oldEntity);

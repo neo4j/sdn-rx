@@ -20,13 +20,15 @@ package org.springframework.data.neo4j.core.context.tracking;
 
 import java.util.Collection;
 
+import org.springframework.data.neo4j.core.schema.NodeDescription;
+
 /**
  * @author Gerrit Meier
  */
 public class PropertyBasedTrackingStrategy implements EntityTrackingStrategy {
 
 	@Override
-	public void registerEntity(Object entity) {
+	public void track(NodeDescription nodeDescription, Object entity) {
 		// React to events propagated from the enhanced class and store them
 	}
 

@@ -21,13 +21,15 @@ package org.springframework.data.neo4j.core.context.tracking;
 import java.util.Collection;
 
 import org.apiguardian.api.API;
+import org.springframework.data.neo4j.core.schema.NodeDescription;
 
 /**
  * @author Gerrit Meier
  */
 @API(status = API.Status.INTERNAL, since = "1.0")
 public interface EntityTrackingStrategy {
-	void registerEntity(Object entity);
+
+	void track(NodeDescription nodeDescription, Object entity);
 
 	Collection<EntityChangeEvent> getAggregatedDelta(Object entity);
 
