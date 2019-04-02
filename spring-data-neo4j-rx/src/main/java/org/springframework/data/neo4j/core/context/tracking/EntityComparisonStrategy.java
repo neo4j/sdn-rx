@@ -18,9 +18,13 @@
  */
 package org.springframework.data.neo4j.core.context.tracking;
 
+import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Gerrit Meier
@@ -39,4 +43,68 @@ public class EntityComparisonStrategy implements EntityTrackingStrategy {
 		return statesOfEntities.get(getObjectIdentifier(entity)).computeDelta(entity);
 	}
 
+	/**
+	 * Compares two entities of the same instance and creates a delta {@link EntityChangeEvent}.
+	 */
+	private static class EntityState {
+
+		private final Map<String, Object> oldState;
+		private final Field[] objectFields;
+		private final Object identifier;
+
+		EntityState(Object oldEntity) {
+			objectFields = oldEntity.getClass().getDeclaredFields();
+			this.identifier = computeIdentifier(oldEntity);
+			this.oldState = retrieveStateFrom(oldEntity);
+		}
+
+		Set<EntityChangeEvent> computeDelta(Object newObject) {
+			if (!sameObject(newObject)) {
+				throw new IllegalArgumentException("The objects to compare are not the same.");
+			}
+			Set<EntityChangeEvent> changes = new HashSet<>();
+
+			for (Field field : objectFields) {
+				Object newValue = getFieldValueOrHashCode(field, newObject);
+				if (!oldState.get(field.getName()).equals(newValue)) {
+					changes.add(new EntityChangeEvent(field.getName(), newValue));
+				}
+			}
+
+			return changes;
+		}
+
+		private boolean sameObject(Object objectToCompare) {
+			return this.identifier.equals(computeIdentifier(objectToCompare));
+		}
+
+		private Object computeIdentifier(Object object) {
+			return System.identityHashCode(object);
+		}
+
+		private Map<String, Object> retrieveStateFrom(Object entity) {
+			Map<String, Object> state = new HashMap<>();
+
+			for (Field field : objectFields) {
+				state.put(field.getName(), getFieldValueOrHashCode(field, entity));
+			}
+
+			return Collections.unmodifiableMap(state);
+		}
+
+		private Object getFieldValueOrHashCode(Field field, Object entity) {
+			try {
+				field.setAccessible(true);
+				Object value = field.get(entity);
+				field.setAccessible(false);
+				if (!Collection.class.isAssignableFrom(value.getClass())) {
+					return value;
+				} else {
+					return value.hashCode();
+				}
+			} catch (IllegalAccessException e) {
+				throw new IllegalStateException("Cannot determine field value", e);
+			}
+		}
+	}
 }
