@@ -36,6 +36,8 @@ public class StatementVisitor implements PartRenderer {
 
 	private int childCounter = 0;
 
+	private boolean inMatch = false;
+
 	public StatementVisitor(RenderContext renderContext) {
 		this.renderContext = renderContext;
 	}
@@ -46,6 +48,7 @@ public class StatementVisitor implements PartRenderer {
 		if (segment instanceof Match) {
 			builder.append("MATCH ");
 			childCounter = 0;
+			inMatch = true;
 		}
 
 		if (segment instanceof Return) {
@@ -59,18 +62,22 @@ public class StatementVisitor implements PartRenderer {
 				builder.append(", ");
 			}
 
-			builder.append("(")
-				.append(node.getAlias()).append(":").append(node.getLabels().stream().collect(joining(":", "`", "`")))
-				.append(")");
+			if (inMatch) {
+				builder.append("(")
+					.append(node.getAlias()).append(":").append(node.getLabels().stream().collect(joining(":", "`", "`")))
+					.append(")");
+			} else {
+				builder.append(node.getAlias());
+			}
 			childCounter++;
 		}
-		System.out.println(segment.getClass());
 	}
 
 	@Override
 	public void leave(Visitable segment) {
 		if (segment instanceof Match) {
 			builder.append(" ");
+			inMatch = false;
 		}
 	}
 
