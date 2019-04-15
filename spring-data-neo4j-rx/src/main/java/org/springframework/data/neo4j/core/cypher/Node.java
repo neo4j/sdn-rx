@@ -24,11 +24,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.springframework.util.Assert;
+
 /**
  * @author Michael J. Simons
  */
-import org.springframework.util.Assert;
-
 public class Node extends AbstractSegment implements Expression<Node> {
 
 	static Node create(String alias, String primaryLabel, String... additionalLabels) {
@@ -57,5 +57,19 @@ public class Node extends AbstractSegment implements Expression<Node> {
 
 	public List<String> getLabels() {
 		return Stream.concat(Stream.of(primaryLabel), additionalLabels.stream()).collect(toList());
+	}
+
+	/**
+	 * Creates a new {@link Property} associated with this property container..
+	 * <p/>
+	 * Note: The property container does not track property creation and there is no possibility to enumerate all
+	 * properties that have been created for this node.
+	 *
+	 * @param name property name, must not be {@literal null} or empty.
+	 * @return a new {@link Property} associated with this {@link Node}.
+	 */
+	public Property property(String name) {
+
+		return Property.create(this, name);
 	}
 }

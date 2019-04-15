@@ -18,31 +18,8 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
-import java.util.Collection;
-
 /**
  * @author Michael J. Simons
  */
-public interface StatementBuilder {
-
-	MatchAndReturn match(Expression<Node> expression);
-
-	MatchAndReturn match(Expression<Node>... expressions);
-
-	MatchAndReturn match(Collection<? extends Expression<Node>> expressions);
-
-	interface MatchAndReturn extends BuildableMatch, MatchWhere {
-
-		BuildableMatch returning(Node expression);
-	}
-
-	interface BuildableMatch {
-
-		Statement build();
-	}
-
-	interface MatchWhere {
-
-		MatchAndReturn where(Condition condition);
-	}
+public interface Condition extends Segment {
 }

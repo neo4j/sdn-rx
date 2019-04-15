@@ -18,31 +18,17 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
-import java.util.Collection;
-
 /**
+ * Builder for various conditions.
+ *
  * @author Michael J. Simons
  */
-public interface StatementBuilder {
+public final class Conditions {
 
-	MatchAndReturn match(Expression<Node> expression);
-
-	MatchAndReturn match(Expression<Node>... expressions);
-
-	MatchAndReturn match(Collection<? extends Expression<Node>> expressions);
-
-	interface MatchAndReturn extends BuildableMatch, MatchWhere {
-
-		BuildableMatch returning(Node expression);
+	static Condition matches(Expression<?> lhs, Expression<?> rhs) {
+		return Comparison.create(lhs, "=~", rhs);
 	}
 
-	interface BuildableMatch {
-
-		Statement build();
-	}
-
-	interface MatchWhere {
-
-		MatchAndReturn where(Condition condition);
+	private Conditions() {
 	}
 }

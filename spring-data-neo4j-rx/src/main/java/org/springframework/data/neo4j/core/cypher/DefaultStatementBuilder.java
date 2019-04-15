@@ -32,6 +32,7 @@ public class DefaultStatementBuilder implements StatementBuilder, MatchAndReturn
 
 	private final List<Expression<Node>> nodeList = new ArrayList<>();
 	private final List<Expression<Node>> returnList = new ArrayList<>();
+	private Condition where;
 
 	@Override
 	public MatchAndReturn match(Expression<Node> expression) {
@@ -58,7 +59,13 @@ public class DefaultStatementBuilder implements StatementBuilder, MatchAndReturn
 	}
 
 	@Override
+	public MatchAndReturn where(Condition condition) {
+		this.where = condition;
+		return this;
+	}
+
+	@Override
 	public Statement build() {
-		return new DefaultStatement(nodeList, returnList);
+		return new DefaultStatement(nodeList, where, returnList);
 	}
 }

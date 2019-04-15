@@ -18,31 +18,44 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
-import java.util.Collection;
-
 /**
+ * A property that belongs to a property container (either Node or Relationship).
+ *
  * @author Michael J. Simons
  */
-public interface StatementBuilder {
+public class Property extends AbstractSegment implements Expression<Property> {
 
-	MatchAndReturn match(Expression<Node> expression);
+	static Property create(Node parentContainer, String name) {
 
-	MatchAndReturn match(Expression<Node>... expressions);
-
-	MatchAndReturn match(Collection<? extends Expression<Node>> expressions);
-
-	interface MatchAndReturn extends BuildableMatch, MatchWhere {
-
-		BuildableMatch returning(Node expression);
+		return new Property(parentContainer, name);
 	}
 
-	interface BuildableMatch {
+	/**
+	 * The property container this property belongs to.
+	 */
+	private final Node parentContainer;
 
-		Statement build();
+	/**
+	 * The name of this property.
+	 */
+	private final String name;
+
+	Property(Node parentContainer, String name) {
+
+		this.parentContainer = parentContainer;
+		this.name = name;
 	}
 
-	interface MatchWhere {
+	public String getParentAlias() {
+		return parentContainer.getAlias();
+	}
 
-		MatchAndReturn where(Condition condition);
+	public String getName() {
+		return name;
+	}
+
+	public Condition matches(String s) {
+
+		return Conditions.matches(this, new StringLiteral(s));
 	}
 }

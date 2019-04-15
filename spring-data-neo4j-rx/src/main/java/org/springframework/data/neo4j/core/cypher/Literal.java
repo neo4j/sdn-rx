@@ -18,31 +18,24 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
-import java.util.Collection;
-
 /**
+ * Represents a literal.
+ *
  * @author Michael J. Simons
  */
-public interface StatementBuilder {
+public abstract class Literal<T> extends AbstractSegment implements Expression {
 
-	MatchAndReturn match(Expression<Node> expression);
+	private T content;
 
-	MatchAndReturn match(Expression<Node>... expressions);
-
-	MatchAndReturn match(Collection<? extends Expression<Node>> expressions);
-
-	interface MatchAndReturn extends BuildableMatch, MatchWhere {
-
-		BuildableMatch returning(Node expression);
+	Literal(T content) {
+		this.content = content;
 	}
 
-	interface BuildableMatch {
-
-		Statement build();
+	public T getContent() {
+		return content;
 	}
 
-	interface MatchWhere {
-
-		MatchAndReturn where(Condition condition);
-	}
+	@Override
+	public abstract String toString();
 }
+

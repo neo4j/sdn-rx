@@ -18,46 +18,54 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 import org.springframework.util.Assert;
 
 /**
- * @author Michael J. Simons
+ * @author Michael J. Simonss
  */
-public abstract class AbstractSegment implements Segment {
+public class Comparison extends AbstractSegment implements Condition {
 
-	private final List<? extends Segment> children;
+	static Comparison create(Expression lhs, String comparator, Expression rhs) {
 
-	// Constructors don't delegate to each other to allow AbstractSegment#AbstractSegment(java.util.List<? extends org.springframework.data.neo4j.core.cypher.Segment>)
-	// to create a copy from the list of childrens, which is not needed in the ot her constructors.
+		Assert.notNull(lhs, "Left expression must not be null!");
+		Assert.notNull(comparator, "Comparator must not be null!");
+		Assert.notNull(rhs, "Right expression must not be null!");
 
-	protected AbstractSegment() {
-
-		this.children = Collections.emptyList();
+		return new Comparison(lhs, comparator, rhs);
 	}
 
-	protected AbstractSegment(Segment... children) {
+	private final Expression left;
+	private final String comparator;
+	private final Expression right;
 
-		this.children = Arrays.asList(children);
+	private Comparison(Expression left, String comparator, Expression right) {
 
+		super(left, right);
+
+		this.left = left;
+		this.comparator = comparator;
+		this.right = right;
 	}
 
-	protected AbstractSegment(List<? extends Segment> children) {
+	public Expression getLeft() {
+		return left;
+	}
 
-		this.children = new ArrayList<>(children);
+	public String getComparator() {
+		return comparator;
+	}
+
+	public Expression getRight() {
+		return right;
 	}
 
 	@Override
 	public void accept(Visitor visitor) {
 
-		Assert.notNull(visitor, "Visitor must not be null!");
-
+		left.accept(visitor);
 		visitor.enter(this);
-		children.forEach(child -> child.accept(visitor));
 		visitor.leave(this);
+		right.accept(visitor);
 	}
 }
+

@@ -18,31 +18,10 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
-import java.util.Collection;
-
 /**
+ * A segment representing parameter marks in Cypher queries ({@code $something}).
+ *
  * @author Michael J. Simons
  */
-public interface StatementBuilder {
-
-	MatchAndReturn match(Expression<Node> expression);
-
-	MatchAndReturn match(Expression<Node>... expressions);
-
-	MatchAndReturn match(Collection<? extends Expression<Node>> expressions);
-
-	interface MatchAndReturn extends BuildableMatch, MatchWhere {
-
-		BuildableMatch returning(Node expression);
-	}
-
-	interface BuildableMatch {
-
-		Statement build();
-	}
-
-	interface MatchWhere {
-
-		MatchAndReturn where(Condition condition);
-	}
+class ParameterMarker extends AbstractSegment implements Expression<ParameterMarker> {
 }

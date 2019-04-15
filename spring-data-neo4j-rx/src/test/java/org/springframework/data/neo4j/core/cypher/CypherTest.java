@@ -37,6 +37,7 @@ class CypherTest {
 
 		Statement matchAndReturnAllBikes = Cypher
 			.match(bikeNode, userNode)
+			.where(userNode.property("name").matches(".*aName"))
 			.returning(bikeNode)
 			.build();
 
@@ -44,6 +45,6 @@ class CypherTest {
 		String cypher = renderer.render(matchAndReturnAllBikes);
 		assertThat(cypher)
 			.isNotEmpty()
-			.isEqualTo("MATCH (n:`Bike`), (u:`User`) RETURN n");
+			.isEqualTo("MATCH (n:`Bike`), (u:`User`) WHERE u.name =~ '.*aName' RETURN n");
 	}
 }

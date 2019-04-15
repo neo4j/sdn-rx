@@ -28,19 +28,33 @@ class DefaultStatement implements Statement {
 
 	private final List<Match> matchList;
 
+	private final Where where;
+
 	private final Return returning;
 
 	DefaultStatement(
 		List<Expression<Node>> matchList,
+		Condition condition,
 		List<Expression<Node>> returnList) {
+
 		this.matchList = Collections.singletonList(new Match(matchList));
+		this.where = new Where(condition);
 		this.returning = new Return(returnList);
 	}
 
 	@Override
 	public void accept(Visitor visitor) {
 
-		this.matchList.forEach(segment -> segment.accept(visitor));
-		this.returning.accept(visitor);
+		if (this.matchList != null) {
+			this.matchList.forEach(segment -> segment.accept(visitor));
+		}
+
+		if (this.where != null) {
+			this.where.accept(visitor);
+		}
+
+		if (this.returning != null) {
+			this.returning.accept(visitor);
+		}
 	}
 }
