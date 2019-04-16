@@ -16,39 +16,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.neo4j.core.cypher;
-
-import org.junit.jupiter.api.Test;
+package org.springframework.data.neo4j.core.cypher2.support;
 
 /**
  * @author Michael J. Simons
  */
-class CypherTest {
+@FunctionalInterface
+public interface Visitor {
 
-	@Test
-	void shouldCreateMatchStatement() {
-/*
-		Node bikeNode = Cypher.node("n", "Bike");
-		Node userNode = Cypher.node("u", "User");
+	/**
+	 * Enter a {@link Visitable}.
+	 *
+	 * @param segment the segment to visit.
+	 */
+	void enter(Visitable segment);
 
-		Statement matchAndReturnAllBikes = Cypher
-			.match(bikeNode, userNode)
-			.where(userNode.property("name").matches(".*aName"))
-			.returning(bikeNode)
-			.build();
-
- */
-
-
-
-/*
-		Renderer renderer = CypherRenderer.create();
-		String cypher = renderer.render(matchAndReturnAllBikes);
-		assertThat(cypher)
-			.isNotEmpty()
-			.isEqualTo("MATCH (n:`Bike`), (u:`User`) WHERE u.name =~ '.*aName' RETURN n");
-	}
-
- */
+	/**
+	 * Leave a {@link Visitable}.
+	 *
+	 * @param segment the visited segment.
+	 */
+	default void leave(Visitable segment) {
 	}
 }

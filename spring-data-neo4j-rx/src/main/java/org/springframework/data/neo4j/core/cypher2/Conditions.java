@@ -16,39 +16,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.neo4j.core.cypher;
-
-import org.junit.jupiter.api.Test;
+package org.springframework.data.neo4j.core.cypher2;
 
 /**
+ * Builder for various conditions.
+ *
  * @author Michael J. Simons
  */
-class CypherTest {
-
-	@Test
-	void shouldCreateMatchStatement() {
-/*
-		Node bikeNode = Cypher.node("n", "Bike");
-		Node userNode = Cypher.node("u", "User");
-
-		Statement matchAndReturnAllBikes = Cypher
-			.match(bikeNode, userNode)
-			.where(userNode.property("name").matches(".*aName"))
-			.returning(bikeNode)
-			.build();
-
- */
+public final class Conditions {
 
 
-
-/*
-		Renderer renderer = CypherRenderer.create();
-		String cypher = renderer.render(matchAndReturnAllBikes);
-		assertThat(cypher)
-			.isNotEmpty()
-			.isEqualTo("MATCH (n:`Bike`), (u:`User`) WHERE u.name =~ '.*aName' RETURN n");
+	static Condition matches(Expression lhs, Expression rhs) {
+		return Comparison.create(lhs, "=~", rhs);
 	}
 
- */
+
+
+	private Conditions() {
 	}
 }
