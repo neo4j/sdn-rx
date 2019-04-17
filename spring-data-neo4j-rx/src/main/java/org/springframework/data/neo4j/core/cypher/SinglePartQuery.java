@@ -18,33 +18,29 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.springframework.data.neo4j.core.cypher.renderer.RenderingVisitor;
+import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.neo4j.core.cypher.Statement.SingleQuery;
+import org.springframework.data.neo4j.core.cypher.support.Visitor;
+import org.springframework.lang.Nullable;
 
 /**
- * @author Michael J. Simons
+ * @author Michael J. Simonss
  */
-public class CypherTest {
+@RequiredArgsConstructor
+public class SinglePartQuery implements SingleQuery {
 
-	@Nested
-	class SingleQuerySinglePart {
+	private @Nullable final ReadingClause readingClause;
 
-		@Test
-		void readingAndReturn() {
+	private final Return aReturn;
 
-			Node bikeNode = Cypher.node("n", "Bike");
-			Node userNode = Cypher.node("u", "User");
+	@Override
+	public void accept(Visitor visitor) {
 
-			Statement statement = Cypher.match(bikeNode, userNode, Cypher.node("o", "U"))
-				.where(userNode.property("name").matches(".*aName"))
-				.returning(bikeNode, userNode)
-				.build();
-
-			RenderingVisitor x = new RenderingVisitor();
-			statement.accept(x);
-			System.out.println(x.getRenderedContent());
+		if (readingClause != null) {
+			readingClause.accept(visitor);
 		}
-	}
 
+		aReturn.accept(visitor);
+	}
 }

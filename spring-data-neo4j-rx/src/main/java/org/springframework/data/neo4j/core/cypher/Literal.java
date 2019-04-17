@@ -18,33 +18,24 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.springframework.data.neo4j.core.cypher.renderer.RenderingVisitor;
-
 /**
+ * Represents a literal.
+ *
  * @author Michael J. Simons
  */
-public class CypherTest {
+public abstract class Literal<T> implements Expression {
 
-	@Nested
-	class SingleQuerySinglePart {
+	private T content;
 
-		@Test
-		void readingAndReturn() {
-
-			Node bikeNode = Cypher.node("n", "Bike");
-			Node userNode = Cypher.node("u", "User");
-
-			Statement statement = Cypher.match(bikeNode, userNode, Cypher.node("o", "U"))
-				.where(userNode.property("name").matches(".*aName"))
-				.returning(bikeNode, userNode)
-				.build();
-
-			RenderingVisitor x = new RenderingVisitor();
-			statement.accept(x);
-			System.out.println(x.getRenderedContent());
-		}
+	Literal(T content) {
+		this.content = content;
 	}
 
+	public T getContent() {
+		return content;
+	}
+
+	@Override
+	public abstract String toString();
 }
+

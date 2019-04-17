@@ -16,35 +16,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.neo4j.core.cypher;
+package org.springframework.data.neo4j.core.cypher.renderer;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.springframework.data.neo4j.core.cypher.renderer.RenderingVisitor;
+import static org.assertj.core.api.Assertions.*;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  * @author Michael J. Simons
  */
-public class CypherTest {
+class RenderUtilsTest {
 
-	@Nested
-	class SingleQuerySinglePart {
+	@ParameterizedTest
+	@CsvSource({
+		"ALabel, `ALabel`",
+		"A Label, `A Label`",
+		"A `Label, `A ``Label`",
+		"`A `Label, ```A ``Label`",
+		"Spring Data Neo4j⚡️RX, `Spring Data Neo4j⚡️RX`"
+	})
+	void shouldCorrectlyEscapeNames(String name, String expectedEscapedName) {
 
-		@Test
-		void readingAndReturn() {
-
-			Node bikeNode = Cypher.node("n", "Bike");
-			Node userNode = Cypher.node("u", "User");
-
-			Statement statement = Cypher.match(bikeNode, userNode, Cypher.node("o", "U"))
-				.where(userNode.property("name").matches(".*aName"))
-				.returning(bikeNode, userNode)
-				.build();
-
-			RenderingVisitor x = new RenderingVisitor();
-			statement.accept(x);
-			System.out.println(x.getRenderedContent());
-		}
+		assertThat(RenderUtils.escapeName(name)).isEqualTo(expectedEscapedName);
 	}
-
 }

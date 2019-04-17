@@ -18,33 +18,24 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.springframework.data.neo4j.core.cypher.renderer.RenderingVisitor;
+import org.springframework.data.neo4j.core.cypher.StatementBuilder.OngoingMatch;
 
 /**
+ * The main entry point into the Cypher DSL.
+ *
+ * The Cypher Builder API is intended for framework usage to produce SQL required for framework operations.
+ *
  * @author Michael J. Simons
  */
-public class CypherTest {
+public class Cypher {
 
-	@Nested
-	class SingleQuerySinglePart {
+	public static Node node(String alias, String primaryLabel, String... additionalLabels) {
 
-		@Test
-		void readingAndReturn() {
-
-			Node bikeNode = Cypher.node("n", "Bike");
-			Node userNode = Cypher.node("u", "User");
-
-			Statement statement = Cypher.match(bikeNode, userNode, Cypher.node("o", "U"))
-				.where(userNode.property("name").matches(".*aName"))
-				.returning(bikeNode, userNode)
-				.build();
-
-			RenderingVisitor x = new RenderingVisitor();
-			statement.accept(x);
-			System.out.println(x.getRenderedContent());
-		}
+		return Node.create(alias, primaryLabel, additionalLabels);
 	}
 
+	public static OngoingMatch match(PatternPart... pattern) {
+
+		return Statement.builder().match(pattern);
+	}
 }

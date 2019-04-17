@@ -18,33 +18,27 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.springframework.data.neo4j.core.cypher.renderer.RenderingVisitor;
-
 /**
- * @author Michael J. Simons
+ * @author Michael J. Simonss
  */
-public class CypherTest {
+public interface StatementBuilder {
 
-	@Nested
-	class SingleQuerySinglePart {
+	OngoingMatch match(PatternPart... pattern);
 
-		@Test
-		void readingAndReturn() {
-
-			Node bikeNode = Cypher.node("n", "Bike");
-			Node userNode = Cypher.node("u", "User");
-
-			Statement statement = Cypher.match(bikeNode, userNode, Cypher.node("o", "U"))
-				.where(userNode.property("name").matches(".*aName"))
-				.returning(bikeNode, userNode)
-				.build();
-
-			RenderingVisitor x = new RenderingVisitor();
-			statement.accept(x);
-			System.out.println(x.getRenderedContent());
-		}
+	interface OngoingMatchAndReturn extends BuildableMatch {
 	}
 
+	interface OngoingMatch {
+
+		OngoingMatchAndReturn returning(Expression... expressions);
+
+		OngoingMatchAndReturn returning(Node... nodes);
+
+		OngoingMatch where(Condition name);
+	}
+
+	interface BuildableMatch {
+
+		Statement build();
+	}
 }

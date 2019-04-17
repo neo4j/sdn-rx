@@ -18,33 +18,16 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.springframework.data.neo4j.core.cypher.renderer.RenderingVisitor;
+import java.util.List;
+
+import org.springframework.data.neo4j.core.cypher.support.TypedSubtree;
 
 /**
- * @author Michael J. Simons
+ * See <a href="https://s3.amazonaws.com/artifacts.opencypher.org/M14/railroad/Pattern.html">Pattern</a>.
  */
-public class CypherTest {
+public class Pattern extends TypedSubtree<PatternPart> {
 
-	@Nested
-	class SingleQuerySinglePart {
-
-		@Test
-		void readingAndReturn() {
-
-			Node bikeNode = Cypher.node("n", "Bike");
-			Node userNode = Cypher.node("u", "User");
-
-			Statement statement = Cypher.match(bikeNode, userNode, Cypher.node("o", "U"))
-				.where(userNode.property("name").matches(".*aName"))
-				.returning(bikeNode, userNode)
-				.build();
-
-			RenderingVisitor x = new RenderingVisitor();
-			statement.accept(x);
-			System.out.println(x.getRenderedContent());
-		}
+	public Pattern(List<PatternPart> patternParts) {
+		super(patternParts);
 	}
-
 }

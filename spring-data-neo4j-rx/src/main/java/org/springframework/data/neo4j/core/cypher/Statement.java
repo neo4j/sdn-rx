@@ -18,33 +18,26 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.springframework.data.neo4j.core.cypher.renderer.RenderingVisitor;
+import org.springframework.data.neo4j.core.cypher.support.Visitable;
 
 /**
+ * Shall be the common interfaces for queries that we support.
+ * For reference see: <a href="https://s3.amazonaws.com/artifacts.opencypher.org/M14/railroad/Cypher.html">Cypher</a>.
+ * We have skipped the intermediate "Query" structure so a statement in the context of this generator is either a
+ * {@link RegularQuery} or a {@code StandaloneCall}.
+ *
  * @author Michael J. Simons
  */
-public class CypherTest {
 
-	@Nested
-	class SingleQuerySinglePart {
+public interface Statement extends Visitable {
+	static StatementBuilder builder() {
 
-		@Test
-		void readingAndReturn() {
-
-			Node bikeNode = Cypher.node("n", "Bike");
-			Node userNode = Cypher.node("u", "User");
-
-			Statement statement = Cypher.match(bikeNode, userNode, Cypher.node("o", "U"))
-				.where(userNode.property("name").matches(".*aName"))
-				.returning(bikeNode, userNode)
-				.build();
-
-			RenderingVisitor x = new RenderingVisitor();
-			statement.accept(x);
-			System.out.println(x.getRenderedContent());
-		}
+		return new DefaultStatementBuilder();
 	}
 
+	interface RegularQuery extends Statement {
+	}
+
+	interface SingleQuery extends RegularQuery {
+	}
 }

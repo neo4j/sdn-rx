@@ -16,35 +16,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.neo4j.core.cypher;
+package org.springframework.data.neo4j.core.cypher.support;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.springframework.data.neo4j.core.cypher.renderer.RenderingVisitor;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author Michael J. Simons
  */
-public class CypherTest {
+public abstract class TypedSubtree<T extends Visitable> implements Visitable {
 
-	@Nested
-	class SingleQuerySinglePart {
+	private final List<T> children;
 
-		@Test
-		void readingAndReturn() {
+	protected TypedSubtree() {
 
-			Node bikeNode = Cypher.node("n", "Bike");
-			Node userNode = Cypher.node("u", "User");
-
-			Statement statement = Cypher.match(bikeNode, userNode, Cypher.node("o", "U"))
-				.where(userNode.property("name").matches(".*aName"))
-				.returning(bikeNode, userNode)
-				.build();
-
-			RenderingVisitor x = new RenderingVisitor();
-			statement.accept(x);
-			System.out.println(x.getRenderedContent());
-		}
+		this.children = Collections.emptyList();
 	}
 
+	protected TypedSubtree(T... children) {
+
+		this.children = Arrays.asList(children);
+
+	}
+
+	protected TypedSubtree(List<T> children) {
+
+		this.children = new ArrayList<>(children);
+	}
+
+	@Override
+	public void accept(Visitor visitor) {
+
+		visitor.enter(this);
+		this.children.forEach(child -> child.accept(visitor));
+		visitor.leave(this);
+	}
 }

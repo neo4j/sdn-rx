@@ -16,35 +16,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.neo4j.core.cypher;
-
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.springframework.data.neo4j.core.cypher.renderer.RenderingVisitor;
+package org.springframework.data.neo4j.core.cypher.support;
 
 /**
  * @author Michael J. Simons
  */
-public class CypherTest {
+@FunctionalInterface
+public interface Visitor {
 
-	@Nested
-	class SingleQuerySinglePart {
+	/**
+	 * Enter a {@link Visitable}.
+	 *
+	 * @param segment the segment to visit.
+	 */
+	void enter(Visitable segment);
 
-		@Test
-		void readingAndReturn() {
-
-			Node bikeNode = Cypher.node("n", "Bike");
-			Node userNode = Cypher.node("u", "User");
-
-			Statement statement = Cypher.match(bikeNode, userNode, Cypher.node("o", "U"))
-				.where(userNode.property("name").matches(".*aName"))
-				.returning(bikeNode, userNode)
-				.build();
-
-			RenderingVisitor x = new RenderingVisitor();
-			statement.accept(x);
-			System.out.println(x.getRenderedContent());
-		}
+	/**
+	 * Leave a {@link Visitable}.
+	 *
+	 * @param segment the visited segment.
+	 */
+	default void leave(Visitable segment) {
 	}
-
 }

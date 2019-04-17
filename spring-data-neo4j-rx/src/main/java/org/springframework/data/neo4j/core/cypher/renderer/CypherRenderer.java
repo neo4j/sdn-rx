@@ -16,35 +16,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.neo4j.core.cypher;
+package org.springframework.data.neo4j.core.cypher.renderer;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.springframework.data.neo4j.core.cypher.renderer.RenderingVisitor;
+import java.util.Objects;
+
+import org.springframework.data.neo4j.core.cypher.Statement;
 
 /**
  * @author Michael J. Simons
  */
-public class CypherTest {
+public class CypherRenderer implements Renderer {
 
-	@Nested
-	class SingleQuerySinglePart {
-
-		@Test
-		void readingAndReturn() {
-
-			Node bikeNode = Cypher.node("n", "Bike");
-			Node userNode = Cypher.node("u", "User");
-
-			Statement statement = Cypher.match(bikeNode, userNode, Cypher.node("o", "U"))
-				.where(userNode.property("name").matches(".*aName"))
-				.returning(bikeNode, userNode)
-				.build();
-
-			RenderingVisitor x = new RenderingVisitor();
-			statement.accept(x);
-			System.out.println(x.getRenderedContent());
-		}
+	public static Renderer create() {
+		return new CypherRenderer(new DefaultRenderContext());
 	}
 
+	private final RenderContext context;
+
+	private CypherRenderer(final RenderContext context) {
+
+		Objects.requireNonNull(context, "RenderContext must not be null!");
+
+		this.context = context;
+	}
+
+	@Override
+	public String render(Statement statement) {
+
+		RenderingVisitor renderingVisitor = new RenderingVisitor();
+		statement.accept(renderingVisitor);
+
+		return renderingVisitor.getRenderedContent();
+	}
 }

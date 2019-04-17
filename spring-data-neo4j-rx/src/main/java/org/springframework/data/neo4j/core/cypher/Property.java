@@ -18,33 +18,44 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.springframework.data.neo4j.core.cypher.renderer.RenderingVisitor;
-
 /**
+ * A property that belongs to a property container (either Node or Relationship).
+ *
  * @author Michael J. Simons
  */
-public class CypherTest {
+public class Property implements Expression {
 
-	@Nested
-	class SingleQuerySinglePart {
+	static Property create(Node parentContainer, String name) {
 
-		@Test
-		void readingAndReturn() {
-
-			Node bikeNode = Cypher.node("n", "Bike");
-			Node userNode = Cypher.node("u", "User");
-
-			Statement statement = Cypher.match(bikeNode, userNode, Cypher.node("o", "U"))
-				.where(userNode.property("name").matches(".*aName"))
-				.returning(bikeNode, userNode)
-				.build();
-
-			RenderingVisitor x = new RenderingVisitor();
-			statement.accept(x);
-			System.out.println(x.getRenderedContent());
-		}
+		return new Property(parentContainer, name);
 	}
 
+	/**
+	 * The property container this property belongs to.
+	 */
+	private final Node parentContainer;
+
+	/**
+	 * The name of this property.
+	 */
+	private final String name;
+
+	Property(Node parentContainer, String name) {
+
+		this.parentContainer = parentContainer;
+		this.name = name;
+	}
+
+	public String getParentAlias() {
+		return parentContainer.getSymbolicName().get().getName();
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public Condition matches(String s) {
+
+		return Conditions.matches(this, new StringLiteral(s));
+	}
 }

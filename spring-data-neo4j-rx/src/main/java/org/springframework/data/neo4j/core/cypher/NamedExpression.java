@@ -18,33 +18,23 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.springframework.data.neo4j.core.cypher.renderer.RenderingVisitor;
-
 /**
- * @author Michael J. Simons
+ * @author Michael J. Simonss
  */
-public class CypherTest {
+public class NamedExpression implements Named, Expression {
 
-	@Nested
-	class SingleQuerySinglePart {
+	private final Expression expression;
 
-		@Test
-		void readingAndReturn() {
+	private final String symbolicName;
 
-			Node bikeNode = Cypher.node("n", "Bike");
-			Node userNode = Cypher.node("u", "User");
+	public NamedExpression(Expression expression, String symbolicName) {
 
-			Statement statement = Cypher.match(bikeNode, userNode, Cypher.node("o", "U"))
-				.where(userNode.property("name").matches(".*aName"))
-				.returning(bikeNode, userNode)
-				.build();
-
-			RenderingVisitor x = new RenderingVisitor();
-			statement.accept(x);
-			System.out.println(x.getRenderedContent());
-		}
+		this.expression = expression;
+		this.symbolicName = symbolicName;
 	}
 
+	@Override
+	public String getSymbolicName() {
+		return symbolicName;
+	}
 }

@@ -16,35 +16,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.neo4j.core.cypher;
+package org.springframework.data.neo4j.core.cypher.renderer;
 
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.springframework.data.neo4j.core.cypher.renderer.RenderingVisitor;
+import java.util.Locale;
 
 /**
+ * Helper methods dealing with the formatting of various Cypher nodes and such.
+ *
  * @author Michael J. Simons
  */
-public class CypherTest {
+public final class RenderUtils {
 
-	@Nested
-	class SingleQuerySinglePart {
-
-		@Test
-		void readingAndReturn() {
-
-			Node bikeNode = Cypher.node("n", "Bike");
-			Node userNode = Cypher.node("u", "User");
-
-			Statement statement = Cypher.match(bikeNode, userNode, Cypher.node("o", "U"))
-				.where(userNode.property("name").matches(".*aName"))
-				.returning(bikeNode, userNode)
-				.build();
-
-			RenderingVisitor x = new RenderingVisitor();
-			statement.accept(x);
-			System.out.println(x.getRenderedContent());
-		}
+	/**
+	 * Escapes a symbolic name. Such a symbolic name is either used for a nodes label, the type of a relationship or a
+	 * variable.
+	 *
+	 * @param unescapedName
+	 * @return The correctly escaped name, safe to be used in statements.
+	 */
+	public static CharSequence escapeName(String unescapedName) {
+		return String.format(Locale.ENGLISH, "`%s`", unescapedName.replaceAll("`", "``"));
 	}
 
+	private RenderUtils() {
+	}
 }
