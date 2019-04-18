@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.neo4j.core.cypher.Relationship.Direction;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
@@ -36,25 +37,42 @@ import org.springframework.util.Assert;
  */
 public class Node implements PatternElement, Expression {
 
-	static Node create(@Nullable String symbolicName, String primaryLabel, String... additionalLabels) {
+	static Node create(String primaryLabel, String... additionalLabels) {
 
 		Assert.hasText(primaryLabel, "A primary label is required.");
 
-		List<String> labels = new ArrayList<>();
-		labels.add(primaryLabel);
-		labels.addAll(Arrays.asList(additionalLabels));
-
-		return new Node(Optional.ofNullable(symbolicName).map(SymbolicName::new).orElse(null), labels);
+		return new Node(primaryLabel, additionalLabels);
 	}
 
 	private @Nullable final SymbolicName symbolicName;
 
 	private final List<String> labels;
 
+	Node(String primaryLabel, String... additionalLabels) {
+
+		this.symbolicName = null;
+
+		this.labels = new ArrayList<>();
+		this.labels.add(primaryLabel);
+		this.labels.addAll(Arrays.asList(additionalLabels));
+	}
+
 	Node(SymbolicName symbolicName, List<String> labels) {
 
 		this.symbolicName = symbolicName;
-		this.labels = labels;
+		this.labels = new ArrayList<>(labels);
+	}
+
+	/**
+	 * Creates a copy of that node with a new symbolic name.
+	 *
+	 * @param newSymbolicName the new symbolic name.
+	 * @return The new node.
+	 */
+	public Node as(String newSymbolicName) {
+
+		Assert.hasText(newSymbolicName, "Symbolic name is required.");
+		return new Node(new SymbolicName(newSymbolicName), labels);
 	}
 
 	public Optional<SymbolicName> getSymbolicName() {
@@ -83,53 +101,130 @@ public class Node implements PatternElement, Expression {
 		return Property.create(this, name);
 	}
 
-	public OngoingRelationshipDefinition outgoingRelationShipTo(Node other) {
-		return new DefaultOngoingRelationshipDefinition(Relationship.Direction.LTR, other);
+	public OngoingRelationshipDefinition<Relationship> outgoingRelationShipTo(Node other) {
+		return new DefaultOngoingRelationshipDefinition(this, Direction.LTR, other);
 	}
 
-	public OngoingRelationshipDefinition incomingRelationShipFrom(Node other) {
-		return new DefaultOngoingRelationshipDefinition(Relationship.Direction.RTR, other);
+	public OngoingRelationshipDefinition<Relationship> incomingRelationShipFrom(Node other) {
+		return new DefaultOngoingRelationshipDefinition(this, Direction.RTR, other);
 	}
 
-	public OngoingRelationshipDefinition relationshipWith(Node other) {
-		return new DefaultOngoingRelationshipDefinition(Relationship.Direction.UNI, other);
+	public OngoingRelationshipDefinition<Relationship> relationshipWith(Node other) {
+		return new DefaultOngoingRelationshipDefinition(this, Direction.UNI, other);
 	}
 
-	public interface OngoingRelationshipDefinition extends OngoingRelationshipDefinitionWithType {
+	/**
+	 * Exposes {@code withType) and terminal operations for creating a relationship.
+	 *
+	 * @param <P> The final thing to be defined
+	 */
+	public interface OngoingRelationshipDefinition<P>
+		extends OngoingRelationshipDefinitionWithType<P>, OngoingRelationshipDefinitionWithSymbolicName<P> {
 
-		OngoingRelationshipDefinitionWithType withType(String... types);
+		OngoingRelationshipDefinitionWithType<P> withType(String... types);
 	}
 
-	public interface OngoingRelationshipDefinitionWithType {
+	/**
+	 * Exposes {@code withType} to specify types for the relationship or the the last element of a chain of relationships,
+	 * {@code as} to specify a symbolic name for the last element in the chain as well as terminal operations
+	 * to create the chain or continue it with the next hop.
+	 *
+	 * @param <P> The final thing to be defined
+	 */
+	public interface OngoingRelationshipDefinitionWithType<P> extends OngoingRelationshipDefinitionWithSymbolicName<P> {
 
-		Relationship create();
+		OngoingRelationshipDefinitionWithSymbolicName<P> as(String symbolicName);
+	}
 
-		Relationship as(String symbolicName);
+	/**
+	 * @param <P> The final thing to be defined
+	 */
+	public interface OngoingRelationshipDefinitionWithSymbolicName<P> {
+
+		P create();
+
+		OngoingRelationshipDefinition<Relationships> outgoingRelationShipTo(Node tripNode);
 	}
 
 	@RequiredArgsConstructor
-	private class DefaultOngoingRelationshipDefinition
-		implements OngoingRelationshipDefinition, OngoingRelationshipDefinitionWithType {
-		private final Relationship.Direction direction;
+	private static class DefaultOngoingRelationshipDefinition
+		implements OngoingRelationshipDefinition<Relationship> {
 
-		private final Node other;
+		private final Node left;
+
+		private final Direction direction;
+
+		private final Node right;
 
 		private String[] types = new String[0];
 
+		private String symbolicName;
+
 		@Override
-		public OngoingRelationshipDefinitionWithType withType(String... types) {
+		public OngoingRelationshipDefinitionWithType withType(@SuppressWarnings("HiddenField") String... types) {
 			this.types = types;
 			return this;
 		}
 
 		@Override
 		public Relationship create() {
-			return as(null);
+			return Relationship.create(left, direction, right, symbolicName, types);
 		}
 
 		@Override
-		public Relationship as(String symbolicName) {
-			return Relationship.create(Node.this, direction, other, symbolicName, types);
+		public OngoingRelationshipDefinitionWithSymbolicName as(@SuppressWarnings("HiddenField") String symbolicName) {
+			this.symbolicName = symbolicName;
+			return this;
+		}
+
+		@Override
+		public OngoingRelationshipDefinition<Relationships> outgoingRelationShipTo(Node next) {
+			return new DefaultOngoingRelationshipsDefinition(this.create(),
+				new DefaultOngoingRelationshipDefinition(right, Direction.LTR, next));
+		}
+	}
+
+	private static class DefaultOngoingRelationshipsDefinition
+		implements OngoingRelationshipDefinition<Relationships> {
+
+		private final List<Relationship> chain;
+
+		private OngoingRelationshipDefinition<Relationship> nextElement;
+
+		DefaultOngoingRelationshipsDefinition(
+			Relationship firstElement,
+			OngoingRelationshipDefinition nextElement) {
+			this.chain = new ArrayList<>();
+			this.chain.add(firstElement);
+			this.nextElement = nextElement;
+		}
+
+		@Override
+		public OngoingRelationshipDefinitionWithType<Relationships> withType(String... types) {
+			this.nextElement.withType(types);
+			return this;
+		}
+
+		@Override
+		public OngoingRelationshipDefinitionWithSymbolicName<Relationships> as(String symbolicName) {
+			this.nextElement.as(symbolicName);
+			return this;
+		}
+
+		@Override
+		public Relationships create() {
+			this.chain.add(this.nextElement.create());
+			return new Relationships(this.chain);
+		}
+
+		@Override
+		public OngoingRelationshipDefinition<Relationships> outgoingRelationShipTo(Node next) {
+			Relationship lastRelationship = this.nextElement.create();
+			this.chain.add(lastRelationship);
+			this.nextElement =
+				new DefaultOngoingRelationshipDefinition(lastRelationship.getRight(), Direction.LTR, next);
+
+			return this;
 		}
 	}
 }

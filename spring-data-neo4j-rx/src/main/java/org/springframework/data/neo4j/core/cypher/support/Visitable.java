@@ -18,6 +18,8 @@
  */
 package org.springframework.data.neo4j.core.cypher.support;
 
+import org.springframework.lang.Nullable;
+
 /**
  * Interface for implementations that accepts {@link Visitor visitors}.
  *
@@ -25,6 +27,20 @@ package org.springframework.data.neo4j.core.cypher.support;
  * @see Visitor
  */
 public interface Visitable {
+
+	/**
+	 * A helper method that presents the {@code visitor} to the {@code visitable} if the visitable is not null.
+	 * Not meant to be overridden.
+	 *
+	 * @param visitable The visitable to visit if not null
+	 * @param visitor The visitor to use
+	 */
+	static void visitIfNotNull(@Nullable Visitable visitable, Visitor visitor) {
+
+		if (visitable != null) {
+			visitable.accept(visitor);
+		}
+	}
 
 	/**
 	 * Accept a {@link Visitor} visiting this {@link Visitable} and its nested {@link Visitable}s if applicable.

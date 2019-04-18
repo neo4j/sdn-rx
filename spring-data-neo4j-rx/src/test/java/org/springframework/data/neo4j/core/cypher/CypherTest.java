@@ -33,9 +33,9 @@ public class CypherTest {
 		@Test
 		void readingAndReturn() {
 
-			Node bikeNode = Cypher.node("b", "Bike");
-			Node userNode = Cypher.node("u", "User");
-			Node tripNode = Cypher.node("t", "Trip");
+			Node bikeNode = Cypher.node("Bike").as("b");
+			Node userNode = Cypher.node("User").as("u");
+			Node tripNode = Cypher.node("Trip").as("u");
 
 			/*
 
@@ -49,7 +49,7 @@ public class CypherTest {
 
 			Statement statement;
 
-			statement = Cypher.match(bikeNode, userNode, Cypher.node("o", "U"))
+			statement = Cypher.match(bikeNode, userNode, Cypher.node("U").as("o"))
 				.where(userNode.property("name").matches(".*aName"))
 				.returning(bikeNode, userNode)
 				.build();
@@ -63,6 +63,21 @@ public class CypherTest {
 			statement = Cypher
 				.match(userNode
 					.outgoingRelationShipTo(bikeNode).withType("OWNS").create()
+				)
+				.where(userNode.property("name").matches(".*aName"))
+				.returning(bikeNode, userNode)
+				.build();
+
+
+			x = new RenderingVisitor();
+			statement.accept(x);
+			System.out.println(x.getRenderedContent());
+
+			statement = Cypher
+				.match(userNode
+					.outgoingRelationShipTo(bikeNode).withType("OWNS").as("r1")
+					.outgoingRelationShipTo(tripNode).withType("USED_ON").as("r2")
+					.create()
 				)
 				.where(userNode.property("name").matches(".*aName"))
 				.returning(bikeNode, userNode)

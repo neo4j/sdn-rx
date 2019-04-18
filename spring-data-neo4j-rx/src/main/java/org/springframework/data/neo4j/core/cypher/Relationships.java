@@ -18,28 +18,42 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
-import lombok.RequiredArgsConstructor;
+import static org.springframework.data.neo4j.core.cypher.support.Visitable.*;
 
-import org.springframework.data.neo4j.core.cypher.support.Visitable;
+import java.util.List;
+
 import org.springframework.data.neo4j.core.cypher.support.Visitor;
-import org.springframework.lang.Nullable;
 
 /**
- * @author Michael J. Simonss
+ * Represents a chain of relationships. The chain is meant to be in order and the right node of an element is related to
+ * the left node of the next element.
+ *
+ * @author Michael J. Simons
  */
-@RequiredArgsConstructor
-public class Match implements ReadingClause {
+public class Relationships implements PatternElement {
 
-	private final Pattern pattern;
+	private List<Relationship> relationships;
 
-	private @Nullable final Where optionalWhere;
+	Relationships(List<Relationship> relationships) {
+		this.relationships = relationships;
+	}
 
 	@Override
 	public void accept(Visitor visitor) {
 
 		visitor.enter(this);
-		this.pattern.accept(visitor);
-		Visitable.visitIfNotNull(optionalWhere, visitor);
+
+		Node lastNode = null;
+		for (Relationship relationship : relationships) {
+
+			relationship.getLeft().accept(visitor);
+			relationship.getDetails().accept(visitor);
+
+			lastNode = relationship.getRight();
+		}
+
+		visitIfNotNull(lastNode, visitor);
+
 		visitor.leave(this);
 	}
 }

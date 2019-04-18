@@ -54,22 +54,26 @@ public class RenderingVisitor extends ReflectiveVisitor {
 	private static final String LABEL_SEPARATOR = ":";
 	private static final String TYPE_SEPARATOR = ":";
 
-	StringBuilder builder = new StringBuilder();
+	private final StringBuilder builder = new StringBuilder();
 
 	String separator = null;
 
-	int currentLevel = 0;
-	Set<Integer> separatorOnLevel = new HashSet<>();
+	/**
+	 * This keeps track on which level of the tree a separator is needed.
+	 */
+	private int currentLevel = 0;
+	private final Set<Integer> separatorOnLevel = new HashSet<>();
 
-	void enableSeparator(int level, boolean on) {
-		if (on)
+	private void enableSeparator(int level, boolean on) {
+		if (on) {
 			separatorOnLevel.add(level);
-		else
+		} else {
 			separatorOnLevel.remove(level);
+		}
 		this.separator = null;
 	}
 
-	boolean needsSeparator() {
+	private boolean needsSeparator() {
 		return separatorOnLevel.contains(currentLevel);
 	}
 
@@ -138,8 +142,8 @@ public class RenderingVisitor extends ReflectiveVisitor {
 	void enter(Node node) {
 		builder.append("(")
 			.append(node.getSymbolicName().map(SymbolicName::getName).orElse(""))
-			.append(node.isLabeled() ? TYPE_SEPARATOR : "")
-			.append(node.getLabels().stream().map(RenderUtils::escapeName).collect(joining(":")))
+			.append(node.isLabeled() ? LABEL_SEPARATOR : "")
+			.append(node.getLabels().stream().map(RenderUtils::escapeName).collect(joining(LABEL_SEPARATOR)))
 			.append(")");
 	}
 

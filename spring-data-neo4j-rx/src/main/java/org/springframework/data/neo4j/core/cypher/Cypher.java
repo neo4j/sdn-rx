@@ -29,9 +29,9 @@ import org.springframework.data.neo4j.core.cypher.StatementBuilder.OngoingMatch;
  */
 public final class Cypher {
 
-	public static Node node(String alias, String primaryLabel, String... additionalLabels) {
+	public static Node node(String primaryLabel, String... additionalLabels) {
 
-		return Node.create(alias, primaryLabel, additionalLabels);
+		return Node.create(primaryLabel, additionalLabels);
 	}
 
 	public static OngoingMatch match(PatternElement... pattern) {
