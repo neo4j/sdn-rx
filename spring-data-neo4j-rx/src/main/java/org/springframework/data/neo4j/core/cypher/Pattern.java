@@ -25,9 +25,9 @@ import org.springframework.data.neo4j.core.cypher.support.TypedSubtree;
 /**
  * See <a href="https://s3.amazonaws.com/artifacts.opencypher.org/M14/railroad/Pattern.html">Pattern</a>.
  */
-public class Pattern extends TypedSubtree<PatternPart> {
+public class Pattern extends TypedSubtree<PatternElement> {
 
-	public Pattern(List<PatternPart> patternParts) {
-		super(patternParts);
+	public Pattern(List<PatternElement> patternElements) {
+		super(patternElements);
 	}
 }

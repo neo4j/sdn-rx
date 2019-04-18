@@ -20,7 +20,6 @@ package org.springframework.data.neo4j.core.cypher;
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.data.neo4j.core.cypher.support.Visitable;
 import org.springframework.data.neo4j.core.cypher.support.Visitor;
 import org.springframework.lang.Nullable;
 
@@ -39,14 +38,7 @@ public class Match implements ReadingClause {
 
 		visitor.enter(this);
 		this.pattern.accept(visitor);
-		visitIfNotNull(optionalWhere, visitor);
+		visitor.visitIfNotNull(optionalWhere);
 		visitor.leave(this);
-	}
-
-	private static void visitIfNotNull(@Nullable Visitable visitable, Visitor visitor) {
-
-		if (visitable != null) {
-			visitable.accept(visitor);
-		}
 	}
 }

@@ -33,15 +33,42 @@ public class CypherTest {
 		@Test
 		void readingAndReturn() {
 
-			Node bikeNode = Cypher.node("n", "Bike");
+			Node bikeNode = Cypher.node("b", "Bike");
 			Node userNode = Cypher.node("u", "User");
+			Node tripNode = Cypher.node("t", "Trip");
 
-			Statement statement = Cypher.match(bikeNode, userNode, Cypher.node("o", "U"))
+			/*
+
+			String cypher = "MATCH (o:User {name: $name}) - [:OWNS] -> (b:Bike) - [:USED_ON] -> (t:Trip) " +
+			"WHERE t.takenOn > $aDate " +
+			"  AND b.name =~ $bikeName " +
+			"  AND t.location = $location " +  // TODO Nice place to add coordinates
+			"RETURN b";
+
+			 */
+
+			Statement statement;
+
+			statement = Cypher.match(bikeNode, userNode, Cypher.node("o", "U"))
 				.where(userNode.property("name").matches(".*aName"))
 				.returning(bikeNode, userNode)
 				.build();
 
-			RenderingVisitor x = new RenderingVisitor();
+			RenderingVisitor x;
+
+			x = new RenderingVisitor();
+			statement.accept(x);
+			System.out.println(x.getRenderedContent());
+
+			statement = Cypher
+				.match(userNode
+					.outgoingRelationShipTo(bikeNode).withType("OWNS").create()
+				)
+				.where(userNode.property("name").matches(".*aName"))
+				.returning(bikeNode, userNode)
+				.build();
+
+			x = new RenderingVisitor();
 			statement.accept(x);
 			System.out.println(x.getRenderedContent());
 		}

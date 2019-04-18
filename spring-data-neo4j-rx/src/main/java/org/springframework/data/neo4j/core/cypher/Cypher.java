@@ -27,15 +27,18 @@ import org.springframework.data.neo4j.core.cypher.StatementBuilder.OngoingMatch;
  *
  * @author Michael J. Simons
  */
-public class Cypher {
+public final class Cypher {
 
 	public static Node node(String alias, String primaryLabel, String... additionalLabels) {
 
 		return Node.create(alias, primaryLabel, additionalLabels);
 	}
 
-	public static OngoingMatch match(PatternPart... pattern) {
+	public static OngoingMatch match(PatternElement... pattern) {
 
 		return Statement.builder().match(pattern);
+	}
+
+	private Cypher() {
 	}
 }

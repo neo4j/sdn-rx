@@ -18,6 +18,8 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
+import lombok.RequiredArgsConstructor;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,7 +34,7 @@ import org.springframework.util.Assert;
  *
  * @author Michael J. Simons
  */
-public class Node implements PatternPart, Expression {
+public class Node implements PatternElement, Expression {
 
 	static Node create(@Nullable String symbolicName, String primaryLabel, String... additionalLabels) {
 
@@ -63,6 +65,10 @@ public class Node implements PatternPart, Expression {
 		return Collections.unmodifiableList(labels);
 	}
 
+	public boolean isLabeled() {
+		return !this.labels.isEmpty();
+	}
+
 	/**
 	 * Creates a new {@link Property} associated with this property container..
 	 * <p/>
@@ -75,5 +81,55 @@ public class Node implements PatternPart, Expression {
 	public Property property(String name) {
 
 		return Property.create(this, name);
+	}
+
+	public OngoingRelationshipDefinition outgoingRelationShipTo(Node other) {
+		return new DefaultOngoingRelationshipDefinition(Relationship.Direction.LTR, other);
+	}
+
+	public OngoingRelationshipDefinition incomingRelationShipFrom(Node other) {
+		return new DefaultOngoingRelationshipDefinition(Relationship.Direction.RTR, other);
+	}
+
+	public OngoingRelationshipDefinition relationshipWith(Node other) {
+		return new DefaultOngoingRelationshipDefinition(Relationship.Direction.UNI, other);
+	}
+
+	public interface OngoingRelationshipDefinition extends OngoingRelationshipDefinitionWithType {
+
+		OngoingRelationshipDefinitionWithType withType(String... types);
+	}
+
+	public interface OngoingRelationshipDefinitionWithType {
+
+		Relationship create();
+
+		Relationship as(String symbolicName);
+	}
+
+	@RequiredArgsConstructor
+	private class DefaultOngoingRelationshipDefinition
+		implements OngoingRelationshipDefinition, OngoingRelationshipDefinitionWithType {
+		private final Relationship.Direction direction;
+
+		private final Node other;
+
+		private String[] types = new String[0];
+
+		@Override
+		public OngoingRelationshipDefinitionWithType withType(String... types) {
+			this.types = types;
+			return this;
+		}
+
+		@Override
+		public Relationship create() {
+			return as(null);
+		}
+
+		@Override
+		public Relationship as(String symbolicName) {
+			return Relationship.create(Node.this, direction, other, symbolicName, types);
+		}
 	}
 }

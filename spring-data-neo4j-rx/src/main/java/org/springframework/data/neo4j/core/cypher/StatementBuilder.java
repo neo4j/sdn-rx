@@ -23,7 +23,7 @@ package org.springframework.data.neo4j.core.cypher;
  */
 public interface StatementBuilder {
 
-	OngoingMatch match(PatternPart... pattern);
+	OngoingMatch match(PatternElement... pattern);
 
 	interface OngoingMatchAndReturn extends BuildableMatch {
 	}

@@ -23,5 +23,5 @@ import org.springframework.data.neo4j.core.cypher.support.Visitable;
 /**
  * @author Michael J. Simonss
  */
-public interface PatternPart extends Visitable {
+public interface PatternElement extends Visitable {
 }

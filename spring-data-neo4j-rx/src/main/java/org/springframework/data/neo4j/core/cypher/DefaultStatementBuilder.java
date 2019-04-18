@@ -32,12 +32,12 @@ import org.springframework.data.neo4j.core.cypher.StatementBuilder.OngoingMatchA
 class DefaultStatementBuilder
 	implements StatementBuilder, OngoingMatch, OngoingMatchAndReturn {
 
-	private List<PatternPart> matchList = new ArrayList<>();
+	private List<PatternElement> matchList = new ArrayList<>();
 	private List<ReturnItem> returnList = new ArrayList<>();
 	private Condition where;
 
 	@Override
-	public OngoingMatch match(PatternPart... pattern) {
+	public OngoingMatch match(PatternElement... pattern) {
 
 		this.matchList.addAll(Arrays.asList(pattern));
 		return this;

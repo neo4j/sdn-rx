@@ -18,6 +18,8 @@
  */
 package org.springframework.data.neo4j.core.cypher.support;
 
+import org.springframework.lang.Nullable;
+
 /**
  * @author Michael J. Simons
  */
@@ -37,5 +39,18 @@ public interface Visitor {
 	 * @param segment the visited segment.
 	 */
 	default void leave(Visitable segment) {
+	}
+
+	/**
+	 * A helper method that presents this visitor to the visitable if the visitable is not null.
+	 * Not meant to be overridden.
+	 *
+	 * @param visitable
+	 */
+	default void visitIfNotNull(@Nullable Visitable visitable) {
+
+		if (visitable != null) {
+			visitable.accept(this);
+		}
 	}
 }

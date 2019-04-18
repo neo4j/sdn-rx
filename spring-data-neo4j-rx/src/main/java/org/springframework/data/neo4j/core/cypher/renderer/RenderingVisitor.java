@@ -20,10 +20,15 @@ package org.springframework.data.neo4j.core.cypher.renderer;
 
 import static java.util.stream.Collectors.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.springframework.data.neo4j.core.cypher.Comparison;
 import org.springframework.data.neo4j.core.cypher.Match;
 import org.springframework.data.neo4j.core.cypher.Node;
 import org.springframework.data.neo4j.core.cypher.Property;
+import org.springframework.data.neo4j.core.cypher.Relationship.Direction;
+import org.springframework.data.neo4j.core.cypher.RelationshipDetail;
 import org.springframework.data.neo4j.core.cypher.Return;
 import org.springframework.data.neo4j.core.cypher.StringLiteral;
 import org.springframework.data.neo4j.core.cypher.SymbolicName;
@@ -46,25 +51,37 @@ import org.springframework.data.neo4j.core.cypher.support.Visitable;
  */
 public class RenderingVisitor extends ReflectiveVisitor {
 
+	private static final String LABEL_SEPARATOR = ":";
+	private static final String TYPE_SEPARATOR = ":";
+
 	StringBuilder builder = new StringBuilder();
 
 	String separator = null;
 
-	boolean needsSeparator = false;
+	int currentLevel = 0;
+	Set<Integer> separatorOnLevel = new HashSet<>();
 
-	void enableSeparator(boolean on) {
-		this.needsSeparator = on;
+	void enableSeparator(int level, boolean on) {
+		if (on)
+			separatorOnLevel.add(level);
+		else
+			separatorOnLevel.remove(level);
 		this.separator = null;
+	}
+
+	boolean needsSeparator() {
+		return separatorOnLevel.contains(currentLevel);
 	}
 
 	@Override
 	protected void preEnter(Visitable visitable) {
 
+		int nextLevel = ++currentLevel + 1;
 		if (visitable instanceof TypedSubtree) {
-			enableSeparator(true);
+			enableSeparator(nextLevel, true);
 		}
 
-		if (needsSeparator && separator != null) {
+		if (needsSeparator() && separator != null) {
 			builder.append(separator);
 			separator = null;
 		}
@@ -73,13 +90,15 @@ public class RenderingVisitor extends ReflectiveVisitor {
 	@Override
 	protected void postLeave(Visitable visitable) {
 
-		if (needsSeparator) {
+		if (needsSeparator()) {
 			separator = ", ";
 		}
 
 		if (visitable instanceof TypedSubtree) {
-			enableSeparator(false);
+			enableSeparator(currentLevel + 1, false);
 		}
+
+		--currentLevel;
 	}
 
 	void enter(Match match) {
@@ -119,13 +138,26 @@ public class RenderingVisitor extends ReflectiveVisitor {
 	void enter(Node node) {
 		builder.append("(")
 			.append(node.getSymbolicName().map(SymbolicName::getName).orElse(""))
-			.append(":")
+			.append(node.isLabeled() ? TYPE_SEPARATOR : "")
 			.append(node.getLabels().stream().map(RenderUtils::escapeName).collect(joining(":")))
 			.append(")");
 	}
 
 	void enter(SymbolicName symbolicName) {
 		builder.append(symbolicName.getName());
+	}
+
+	void enter(RelationshipDetail details) {
+
+		Direction direction = details.getDirection();
+		builder.append(direction.getSymbolLeft());
+		builder
+			.append("[")
+			.append(details.getSymbolicName().map(SymbolicName::getName).orElse(""))
+			.append(details.isTyped() ? TYPE_SEPARATOR : "")
+			.append(details.getTypes().stream().map(RenderUtils::escapeName).collect(joining(TYPE_SEPARATOR)))
+			.append("]");
+		builder.append(direction.getSymbolRight());
 	}
 
 	public String getRenderedContent() {
