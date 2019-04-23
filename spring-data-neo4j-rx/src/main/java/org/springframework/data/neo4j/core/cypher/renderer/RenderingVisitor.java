@@ -49,20 +49,36 @@ import org.springframework.data.neo4j.core.cypher.support.Visitable;
  *
  * @author Michael J. Simons
  */
-public class RenderingVisitor extends ReflectiveVisitor {
+class RenderingVisitor extends ReflectiveVisitor {
 
 	private static final String LABEL_SEPARATOR = ":";
 	private static final String TYPE_SEPARATOR = ":";
 
+	private final RenderContext renderContext;
+
+	/**
+	 * Target of all rendering.
+	 */
 	private final StringBuilder builder = new StringBuilder();
 
+	/**
+	 * Optional separator between elements.
+	 */
 	String separator = null;
 
 	/**
 	 * This keeps track on which level of the tree a separator is needed.
 	 */
-	private int currentLevel = 0;
 	private final Set<Integer> separatorOnLevel = new HashSet<>();
+
+	/**
+	 * The current level in the tree of cypher elements.
+	 */
+	private int currentLevel = 0;
+
+	RenderingVisitor(RenderContext renderContext) {
+		this.renderContext = renderContext;
+	}
 
 	private void enableSeparator(int level, boolean on) {
 		if (on) {

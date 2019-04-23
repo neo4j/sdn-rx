@@ -18,8 +18,6 @@
  */
 package org.springframework.data.neo4j.core.cypher.support;
 
-import org.springframework.lang.Nullable;
-
 /**
  * @author Michael J. Simons
  */

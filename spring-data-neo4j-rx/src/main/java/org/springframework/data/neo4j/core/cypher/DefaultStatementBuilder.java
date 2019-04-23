@@ -18,13 +18,15 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
+import static java.util.stream.Collectors.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.data.neo4j.core.cypher.StatementBuilder.OngoingMatch;
 import org.springframework.data.neo4j.core.cypher.StatementBuilder.OngoingMatchAndReturn;
+import org.springframework.util.Assert;
 
 /**
  * @author Michael J. Simonss
@@ -33,11 +35,14 @@ class DefaultStatementBuilder
 	implements StatementBuilder, OngoingMatch, OngoingMatchAndReturn {
 
 	private List<PatternElement> matchList = new ArrayList<>();
-	private List<ReturnItem> returnList = new ArrayList<>();
+	private List<Expression> returnList = new ArrayList<>();
 	private Condition where;
 
 	@Override
 	public OngoingMatch match(PatternElement... pattern) {
+
+		Assert.notNull(pattern, "Patterns to match are required.");
+		Assert.state(pattern.length > 0, "At least one pattern to match is required.");
 
 		this.matchList.addAll(Arrays.asList(pattern));
 		return this;
@@ -46,6 +51,9 @@ class DefaultStatementBuilder
 	@Override
 	public OngoingMatchAndReturn returning(Expression... expressions) {
 
+		Assert.notNull(expressions, "Expressions to return are required.");
+		Assert.state(expressions.length > 0, "At least one expressions to return is required.");
+
 		this.returnList.addAll(Arrays.asList(expressions));
 		return this;
 	}
@@ -53,9 +61,12 @@ class DefaultStatementBuilder
 	@Override
 	public OngoingMatchAndReturn returning(Node... nodes) {
 
+		Assert.notNull(nodes, "Nodes to return are required.");
+		Assert.state(nodes.length > 0, "At least one node to return is required.");
+
 		this.returnList.addAll(Arrays.asList(nodes).stream()
 			.map(node -> node.getSymbolicName().map(Expression.class::cast).orElse(node))
-			.collect(Collectors.toList()));
+			.collect(toList()));
 		return this;
 	}
 
@@ -71,6 +82,6 @@ class DefaultStatementBuilder
 
 		Pattern pattern = new Pattern(this.matchList);
 		Match match = new Match(pattern, this.where == null ? null : new Where(this.where));
-		return new SinglePartQuery(match, new Return(returnList));
+		return new SinglePartQuery(match, new Return(returnList.stream().map(ReturnItem::new).collect(toList())));
 	}
 }

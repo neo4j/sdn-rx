@@ -18,21 +18,25 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.neo4j.core.cypher.Statement.SingleQuery;
 import org.springframework.data.neo4j.core.cypher.support.Visitor;
 import org.springframework.lang.Nullable;
 
 /**
- * @author Michael J. Simonss
+ * See <a href="https://s3.amazonaws.com/artifacts.opencypher.org/M14/railroad/SinglePartQuery.html">SinglePartQuery</a>.
+ *
+ * @author Michael J. Simons
  */
-@RequiredArgsConstructor
 public class SinglePartQuery implements SingleQuery {
 
 	private @Nullable final ReadingClause readingClause;
 
 	private final Return aReturn;
+
+	SinglePartQuery(@Nullable ReadingClause readingClause, Return aReturn) {
+		this.readingClause = readingClause;
+		this.aReturn = aReturn;
+	}
 
 	@Override
 	public void accept(Visitor visitor) {

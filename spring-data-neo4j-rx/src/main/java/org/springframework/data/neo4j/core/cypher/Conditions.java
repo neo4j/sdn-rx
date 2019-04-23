@@ -19,17 +19,27 @@
 package org.springframework.data.neo4j.core.cypher;
 
 /**
- * Builder for various conditions.
+ * Builder for various conditions. Used internally from properties and other expressions that should take part in conditions.
  *
  * @author Michael J. Simons
  */
 public final class Conditions {
 
-
+	/**
+	 * Creates a condition that matches if the right hand side is a regular expression that matches the the left hand side via
+	 * {@code =~}.
+	 *
+	 * @param lhs The left hand side of the comparision
+	 * @param rhs The right hand side of the comparions
+	 * @return A "matches" comparision
+	 */
 	static Condition matches(Expression lhs, Expression rhs) {
 		return Comparison.create(lhs, "=~", rhs);
 	}
 
+	/**
+	 * Not to be instantiated.
+	 */
 	private Conditions() {
 	}
 }

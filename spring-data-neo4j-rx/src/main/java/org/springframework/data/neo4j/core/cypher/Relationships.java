@@ -20,6 +20,7 @@ package org.springframework.data.neo4j.core.cypher;
 
 import static org.springframework.data.neo4j.core.cypher.support.Visitable.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.neo4j.core.cypher.support.Visitor;
@@ -35,7 +36,7 @@ public class Relationships implements PatternElement {
 	private List<Relationship> relationships;
 
 	Relationships(List<Relationship> relationships) {
-		this.relationships = relationships;
+		this.relationships = new ArrayList(relationships);
 	}
 
 	@Override

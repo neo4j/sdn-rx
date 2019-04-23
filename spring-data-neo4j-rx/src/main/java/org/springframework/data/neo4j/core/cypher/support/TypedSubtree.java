@@ -20,7 +20,6 @@ package org.springframework.data.neo4j.core.cypher.support;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -29,11 +28,6 @@ import java.util.List;
 public abstract class TypedSubtree<T extends Visitable> implements Visitable {
 
 	private final List<T> children;
-
-	protected TypedSubtree() {
-
-		this.children = Collections.emptyList();
-	}
 
 	protected TypedSubtree(T... children) {
 

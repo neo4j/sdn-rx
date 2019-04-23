@@ -21,6 +21,8 @@ package org.springframework.data.neo4j.core.cypher;
 import org.springframework.data.neo4j.core.cypher.support.Visitable;
 
 /**
+ * Shared interface for all conditions.
+ *
  * @author Michael J. Simons
  */
 public interface Condition extends Visitable {

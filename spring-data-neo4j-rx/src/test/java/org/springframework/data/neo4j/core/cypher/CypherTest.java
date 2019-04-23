@@ -20,7 +20,8 @@ package org.springframework.data.neo4j.core.cypher;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.data.neo4j.core.cypher.renderer.RenderingVisitor;
+import org.springframework.data.neo4j.core.cypher.renderer.CypherRenderer;
+import org.springframework.data.neo4j.core.cypher.renderer.Renderer;
 
 /**
  * @author Michael J. Simons
@@ -54,11 +55,8 @@ public class CypherTest {
 				.returning(bikeNode, userNode)
 				.build();
 
-			RenderingVisitor x;
-
-			x = new RenderingVisitor();
-			statement.accept(x);
-			System.out.println(x.getRenderedContent());
+			Renderer cypherRenderer = CypherRenderer.create();
+			System.out.println(cypherRenderer.render(statement));
 
 			statement = Cypher
 				.match(userNode
@@ -68,11 +66,7 @@ public class CypherTest {
 				.returning(bikeNode, userNode)
 				.build();
 
-
-			x = new RenderingVisitor();
-			statement.accept(x);
-			System.out.println(x.getRenderedContent());
-
+			System.out.println(cypherRenderer.render(statement));
 			statement = Cypher
 				.match(userNode
 					.outgoingRelationShipTo(bikeNode).withType("OWNS").as("r1")
@@ -83,9 +77,7 @@ public class CypherTest {
 				.returning(bikeNode, userNode)
 				.build();
 
-			x = new RenderingVisitor();
-			statement.accept(x);
-			System.out.println(x.getRenderedContent());
+			System.out.println(cypherRenderer.render(statement));
 		}
 	}
 

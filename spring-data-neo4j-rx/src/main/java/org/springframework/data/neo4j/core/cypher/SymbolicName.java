@@ -19,13 +19,18 @@
 package org.springframework.data.neo4j.core.cypher;
 
 /**
+ * A symbolic name to identify nodes and relationships.
+ * <p/>
+ * See <a href="https://s3.amazonaws.com/artifacts.opencypher.org/M14/railroad/SchemaName.html">SchemaName</a>
+ * <a href="https://s3.amazonaws.com/artifacts.opencypher.org/M14/railroad/SymbolicName.html">SymbolicName</a>
+ *
  * @author Michael J. Simonss
  */
 public class SymbolicName implements Expression {
 
 	private final String name;
 
-	public SymbolicName(String name) {
+	SymbolicName(String name) {
 		this.name = name;
 	}
 

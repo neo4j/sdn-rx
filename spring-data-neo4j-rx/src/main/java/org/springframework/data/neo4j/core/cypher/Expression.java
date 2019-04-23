@@ -21,7 +21,9 @@ package org.springframework.data.neo4j.core.cypher;
 import org.springframework.data.neo4j.core.cypher.support.Visitable;
 
 /**
+ * An expression can be used in many places, i.e. in return statements, pattern elements etc.
+ *
  * @author Michael J. Simons
  */
-public interface Expression extends Visitable, ReturnItem {
+public interface Expression extends Visitable {
 }

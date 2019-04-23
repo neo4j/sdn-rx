@@ -21,24 +21,61 @@ package org.springframework.data.neo4j.core.cypher;
 /**
  * @author Michael J. Simonss
  */
-public interface StatementBuilder {
+interface StatementBuilder {
 
+	/**
+	 * See {@link Cypher#match(PatternElement...)}.
+	 *
+	 * @param pattern
+	 * @return
+	 */
 	OngoingMatch match(PatternElement... pattern);
 
+	/**
+	 * A match that knows what to return and which is ready to be build.
+	 */
 	interface OngoingMatchAndReturn extends BuildableMatch {
 	}
 
+	/**
+	 * A match that exposes {@code returning} and {@code where} methods to add required information.
+	 */
 	interface OngoingMatch {
 
+		/**
+		 * Create a match that returns one or more expressions.
+		 *
+		 * @param expressions The expressions to be returned. Must not be null and be at least one expression.
+		 * @return A match that can be build now
+		 */
 		OngoingMatchAndReturn returning(Expression... expressions);
 
+		/**
+		 * Creates a match that returns one ore more nodes. If the nodes have a symbolic name, that symbolic name is
+		 * used in the return clause, otherwise the whole node pattern.
+		 *
+		 * @param nodes The nodes to be returned. Must not be null and be at least one node.
+		 * @return A match that can be build now
+		 */
 		OngoingMatchAndReturn returning(Node... nodes);
 
-		OngoingMatch where(Condition name);
+		/**
+		 * Adds a where clause to this match.
+		 *
+		 * @param condition The new condition
+		 * @return A match restricted by a where clause with no return items yet.
+		 */
+		OngoingMatch where(Condition condition);
 	}
 
+	/**
+	 * A match that has all information required to be build.
+	 */
 	interface BuildableMatch {
 
+		/**
+		 * @return The statement ready to be used, i.e. in a renderer.
+		 */
 		Statement build();
 	}
 }

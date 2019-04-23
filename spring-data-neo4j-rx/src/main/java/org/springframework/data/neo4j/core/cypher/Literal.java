@@ -18,20 +18,22 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
+import org.springframework.lang.Nullable;
+
 /**
- * Represents a literal.
+ * Represents a literal with an optional content.
  *
  * @author Michael J. Simons
  */
 public abstract class Literal<T> implements Expression {
 
-	private T content;
+	private @Nullable T content;
 
-	Literal(T content) {
+	Literal(@Nullable T content) {
 		this.content = content;
 	}
 
-	public T getContent() {
+	public @Nullable T getContent() {
 		return content;
 	}
 

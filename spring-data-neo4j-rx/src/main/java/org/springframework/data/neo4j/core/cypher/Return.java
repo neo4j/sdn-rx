@@ -27,7 +27,7 @@ import org.springframework.data.neo4j.core.cypher.support.TypedSubtree;
  */
 public class Return extends TypedSubtree<ReturnItem> {
 
-	public Return(List<ReturnItem> returnItems) {
+	Return(List<ReturnItem> returnItems) {
 		super(returnItems);
 	}
 }

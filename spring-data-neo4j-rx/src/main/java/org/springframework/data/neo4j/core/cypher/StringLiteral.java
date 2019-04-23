@@ -23,13 +23,13 @@ package org.springframework.data.neo4j.core.cypher;
  */
 public class StringLiteral extends Literal<CharSequence> {
 
-	public StringLiteral(CharSequence content) {
+	StringLiteral(CharSequence content) {
 		super(content);
 	}
 
 	@Override
 	public String toString() {
-		// TODO escapeName all the things
+		// TODO escape all the things
 		return "'" + getContent() + "'";
 	}
 }

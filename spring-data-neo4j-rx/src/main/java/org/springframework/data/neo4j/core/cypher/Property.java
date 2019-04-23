@@ -18,6 +18,8 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
+import org.springframework.util.Assert;
+
 /**
  * A property that belongs to a property container (either Node or Relationship).
  *
@@ -27,6 +29,8 @@ public class Property implements Expression {
 
 	static Property create(Node parentContainer, String name) {
 
+		Assert.state(parentContainer.getSymbolicName().isPresent(),
+			"A property derived from a node needs a parent with a symbolic name.");
 		return new Property(parentContainer, name);
 	}
 
@@ -56,6 +60,6 @@ public class Property implements Expression {
 
 	public Condition matches(String s) {
 
-		return Conditions.matches(this, new StringLiteral(s));
+		return Conditions.matches(this, Cypher.literalOf(s));
 	}
 }

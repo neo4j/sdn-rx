@@ -18,6 +18,7 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -42,11 +43,11 @@ public class RelationshipDetail implements Visitable {
 
 	private final List<String> types;
 
-	public RelationshipDetail(Direction direction,
+	RelationshipDetail(Direction direction,
 		@Nullable SymbolicName symbolicName, List<String> types) {
 		this.direction = direction;
 		this.symbolicName = symbolicName;
-		this.types = types;
+		this.types = new ArrayList<>(types);
 	}
 
 	public Direction getDirection() {

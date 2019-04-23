@@ -18,21 +18,25 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.neo4j.core.cypher.support.Visitable;
 import org.springframework.data.neo4j.core.cypher.support.Visitor;
 import org.springframework.lang.Nullable;
 
 /**
+ * See <a href="https://s3.amazonaws.com/artifacts.opencypher.org/M14/railroad/Match.html">Match</a>.
+ *
  * @author Michael J. Simonss
  */
-@RequiredArgsConstructor
 public class Match implements ReadingClause {
 
 	private final Pattern pattern;
 
 	private @Nullable final Where optionalWhere;
+
+	Match(Pattern pattern, @Nullable Where optionalWhere) {
+		this.pattern = pattern;
+		this.optionalWhere = optionalWhere;
+	}
 
 	@Override
 	public void accept(Visitor visitor) {

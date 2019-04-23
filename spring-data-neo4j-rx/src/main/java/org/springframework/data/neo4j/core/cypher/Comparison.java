@@ -22,6 +22,8 @@ import org.springframework.data.neo4j.core.cypher.support.Visitor;
 import org.springframework.util.Assert;
 
 /**
+ * A concrete condition representing a comparision between two expressions.
+ *
  * @author Michael J. Simonss
  */
 public class Comparison implements Condition {
@@ -39,23 +41,15 @@ public class Comparison implements Condition {
 	private final String comparator;
 	private final Expression right;
 
-	private Comparison(Expression left, String comparator, Expression right) {
+	Comparison(Expression left, String comparator, Expression right) {
 
 		this.left = left;
 		this.comparator = comparator;
 		this.right = right;
 	}
 
-	public Expression getLeft() {
-		return left;
-	}
-
 	public String getComparator() {
 		return comparator;
-	}
-
-	public Expression getRight() {
-		return right;
 	}
 
 	@Override

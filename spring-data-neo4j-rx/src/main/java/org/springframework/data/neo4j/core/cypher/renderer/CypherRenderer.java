@@ -43,7 +43,7 @@ public class CypherRenderer implements Renderer {
 	@Override
 	public String render(Statement statement) {
 
-		RenderingVisitor renderingVisitor = new RenderingVisitor();
+		RenderingVisitor renderingVisitor = new RenderingVisitor(context);
 		statement.accept(renderingVisitor);
 
 		return renderingVisitor.getRenderedContent();

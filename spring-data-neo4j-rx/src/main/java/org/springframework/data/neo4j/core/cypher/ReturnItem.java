@@ -19,9 +19,27 @@
 package org.springframework.data.neo4j.core.cypher;
 
 import org.springframework.data.neo4j.core.cypher.support.Visitable;
+import org.springframework.data.neo4j.core.cypher.support.Visitor;
 
 /**
+ * This is a wrapper around an expression.
+ * <p/>
+ * See <a href="https://s3.amazonaws.com/artifacts.opencypher.org/M14/railroad/ReturnBody.html#ReturnItem">ReturnItem</a>.
+ *
  * @author Michael J. Simonss
  */
-public interface ReturnItem extends Visitable {
+class ReturnItem implements Visitable {
+
+	private final Expression expression;
+
+	ReturnItem(Expression expression) {
+		this.expression = expression;
+	}
+
+	@Override
+	public void accept(Visitor visitor) {
+		visitor.enter(this);
+		expression.accept(visitor);
+		visitor.leave(this);
+	}
 }

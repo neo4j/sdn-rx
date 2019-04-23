@@ -19,6 +19,8 @@
 package org.springframework.data.neo4j.core.cypher;
 
 /**
+ * See <a href="https://s3.amazonaws.com/artifacts.opencypher.org/M14/railroad/Cypher.html#RegularQuery">RegularQuery</a>.
+ *
  * @author Michael J. Simonss
  */
 public interface RegularQuery {
