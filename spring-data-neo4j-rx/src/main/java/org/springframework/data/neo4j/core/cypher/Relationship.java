@@ -30,7 +30,7 @@ import org.springframework.util.Assert;
  *
  * @author Michael J. Simons
  */
-public class Relationship implements PatternElement {
+public class Relationship implements PatternElement, NamedExpression {
 
 	/**
 	 * While the direction in the schema package is centered around the node, the direction here is the direction between two nodes.
@@ -101,6 +101,10 @@ public class Relationship implements PatternElement {
 
 	public RelationshipDetail getDetails() {
 		return details;
+	}
+
+	public Optional<SymbolicName> getSymbolicName() {
+		return details.getSymbolicName();
 	}
 
 	@Override

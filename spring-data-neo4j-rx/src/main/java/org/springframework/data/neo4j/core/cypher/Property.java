@@ -31,6 +31,8 @@ public class Property implements Expression {
 
 		Assert.state(parentContainer.getSymbolicName().isPresent(),
 			"A property derived from a node needs a parent with a symbolic name.");
+		Assert.hasText(name, "The properties name is required.");
+
 		return new Property(parentContainer, name);
 	}
 

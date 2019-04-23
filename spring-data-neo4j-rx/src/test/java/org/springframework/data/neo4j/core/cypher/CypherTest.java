@@ -18,6 +18,8 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
+import static org.assertj.core.api.Assertions.*;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.neo4j.core.cypher.renderer.CypherRenderer;
@@ -28,57 +30,69 @@ import org.springframework.data.neo4j.core.cypher.renderer.Renderer;
  */
 public class CypherTest {
 
+	private final Renderer cypherRenderer = CypherRenderer.create();
+	private final Node bikeNode = Cypher.node("Bike").as("b");
+	private final Node userNode = Cypher.node("User").as("u");
+
 	@Nested
 	class SingleQuerySinglePart {
 
-		@Test
-		void readingAndReturn() {
+		@Nested
+		class ReadingAndReturn {
 
-			Node bikeNode = Cypher.node("Bike").as("b");
-			Node userNode = Cypher.node("User").as("u");
-			Node tripNode = Cypher.node("Trip").as("u");
+			@Test
+			void unrelatedNodes() {
+				Statement statement = Cypher.match(bikeNode, userNode, Cypher.node("U").as("o"))
+					.returning(bikeNode, userNode)
+					.build();
 
-			/*
+				assertThat(cypherRenderer.render(statement))
+					.isEqualTo("MATCH (b:`Bike`), (u:`User`), (o:`U`) RETURN b, u");
+			}
 
-			String cypher = "MATCH (o:User {name: $name}) - [:OWNS] -> (b:Bike) - [:USED_ON] -> (t:Trip) " +
-			"WHERE t.takenOn > $aDate " +
-			"  AND b.name =~ $bikeName " +
-			"  AND t.location = $location " +  // TODO Nice place to add coordinates
-			"RETURN b";
+			@Test
+			void simpleRelationship() {
+				Statement statement = Cypher
+					.match(userNode.outgoingRelationShipTo(bikeNode).withType("OWNS").create())
+					.returning(bikeNode, userNode)
+					.build();
 
-			 */
+				assertThat(cypherRenderer.render(statement))
+					.isEqualTo("MATCH (u:`User`)-[:`OWNS`]->(b:`Bike`) RETURN b, u");
+			}
 
-			Statement statement;
+			@Test
+			void simpleRelationshipWithReturn() {
+				Relationship owns = userNode
+					.outgoingRelationShipTo(bikeNode).withType("OWNS").as("o").create();
 
-			statement = Cypher.match(bikeNode, userNode, Cypher.node("U").as("o"))
-				.where(userNode.property("name").matches(".*aName"))
-				.returning(bikeNode, userNode)
-				.build();
+				Statement statement = Cypher
+					.match(owns)
+					.returning(bikeNode, userNode, owns)
+					.build();
 
-			Renderer cypherRenderer = CypherRenderer.create();
-			System.out.println(cypherRenderer.render(statement));
+				assertThat(cypherRenderer.render(statement))
+					.isEqualTo("MATCH (u:`User`)-[o:`OWNS`]->(b:`Bike`) RETURN b, u, o");
+			}
 
-			statement = Cypher
-				.match(userNode
-					.outgoingRelationShipTo(bikeNode).withType("OWNS").create()
-				)
-				.where(userNode.property("name").matches(".*aName"))
-				.returning(bikeNode, userNode)
-				.build();
+			@Test
+			void chainedRelations() {
+				Node tripNode = Cypher.node("Trip").as("u");
+				Statement statement = Cypher
+					.match(userNode
+						.outgoingRelationShipTo(bikeNode).withType("OWNS").as("r1")
+						.outgoingRelationShipTo(tripNode).withType("USED_ON").as("r2")
+						.create()
+					)
+					.where(userNode.property("name").matches(".*aName"))
+					.returning(bikeNode, userNode)
+					.build();
 
-			System.out.println(cypherRenderer.render(statement));
-			statement = Cypher
-				.match(userNode
-					.outgoingRelationShipTo(bikeNode).withType("OWNS").as("r1")
-					.outgoingRelationShipTo(tripNode).withType("USED_ON").as("r2")
-					.create()
-				)
-				.where(userNode.property("name").matches(".*aName"))
-				.returning(bikeNode, userNode)
-				.build();
-
-			System.out.println(cypherRenderer.render(statement));
+				assertThat(cypherRenderer.render(statement))
+					.isEqualTo(
+						"MATCH (u:`User`)-[r1:`OWNS`]->(b:`Bike`)-[r2:`USED_ON`]->(u:`Trip`) WHERE u.name =~ '.*aName' RETURN b, u");
+			}
 		}
-	}
 
+	}
 }

@@ -30,9 +30,9 @@ public class Comparison implements Condition {
 
 	static Comparison create(Expression lhs, String comparator, Expression rhs) {
 
-		Assert.notNull(lhs, "Left expression must not be null!");
-		Assert.notNull(comparator, "Comparator must not be null!");
-		Assert.notNull(rhs, "Right expression must not be null!");
+		Assert.notNull(lhs, "Left expression must not be null.");
+		Assert.hasText(comparator, "Comparator must not be empty.");
+		Assert.notNull(rhs, "Right expression must not be null.");
 
 		return new Comparison(lhs, comparator, rhs);
 	}

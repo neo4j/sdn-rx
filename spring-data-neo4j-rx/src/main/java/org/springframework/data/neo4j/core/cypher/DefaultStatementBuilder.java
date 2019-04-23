@@ -42,7 +42,7 @@ class DefaultStatementBuilder
 	public OngoingMatch match(PatternElement... pattern) {
 
 		Assert.notNull(pattern, "Patterns to match are required.");
-		Assert.state(pattern.length > 0, "At least one pattern to match is required.");
+		Assert.notEmpty(pattern, "At least one pattern to match is required.");
 
 		this.matchList.addAll(Arrays.asList(pattern));
 		return this;
@@ -52,9 +52,14 @@ class DefaultStatementBuilder
 	public OngoingMatchAndReturn returning(Expression... expressions) {
 
 		Assert.notNull(expressions, "Expressions to return are required.");
-		Assert.state(expressions.length > 0, "At least one expressions to return is required.");
+		Assert.notEmpty(expressions, "At least one expressions to return is required.");
 
-		this.returnList.addAll(Arrays.asList(expressions));
+		this.returnList.addAll(Arrays.asList(expressions)
+			.stream()
+			.map(expression -> expression instanceof NamedExpression ?
+				((NamedExpression) expression).getSymbolicName().map(Expression.class::cast).orElse(expression) :
+				expression)
+			.collect(toList()));
 		return this;
 	}
 
@@ -62,7 +67,7 @@ class DefaultStatementBuilder
 	public OngoingMatchAndReturn returning(Node... nodes) {
 
 		Assert.notNull(nodes, "Nodes to return are required.");
-		Assert.state(nodes.length > 0, "At least one node to return is required.");
+		Assert.notEmpty(nodes, "At least one node to return is required.");
 
 		this.returnList.addAll(Arrays.asList(nodes).stream()
 			.map(node -> node.getSymbolicName().map(Expression.class::cast).orElse(node))

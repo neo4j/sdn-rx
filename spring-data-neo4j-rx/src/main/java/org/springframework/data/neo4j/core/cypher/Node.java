@@ -35,11 +35,15 @@ import org.springframework.util.Assert;
  *
  * @author Michael J. Simons
  */
-public class Node implements PatternElement, Expression {
+public class Node implements PatternElement, NamedExpression {
 
 	static Node create(String primaryLabel, String... additionalLabels) {
 
 		Assert.hasText(primaryLabel, "A primary label is required.");
+
+		for (String additionalLabel : additionalLabels) {
+			Assert.hasText(additionalLabel, "An empty label is not allowed.");
+		}
 
 		return new Node(primaryLabel, additionalLabels);
 	}
