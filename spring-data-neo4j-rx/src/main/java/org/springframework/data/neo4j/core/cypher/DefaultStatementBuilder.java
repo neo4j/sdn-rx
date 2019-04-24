@@ -54,8 +54,7 @@ class DefaultStatementBuilder
 		Assert.notNull(expressions, "Expressions to return are required.");
 		Assert.notEmpty(expressions, "At least one expressions to return is required.");
 
-		this.returnList.addAll(Arrays.asList(expressions)
-			.stream()
+		this.returnList.addAll(Arrays.stream(expressions)
 			.map(expression -> expression instanceof NamedExpression ?
 				((NamedExpression) expression).getSymbolicName().map(Expression.class::cast).orElse(expression) :
 				expression)
@@ -69,7 +68,7 @@ class DefaultStatementBuilder
 		Assert.notNull(nodes, "Nodes to return are required.");
 		Assert.notEmpty(nodes, "At least one node to return is required.");
 
-		this.returnList.addAll(Arrays.asList(nodes).stream()
+		this.returnList.addAll(Arrays.stream(nodes)
 			.map(node -> node.getSymbolicName().map(Expression.class::cast).orElse(node))
 			.collect(toList()));
 		return this;

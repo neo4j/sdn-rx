@@ -25,7 +25,7 @@ import org.springframework.lang.Nullable;
 /**
  * The main entry point into the Cypher DSL.
  *
- * The Cypher Builder API is intended for framework usage to produce SQL required for framework operations.
+ * The Cypher Builder API is intended for framework usage to produce Cypher statements required for database operations.
  *
  * @author Michael J. Simons
  */

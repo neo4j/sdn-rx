@@ -41,7 +41,7 @@ public class Comparison implements Condition {
 	private final String comparator;
 	private final Expression right;
 
-	Comparison(Expression left, String comparator, Expression right) {
+	private Comparison(Expression left, String comparator, Expression right) {
 
 		this.left = left;
 		this.comparator = comparator;

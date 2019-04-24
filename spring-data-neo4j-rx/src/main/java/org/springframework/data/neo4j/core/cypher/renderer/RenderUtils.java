@@ -25,7 +25,7 @@ import java.util.Locale;
  *
  * @author Michael J. Simons
  */
-public final class RenderUtils {
+final class RenderUtils {
 
 	/**
 	 * Escapes a symbolic name. Such a symbolic name is either used for a nodes label, the type of a relationship or a
@@ -34,7 +34,7 @@ public final class RenderUtils {
 	 * @param unescapedName
 	 * @return The correctly escaped name, safe to be used in statements.
 	 */
-	public static CharSequence escapeName(String unescapedName) {
+	static CharSequence escapeName(String unescapedName) {
 		return String.format(Locale.ENGLISH, "`%s`", unescapedName.replaceAll("`", "``"));
 	}
 

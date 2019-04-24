@@ -29,7 +29,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * This is a convience class implementing a {@link Visitor} and it takes care of choosing the right methods
+ * This is a convenience class implementing a {@link Visitor} and it takes care of choosing the right methods
  * to dispatch the {@link Visitor#enter(Visitable)} and {@link Visitor#leave(Visitable)} calls to.
  * <p/>
  * Classes extending this visitor need to provide corresponding {@code enter} and {@code leave} methods taking exactly
@@ -43,7 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class ReflectiveVisitor implements Visitor {
 
 	/**
-	 * Private enum to specificy a visiting phase.
+	 * Private enum to specify a visiting phase.
 	 */
 	private enum Phase {
 		ENTER("enter"),
@@ -88,7 +88,7 @@ public abstract class ReflectiveVisitor implements Visitor {
 		postLeave(visitable);
 	}
 
-	void executeConcreteMethodIn(TargetAndPhase targetAndPhase, Visitable onVisitable) {
+	private void executeConcreteMethodIn(TargetAndPhase targetAndPhase, Visitable onVisitable) {
 		Optional<MethodHandle> optionalHandle = this.cachedHandles.computeIfAbsent(targetAndPhase, this::findHandleFor);
 		optionalHandle.ifPresent(handle -> {
 			try {
@@ -98,7 +98,7 @@ public abstract class ReflectiveVisitor implements Visitor {
 		});
 	}
 
-	Optional<MethodHandle> findHandleFor(TargetAndPhase targetAndPhase) {
+	private Optional<MethodHandle> findHandleFor(TargetAndPhase targetAndPhase) {
 
 		try {
 			// Using MethodHandles.lookup().findVirtual() doesn't allow to make a protected method accessible.
@@ -114,7 +114,7 @@ public abstract class ReflectiveVisitor implements Visitor {
 
 	@RequiredArgsConstructor
 	@EqualsAndHashCode
-	static class TargetAndPhase {
+	private static class TargetAndPhase {
 		private final Class<? extends Visitable> classOfVisitable;
 
 		private final Phase phase;

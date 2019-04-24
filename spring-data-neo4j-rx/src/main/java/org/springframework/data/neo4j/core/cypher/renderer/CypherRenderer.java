@@ -18,8 +18,6 @@
  */
 package org.springframework.data.neo4j.core.cypher.renderer;
 
-import java.util.Objects;
-
 import org.springframework.data.neo4j.core.cypher.Statement;
 
 /**
@@ -27,23 +25,17 @@ import org.springframework.data.neo4j.core.cypher.Statement;
  */
 public class CypherRenderer implements Renderer {
 
-	public static Renderer create() {
-		return new CypherRenderer(new DefaultRenderContext());
+	private CypherRenderer() {
 	}
 
-	private final RenderContext context;
-
-	private CypherRenderer(final RenderContext context) {
-
-		Objects.requireNonNull(context, "RenderContext must not be null!");
-
-		this.context = context;
+	public static Renderer create() {
+		return new CypherRenderer();
 	}
 
 	@Override
 	public String render(Statement statement) {
 
-		RenderingVisitor renderingVisitor = new RenderingVisitor(context);
+		RenderingVisitor renderingVisitor = new RenderingVisitor();
 		statement.accept(renderingVisitor);
 
 		return renderingVisitor.getRenderedContent();

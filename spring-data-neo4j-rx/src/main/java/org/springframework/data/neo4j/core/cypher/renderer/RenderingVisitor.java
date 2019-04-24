@@ -54,8 +54,6 @@ class RenderingVisitor extends ReflectiveVisitor {
 	private static final String LABEL_SEPARATOR = ":";
 	private static final String TYPE_SEPARATOR = ":";
 
-	private final RenderContext renderContext;
-
 	/**
 	 * Target of all rendering.
 	 */
@@ -64,7 +62,7 @@ class RenderingVisitor extends ReflectiveVisitor {
 	/**
 	 * Optional separator between elements.
 	 */
-	String separator = null;
+	private String separator = null;
 
 	/**
 	 * This keeps track on which level of the tree a separator is needed.
@@ -75,10 +73,6 @@ class RenderingVisitor extends ReflectiveVisitor {
 	 * The current level in the tree of cypher elements.
 	 */
 	private int currentLevel = 0;
-
-	RenderingVisitor(RenderContext renderContext) {
-		this.renderContext = renderContext;
-	}
 
 	private void enableSeparator(int level, boolean on) {
 		if (on) {

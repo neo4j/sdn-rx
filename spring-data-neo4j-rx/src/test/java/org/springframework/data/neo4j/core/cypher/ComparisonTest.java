@@ -29,7 +29,6 @@ class ComparisonTest {
 
 	@Test
 	void preconditionsShouldBeAsserted() {
-		String expectedMessage = "A primary label is required.";
 
 		Expression expression = Cypher.literalOf("Arbitrary expression");
 		assertThatIllegalArgumentException().isThrownBy(() -> Comparison.create(null, "=", expression))
