@@ -98,7 +98,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 	public Iterable<T> findAll(Sort sort) {
 
 		Statement statement = match(node).returning(node).orderBy(createSort(sort)).build();
-		return nodeManager.executeTypedQueryForObjects(renderer.render(statement), nodeClass);
+		return nodeManager.executeTypedQueryForObjects(() -> renderer.render(statement), nodeClass);
 	}
 
 	@Override
@@ -110,7 +110,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 
 		Statement statement = returningWithPaging.build();
 
-		List<T> allResult = new ArrayList<>(nodeManager.executeTypedQueryForObjects(renderer.render(statement), nodeClass));
+		List<T> allResult = new ArrayList<>(nodeManager.executeTypedQueryForObjects(() -> renderer.render(statement), nodeClass));
 		LongSupplier totalCountSupplier = this::count;
 		return PageableExecutionUtils.getPage(allResult, pageable, totalCountSupplier);
 	}
@@ -124,7 +124,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 
 		Statement statement = returningWithPaging.build();
 
-		List<T> allResult = new ArrayList<>(nodeManager.executeTypedQueryForObjects(renderer.render(statement), nodeClass));
+		List<T> allResult = new ArrayList<>(nodeManager.executeTypedQueryForObjects(() -> renderer.render(statement), nodeClass));
 		LongSupplier totalCountSupplier = this::count;
 		return (Page<S>) PageableExecutionUtils.getPage(allResult, pageable, totalCountSupplier);
 	}
@@ -156,7 +156,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 	public Optional<T> findById(ID id) {
 		Statement statement = match(node).where(idExpression.isEqualTo(literalOf(id))).returning(node)
 				.build();
-		return nodeManager.executeTypedQueryForObject(renderer.render(statement), nodeClass);
+		return nodeManager.executeTypedQueryForObject(() -> renderer.render(statement), nodeClass);
 	}
 
 	@Override
@@ -168,14 +168,14 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 	public Iterable<T> findAll() {
 
 		Statement statement = match(node).returning(node).build();
-		return nodeManager.executeTypedQueryForObjects(renderer.render(statement), nodeClass);
+		return nodeManager.executeTypedQueryForObjects(() -> renderer.render(statement), nodeClass);
 	}
 
 	@Override
 	public Iterable<T> findAllById(Iterable<ID> ids) {
 		Statement statement = match(node).where(idExpression.isIn((Iterable<Long>) ids)).returning(node)
 				.build();
-		return nodeManager.executeTypedQueryForObjects(renderer.render(statement), nodeClass);
+		return nodeManager.executeTypedQueryForObjects(() -> renderer.render(statement), nodeClass);
 	}
 
 	@Override
@@ -183,7 +183,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 
 		Statement statement = match(node).returning(Functions.count(node)).build();
 
-		return nodeManager.executeTypedQueryForObject(renderer.render(statement), Long.class).get();
+		return nodeManager.executeTypedQueryForObject(() -> renderer.render(statement), Long.class).get();
 	}
 
 	@Override
@@ -219,28 +219,28 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 
 		Statement statement = match(node).where(createAndConditions(example)).returning(node).build();
 
-		return (Optional<S>) nodeManager.executeTypedQueryForObject(renderer.render(statement), nodeClass);
+		return (Optional<S>) nodeManager.executeTypedQueryForObject(() -> renderer.render(statement), nodeClass);
 	}
 
 	@Override
 	public <S extends T> Iterable<S> findAll(Example<S> example) {
 		Statement statement = match(node).where(createAndConditions(example)).returning(node).build();
 
-		return (Collection<S>) nodeManager.executeTypedQueryForObjects(renderer.render(statement), nodeClass);
+		return (Collection<S>) nodeManager.executeTypedQueryForObjects(() -> renderer.render(statement), nodeClass);
 	}
 
 	@Override
 	public <S extends T> Iterable<S> findAll(Example<S> example, Sort sort) {
 		Statement statement = match(node).where(createAndConditions(example)).returning(node).orderBy(createSort(sort)).build();
 
-		return (Collection<S>) nodeManager.executeTypedQueryForObjects(renderer.render(statement), nodeClass);
+		return (Collection<S>) nodeManager.executeTypedQueryForObjects(() -> renderer.render(statement), nodeClass);
 	}
 
 	@Override
 	public <S extends T> long count(Example<S> example) {
 		Statement statement = match(node).where(createAndConditions(example)).returning(Functions.count(node)).build();
 
-		return nodeManager.executeTypedQueryForObject(renderer.render(statement), Long.class).get();
+		return nodeManager.executeTypedQueryForObject(() -> renderer.render(statement), Long.class).get();
 	}
 
 	@Override
@@ -259,7 +259,6 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 		return result;
 
 	}
-
 
 	private List<Condition> createConditionsFromProperties(Example example) {
 

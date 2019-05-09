@@ -19,7 +19,9 @@
 package org.springframework.data.neo4j.core;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.apiguardian.api.API;
 import org.neo4j.driver.Transaction;
@@ -68,20 +70,24 @@ class DefaultNodeManager implements NodeManager {
 	}
 
 	@Override
-	public <T> Optional<T> executeTypedQueryForObject(String query, Class<T> returnedType) {
+	public <T> Optional<T> executeTypedQueryForObject(Supplier<String> querySupplier, Class<T> resultType, Map<String, Object> parameters) {
 
-		MappingSpec<Optional<T>, Collection<T>, T> mappingSpec = neo4jClient.newQuery(query).fetchAs(returnedType);
-		return schema.getMappingFunctionFor(returnedType)
+		MappingSpec<Optional<T>, Collection<T>, T> mappingSpec = neo4jClient.newQuery(querySupplier)
+			.bindAll(parameters)
+			.fetchAs(resultType);
+		return schema.getMappingFunctionFor(resultType)
 			.map(mappingFunction -> mappingSpec.mappedBy(mappingFunction))
 			.orElse(mappingSpec)
 			.one();
 	}
 
 	@Override
-	public <T> Collection<T> executeTypedQueryForObjects(String query, Class<T> returnedType) {
+	public <T> Collection<T> executeTypedQueryForObjects(Supplier<String> querySupplier, Class<T> resultType, Map<String, Object> parameters) {
 
-		MappingSpec<Optional<T>, Collection<T>, T> mappingSpec = neo4jClient.newQuery(query).fetchAs(returnedType);
-		return schema.getMappingFunctionFor(returnedType)
+		MappingSpec<Optional<T>, Collection<T>, T> mappingSpec = neo4jClient.newQuery(querySupplier)
+			.bindAll(parameters)
+			.fetchAs(resultType);
+		return schema.getMappingFunctionFor(resultType)
 			.map(mappingFunction -> mappingSpec.mappedBy(mappingFunction))
 			.orElse(mappingSpec)
 			.all();

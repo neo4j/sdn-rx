@@ -306,9 +306,17 @@ class RepositoryIT {
 	}
 
 	@Test
-	void findBySimpleProperty() {
-		assertThatExceptionOfType(UnsupportedOperationException.class)
-				.isThrownBy(() -> repository.findByName(TEST_PERSON1_NAME));
+	void findOneBySimpleProperty() {
+
+		Optional<PersonWithAllConstructor> optionalPerson = repository.findOneByName(TEST_PERSON1_NAME);
+		assertThat(optionalPerson).isPresent().contains(person1);
+	}
+
+	@Test
+	void findAllBySimpleProperty() {
+
+		List<PersonWithAllConstructor> persons = repository.findAllBySameValue(TEST_PERSON_SAMEVALUE);
+		assertThat(persons).containsExactlyInAnyOrder(person1, person2);
 	}
 
 	@Configuration

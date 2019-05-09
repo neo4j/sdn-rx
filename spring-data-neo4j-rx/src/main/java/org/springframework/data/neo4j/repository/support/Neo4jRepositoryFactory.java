@@ -42,6 +42,7 @@ import org.springframework.data.repository.query.RepositoryQuery;
  *
  * @author Gerrit Meier
  * @author Michael J. Simons
+ * @since 1.0
  */
 final class Neo4jRepositoryFactory extends RepositoryFactorySupport {
 
@@ -98,10 +99,10 @@ final class Neo4jRepositoryFactory extends RepositoryFactorySupport {
 
 			Neo4jQueryMethod queryMethod = new Neo4jQueryMethod(method, metadata, factory);
 			if (queryMethod.hasAnnotatedQuery()) {
-				return new StringBasedNeo4jQuery(queryMethod, nodeManager);
+				return new StringBasedNeo4jQuery(nodeManager, queryMethod);
 			}
 
-			return new PartTreeNeo4jQuery(queryMethod, nodeManager);
+			return new PartTreeNeo4jQuery(nodeManager, queryMethod);
 		}
 	}
 }

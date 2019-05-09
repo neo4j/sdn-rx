@@ -18,12 +18,64 @@
  */
 package org.springframework.data.neo4j.repository.query;
 
+import org.springframework.data.neo4j.core.NodeManager;
+import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.util.Assert;
 
 /**
  * Base class for {@link RepositoryQuery} implementations for Neo4j.
  *
  * @author Gerrit Meier
- **/
+ * @author Michael J. Simons
+ * @since 1.0
+ */
 abstract class AbstractNeo4jQuery implements RepositoryQuery {
+
+	protected final NodeManager nodeManager;
+	protected final Neo4jQueryMethod queryMethod;
+
+	AbstractNeo4jQuery(NodeManager nodeManager, Neo4jQueryMethod queryMethod) {
+
+		Assert.notNull(nodeManager, "The node manager is required.");
+		Assert.notNull(queryMethod, "Query method must not be null!");
+
+		this.nodeManager = nodeManager;
+		this.queryMethod = queryMethod;
+	}
+
+	@Override
+	public QueryMethod getQueryMethod() {
+		return this.queryMethod;
+	}
+
+	@Override
+	public final Object execute(Object[] parameters) {
+
+		return new Neo4jQueryExecution.DefaultQueryExecution(nodeManager).execute(createExecutableQuery(parameters));
+	}
+
+	protected abstract ExecutableQuery createExecutableQuery(Object[] parameters);
+
+	/**
+	 * Returns whether the query should get a count projection applied.
+	 *
+	 * @return
+	 */
+	protected abstract boolean isCountQuery();
+
+	/**
+	 * @return True if the query should get an exists projection applied.
+	 */
+	protected abstract boolean isExistsQuery();
+
+	/**
+	 * @return True if the query should delete matching nodes.
+	 */
+	protected abstract boolean isDeleteQuery();
+
+	/**
+	 * @return True if the query has an explicit limit set.
+	 */
+	protected abstract boolean isLimiting();
 }

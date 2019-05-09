@@ -18,8 +18,10 @@
  */
 package org.springframework.data.neo4j.repository.query;
 
+import java.util.Collections;
+import java.util.Optional;
+
 import org.springframework.data.neo4j.core.NodeManager;
-import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.RepositoryQuery;
 
 /**
@@ -33,27 +35,56 @@ public class StringBasedNeo4jQuery extends AbstractNeo4jQuery {
 	private final Neo4jQueryMethod queryMethod;
 	private final NodeManager nodeManager;
 
-	public StringBasedNeo4jQuery(Neo4jQueryMethod queryMethod, NodeManager nodeManager) {
+	private final boolean countQuery;
+	private final boolean existsQuery;
+	private final boolean deleteQuery;
+
+	public StringBasedNeo4jQuery(NodeManager nodeManager, Neo4jQueryMethod queryMethod) {
+
+		super(nodeManager, queryMethod);
 
 		this.queryMethod = queryMethod;
 		this.nodeManager = nodeManager;
-	}
 
-	@Override
-	public Object execute(Object[] parameters) {
-
-		Class<?> returnedType = queryMethod.getReturnedObjectType();
-		boolean collectionQuery = queryMethod.isCollectionQuery();
-
-		if (collectionQuery) {
-			return nodeManager.executeTypedQueryForObjects(queryMethod.getAnnotatedQuery(), returnedType);
+		Optional<Query> optionalQueryAnnotation = queryMethod.getQueryAnnotation();
+		if (optionalQueryAnnotation.isPresent()) {
+			Query queryAnnotation = optionalQueryAnnotation.get();
+			countQuery = queryAnnotation.count();
+			existsQuery = queryAnnotation.exists();
+			deleteQuery = queryAnnotation.delete();
 		} else {
-			return nodeManager.executeTypedQueryForObject(queryMethod.getAnnotatedQuery(), returnedType);
+			countQuery = false;
+			existsQuery = false;
+			deleteQuery = false;
 		}
 	}
 
 	@Override
-	public QueryMethod getQueryMethod() {
-		return null;
+	protected ExecutableQuery createExecutableQuery(Object[] parameters) {
+
+		Class<?> returnedType = queryMethod.getReturnedObjectType();
+		boolean collectionQuery = queryMethod.isCollectionQuery();
+
+		return new ExecutableQuery(returnedType, collectionQuery, queryMethod::getAnnotatedQuery, Collections.emptyMap());
+	}
+
+	@Override
+	public boolean isCountQuery() {
+		return countQuery;
+	}
+
+	@Override
+	public boolean isExistsQuery() {
+		return existsQuery;
+	}
+
+	@Override
+	public boolean isDeleteQuery() {
+		return deleteQuery;
+	}
+
+	@Override
+	protected boolean isLimiting() {
+		return false;
 	}
 }

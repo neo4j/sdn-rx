@@ -19,7 +19,10 @@
 package org.springframework.data.neo4j.core;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.apiguardian.api.API;
 import org.neo4j.driver.Transaction;
@@ -50,9 +53,17 @@ public interface NodeManager {
 
 	Object executeQuery(String query);
 
-	<T> Collection<T> executeTypedQueryForObjects(String query, Class<T> returnedType);
+	default <T> Collection<T> executeTypedQueryForObjects(Supplier<String> querySupplier, Class<T> resultType) {
+		return executeTypedQueryForObjects(querySupplier, resultType, Collections.emptyMap());
+	}
 
-	<T> Optional<T> executeTypedQueryForObject(String query, Class<T> returnedType);
+	<T> Collection<T> executeTypedQueryForObjects(Supplier<String> querySupplier, Class<T> resultTyped, Map<String, Object> parameters);
+
+	default <T> Optional<T> executeTypedQueryForObject(Supplier<String> querySupplier, Class<T> resultType) {
+		return executeTypedQueryForObject(querySupplier, resultType, Collections.emptyMap());
+	}
+
+	<T> Optional<T> executeTypedQueryForObject(Supplier<String> querySupplier, Class<T> resultType, Map<String, Object> parameters);
 
 	/**
 	 * Saves an entity. When the entity is not yet managed in this instance of the NodeManager, and will be registered as

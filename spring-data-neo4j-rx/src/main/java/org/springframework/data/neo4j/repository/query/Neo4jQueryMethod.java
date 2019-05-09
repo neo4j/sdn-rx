@@ -31,7 +31,9 @@ import org.springframework.lang.Nullable;
  * Neo4j specific implementation of {@link QueryMethod}.
  *
  * @author Gerrit Meier
- **/
+ * @author Michael J. Simons
+ * @since 1.0
+ */
 public class Neo4jQueryMethod extends QueryMethod {
 
 	private final Method method;
@@ -63,8 +65,15 @@ public class Neo4jQueryMethod extends QueryMethod {
 		return getQueryAnnotation().map(Query::value).orElse(null);
 	}
 
-	private Optional<Query> getQueryAnnotation() {
+	/**
+	 * @return the {@link Query} annotation that is applied to the method or an empty {@link Optional} if none available.
+	 */
+	Optional<Query> getQueryAnnotation() {
 		return Optional.ofNullable(AnnotatedElementUtils.findMergedAnnotation(method, Query.class));
 	}
 
+	@Override
+	public Class<?> getDomainClass() {
+		return super.getDomainClass();
+	}
 }
