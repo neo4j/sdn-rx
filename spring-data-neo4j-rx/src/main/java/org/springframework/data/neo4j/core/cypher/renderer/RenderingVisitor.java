@@ -198,6 +198,21 @@ class RenderingVisitor extends ReflectiveVisitor {
 			.append(" ");
 	}
 
+	void enter(Operation operation) {
+		builder.append("(");
+	}
+
+	void enter(Operator operator) {
+		builder
+			.append(" ")
+			.append(operator.getRepresentation())
+			.append(" ");
+	}
+
+	void leave(Operation operation) {
+		builder.append(")");
+	}
+
 	void leave(IsNull isNull) {
 		builder
 			.append(" IS ")

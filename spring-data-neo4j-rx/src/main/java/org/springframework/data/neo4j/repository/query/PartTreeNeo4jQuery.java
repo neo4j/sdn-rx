@@ -25,6 +25,8 @@ import java.util.Map;
 import org.springframework.data.neo4j.core.NodeManager;
 import org.springframework.data.neo4j.core.mapping.Neo4jMappingContext;
 import org.springframework.data.neo4j.repository.query.Neo4jQueryMethod.Neo4jParameters;
+import org.springframework.data.repository.query.ParameterAccessor;
+import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.data.repository.query.ResultProcessor;
 import org.springframework.data.repository.query.parser.PartTree;
@@ -59,17 +61,18 @@ final class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
 	protected PreparedQuery<?> prepareQuery(Object[] parameters) {
 
 		Neo4jParameters formalParameters = (Neo4jParameters) this.queryMethod.getParameters();
+		ParameterAccessor actualParameters = new ParametersParameterAccessor(formalParameters, parameters);
 		CypherQueryCreator queryCreator = new CypherQueryCreator(
-			neo4jMappingContext, domainType, formalParameters, tree
+			neo4jMappingContext, domainType, tree, formalParameters, actualParameters
 		);
 
 		String cypherQuery = queryCreator.createQuery();
-		Map<String, Object> actualParameters = formalParameters
+		Map<String, Object> boundedParameters = formalParameters
 			.getBindableParameters().stream()
 			.collect(toMap(Neo4jQueryMethod.Neo4jParameter::getNameOrIndex, formalParameter -> parameters[formalParameter.getIndex()]));
 
 		return new PreparedQuery<>(super.domainType, super.queryMethod.isCollectionQuery(), cypherQuery,
-			actualParameters);
+			boundedParameters);
 	}
 
 	@Override

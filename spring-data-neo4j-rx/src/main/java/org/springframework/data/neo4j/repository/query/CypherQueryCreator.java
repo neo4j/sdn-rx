@@ -27,6 +27,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.neo4j.core.cypher.Condition;
 import org.springframework.data.neo4j.core.cypher.Cypher;
+import org.springframework.data.neo4j.core.cypher.Property;
 import org.springframework.data.neo4j.core.cypher.Statement;
 import org.springframework.data.neo4j.core.cypher.renderer.CypherRenderer;
 import org.springframework.data.neo4j.core.mapping.Neo4jMappingContext;
@@ -34,6 +35,7 @@ import org.springframework.data.neo4j.core.mapping.Neo4jPersistentProperty;
 import org.springframework.data.neo4j.core.schema.NodeDescription;
 import org.springframework.data.neo4j.repository.query.Neo4jQueryMethod.Neo4jParameter;
 import org.springframework.data.neo4j.repository.query.Neo4jQueryMethod.Neo4jParameters;
+import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
@@ -52,32 +54,29 @@ final class CypherQueryCreator extends AbstractQueryCreator<String, Condition> {
 	private final Class<?> domainType;
 	private final NodeDescription<?> nodeDescription;
 
-	private final Parameters<Neo4jParameters, Neo4jParameter> formalParameters;
-	private Iterator<Neo4jParameter> it;
+	private Iterator<Neo4jParameter> formalParameters;
 
-	CypherQueryCreator(Neo4jMappingContext mappingContext, Class<?> domainType,
-		Parameters<Neo4jParameters, Neo4jParameter>  formalParameters, PartTree tree
+	CypherQueryCreator(Neo4jMappingContext mappingContext, Class<?> domainType, PartTree tree,
+		Parameters<Neo4jParameters, Neo4jParameter> formalParameters, ParameterAccessor actualParameters
 	) {
-		super(tree);
+		super(tree, actualParameters);
 
 		this.mappingContext = mappingContext;
 		this.domainType = domainType;
 		this.nodeDescription = this.mappingContext.getRequiredNodeDescription(this.domainType);
-		this.formalParameters = formalParameters;
+		this.formalParameters = formalParameters.iterator();
 	}
 
 	@Override
-	protected Condition create(Part part, Iterator<Object> iterator) {
-
-		this.it = formalParameters.iterator();
+	protected Condition create(Part part, Iterator<Object> actualParameters) {
 		return createImpl(part);
 	}
 
 	@Override
-	protected Condition and(Part part, Condition base, Iterator<Object> iterator) {
+	protected Condition and(Part part, Condition base, Iterator<Object> actualParameters) {
 
 		if (base == null) {
-			return create(part, iterator);
+			return create(part, actualParameters);
 		}
 
 		return base.and(createImpl(part));
@@ -100,18 +99,62 @@ final class CypherQueryCreator extends AbstractQueryCreator<String, Condition> {
 	}
 
 	private Condition createImpl(Part part) {
+
 		PersistentPropertyPath<Neo4jPersistentProperty> path = mappingContext
 			.getPersistentPropertyPath(part.getProperty());
 		Neo4jPersistentProperty persistentProperty = path.getLeafProperty();
 
-		Neo4jParameter formalParameter = it.next();
-		switch (part.getType()) {
+		// TODO case insensitive (like, notlike, simpleProperty, negatedSimpleProperty)
 
+		switch (part.getType()) {
+			case CONTAINING:
+				return property(persistentProperty)
+					.contains(parameter(nextRequiredParameterNameOrIndex()));
+			case ENDING_WITH:
+				return property(persistentProperty)
+					.endsWith(parameter(nextRequiredParameterNameOrIndex()));
+			case FALSE:
+				return property(persistentProperty).isFalse();
+			case LIKE:
+				return likeCondition(persistentProperty);
 			case SIMPLE_PROPERTY:
-				return property("n", persistentProperty.getPropertyName())
-					.isEqualTo(parameter(formalParameter.getNameOrIndex()));
+				return property(persistentProperty)
+					.isEqualTo(parameter(nextRequiredParameterNameOrIndex()));
+			case STARTING_WITH:
+				return property(persistentProperty)
+					.startsWith(parameter(nextRequiredParameterNameOrIndex()));
+			case REGEX:
+				return property(persistentProperty)
+					.matches(parameter(nextRequiredParameterNameOrIndex()));
+			case NEGATING_SIMPLE_PROPERTY:
+				return property(persistentProperty)
+					.isNotEqualTo(parameter(nextRequiredParameterNameOrIndex()));
+			case NOT_CONTAINING:
+				return property(persistentProperty)
+					.contains(parameter(nextRequiredParameterNameOrIndex())).not();
+			case NOT_LIKE:
+				return likeCondition(persistentProperty).not();
+			case TRUE:
+				return property(persistentProperty).isTrue();
 			default:
 				throw new IllegalArgumentException("Unsupported part type: " + part.getType());
 		}
+	}
+
+	private Condition likeCondition(Neo4jPersistentProperty persistentProperty) {
+		return property(persistentProperty)
+			.matches(literalOf(".*").plus(parameter(nextRequiredParameterNameOrIndex())).plus(literalOf(".*")));
+	}
+
+	private Property property(Neo4jPersistentProperty persistentProperty) {
+		return Cypher.property("n", persistentProperty.getPropertyName());
+	}
+
+	private String nextRequiredParameterNameOrIndex() {
+		if (!formalParameters.hasNext()) {
+			throw new IllegalStateException("Not enough formal, bindable parameters for parts");
+		}
+
+		return formalParameters.next().getNameOrIndex();
 	}
 }

@@ -154,6 +154,20 @@ public final class Cypher {
 	}
 
 	/**
+	 * @return The {@literal true} literal.
+	 */
+	public static Literal literalTrue() {
+		return BooleanLiteral.TRUE;
+	}
+
+	/**
+	 * @return The {@literal false} literal.
+	 */
+	public static Literal literalFalse() {
+		return BooleanLiteral.FALSE;
+	}
+
+	/**
 	 * Not to be instantiated.
 	 */
 	private Cypher() {

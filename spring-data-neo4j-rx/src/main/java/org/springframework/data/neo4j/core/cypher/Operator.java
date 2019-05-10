@@ -16,39 +16,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.neo4j.integration;
+package org.springframework.data.neo4j.core.cypher;
 
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-
-import org.springframework.data.neo4j.core.schema.Id;
-import org.springframework.data.neo4j.core.schema.Node;
-import org.springframework.data.neo4j.core.schema.Property;
+import org.apiguardian.api.API;
+import org.springframework.data.neo4j.core.cypher.support.Visitable;
 
 /**
- * @author Gerrit Meier
+ * An operator
+ *
  * @author Michael J. Simons
+ * @since 1.0
  */
-@Getter
-@Setter
-@Node
-@ToString
-@AllArgsConstructor
-@EqualsAndHashCode
-public class PersonWithAllConstructor {
+@API(status = API.Status.INTERNAL, since = "1.0")
+public enum Operator implements Visitable {
 
-	@Id
-	private final Long id;
+	/**
+	 * The {@code +} operator.
+	 */
+	PLUS("+");
 
-	private final String name;
+	private final String representation;
 
-	@Property("first_name")
-	private final String firstName;
+	Operator(String representation) {
+		this.representation = representation;
+	}
 
-	private final String sameValue;
-
-	private final Boolean cool;
+	public String getRepresentation() {
+		return representation;
+	}
 }

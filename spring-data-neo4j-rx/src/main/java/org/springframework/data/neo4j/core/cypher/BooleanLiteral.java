@@ -16,39 +16,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.neo4j.integration;
+package org.springframework.data.neo4j.core.cypher;
 
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-
-import org.springframework.data.neo4j.core.schema.Id;
-import org.springframework.data.neo4j.core.schema.Node;
-import org.springframework.data.neo4j.core.schema.Property;
+import org.apiguardian.api.API;
 
 /**
- * @author Gerrit Meier
+ * The boolean literal.
+ *
  * @author Michael J. Simons
+ * @soundtrack Bad Religion - Age Of Unreason
+ * @since 1.0
  */
-@Getter
-@Setter
-@Node
-@ToString
-@AllArgsConstructor
-@EqualsAndHashCode
-public class PersonWithAllConstructor {
+@API(status = API.Status.INTERNAL, since = "1.0")
+public final class BooleanLiteral extends Literal<Boolean> {
 
-	@Id
-	private final Long id;
+	static BooleanLiteral TRUE = new BooleanLiteral(true);
+	static BooleanLiteral FALSE = new BooleanLiteral(false);
 
-	private final String name;
+	private BooleanLiteral(boolean content) {
+		super(content);
+	}
 
-	@Property("first_name")
-	private final String firstName;
-
-	private final String sameValue;
-
-	private final Boolean cool;
+	@Override
+	public String asString() {
+		return getContent().toString();
+	}
 }

@@ -16,39 +16,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.neo4j.integration;
+package org.springframework.data.neo4j.core.cypher;
 
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-
-import org.springframework.data.neo4j.core.schema.Id;
-import org.springframework.data.neo4j.core.schema.Node;
-import org.springframework.data.neo4j.core.schema.Property;
+import org.apiguardian.api.API;
 
 /**
- * @author Gerrit Meier
+ * A set of operations.
+ *
  * @author Michael J. Simons
+ * @since 1.0
  */
-@Getter
-@Setter
-@Node
-@ToString
-@AllArgsConstructor
-@EqualsAndHashCode
-public class PersonWithAllConstructor {
+@API(status = API.Status.INTERNAL, since = "1.0")
+public final class Operations {
 
-	@Id
-	private final Long id;
+	/**
+	 * Creates a {@code +} operation. Both operands must evaluate to a compatible type.
+	 *
+	 * @param op1 first operand
+	 * @param op2 second operation
+	 * @return A new operation.
+	 */
+	static Operation plus(Expression op1, Expression op2) {
 
-	private final String name;
+		return Operation.create(op1, Operator.PLUS, op2);
+	}
 
-	@Property("first_name")
-	private final String firstName;
-
-	private final String sameValue;
-
-	private final Boolean cool;
+	/**
+	 * Not to be instantiated.
+	 */
+	private Operations() {
+	}
 }
