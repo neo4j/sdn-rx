@@ -19,7 +19,6 @@
 package org.springframework.data.neo4j.integration;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.neo4j.repository.Neo4jRepository;

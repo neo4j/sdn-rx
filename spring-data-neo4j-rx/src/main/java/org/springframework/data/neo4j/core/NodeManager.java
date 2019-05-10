@@ -18,18 +18,11 @@
  */
 package org.springframework.data.neo4j.core;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Supplier;
 
 import org.apiguardian.api.API;
 import org.neo4j.driver.Transaction;
-import org.springframework.data.neo4j.core.cypher.Condition;
-import org.springframework.data.neo4j.core.cypher.Node;
-import org.springframework.data.neo4j.core.cypher.StatementBuilder;
-import org.springframework.data.neo4j.core.schema.NodeDescription;
 import org.springframework.lang.Nullable;
 
 /**
@@ -54,19 +47,11 @@ public interface NodeManager {
 	@Nullable
 	Transaction getTransaction();
 
-	Object executeQuery(String query);
-
-	default <T> Collection<T> executeTypedQueryForObjects(Class<T> resultType, String query) {
-		return executeTypedQueryForObjects(resultType, query, Collections.emptyMap());
+	default <T> ExecutableQuery<T> createQuery(Class<T> resultType, String query) {
+		return createQuery(resultType, query, Collections.emptyMap());
 	}
 
-	<T> Collection<T> executeTypedQueryForObjects(Class<T> resultType, String query, Map<String, Object> parameters);
-
-	default <T> Optional<T> executeTypedQueryForObject(Class<T> resultType, String query) {
-		return executeTypedQueryForObject(resultType, query, Collections.emptyMap());
-	}
-
-	<T> Optional<T> executeTypedQueryForObject(Class<T> resultType, String query, Map<String, Object> parameters);
+	<T> ExecutableQuery<T> createQuery(Class<T> resultType, String query, Map<String, Object> parameters);
 
 	/**
 	 * Saves an entity. When the entity is not yet managed in this instance of the NodeManager, and will be registered as

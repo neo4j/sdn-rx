@@ -53,10 +53,10 @@ abstract class AbstractNeo4jQuery implements RepositoryQuery {
 
 	@Override
 	public final Object execute(Object[] parameters) {
-		return new Neo4jQueryExecution.DefaultQueryExecution(nodeManager).execute(createExecutableQuery(parameters));
+		return new Neo4jQueryExecution.DefaultQueryExecution(nodeManager).execute(prepareQuery(parameters));
 	}
 
-	protected abstract ExecutableQuery createExecutableQuery(Object[] parameters);
+	protected abstract PreparedQuery prepareQuery(Object[] parameters);
 
 	/**
 	 * Returns whether the query should get a count projection applied.

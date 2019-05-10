@@ -28,24 +28,25 @@ import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.neo4j.core.cypher.Condition;
 import org.springframework.data.neo4j.core.cypher.Cypher;
 import org.springframework.data.neo4j.core.cypher.Statement;
+import org.springframework.data.neo4j.core.cypher.renderer.CypherRenderer;
 import org.springframework.data.neo4j.core.mapping.Neo4jMappingContext;
 import org.springframework.data.neo4j.core.mapping.Neo4jPersistentProperty;
 import org.springframework.data.neo4j.core.schema.NodeDescription;
 import org.springframework.data.neo4j.repository.query.Neo4jQueryMethod.Neo4jParameter;
 import org.springframework.data.neo4j.repository.query.Neo4jQueryMethod.Neo4jParameters;
-import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 
 /**
- * TODO Choose correct name.
+ * A Cypher-DSL based implementation of the {@link AbstractQueryCreator} that eventually creates Cypher queries as strings
+ * to be used by a Neo4j client or driver as statement template.
  *
  * @author Michael J. Simons
- * @since
+ * @since 1.0
  */
-public class CypherQueryCreator extends AbstractQueryCreator<Statement, Condition> {
+final class CypherQueryCreator extends AbstractQueryCreator<String, Condition> {
 
 	private final Neo4jMappingContext mappingContext;
 	private final Class<?> domainType;
@@ -54,7 +55,7 @@ public class CypherQueryCreator extends AbstractQueryCreator<Statement, Conditio
 	private final Parameters<Neo4jParameters, Neo4jParameter> formalParameters;
 	private Iterator<Neo4jParameter> it;
 
-	public CypherQueryCreator(Neo4jMappingContext mappingContext, Class<?> domainType,
+	CypherQueryCreator(Neo4jMappingContext mappingContext, Class<?> domainType,
 		Parameters<Neo4jParameters, Neo4jParameter>  formalParameters, PartTree tree
 	) {
 		super(tree);
@@ -88,12 +89,14 @@ public class CypherQueryCreator extends AbstractQueryCreator<Statement, Conditio
 	}
 
 	@Override
-	protected Statement complete(Condition condition, Sort sort) {
+	protected String complete(Condition condition, Sort sort) {
 
-		return mappingContext
+		Statement statement = mappingContext
 			.prepareMatchOf(nodeDescription, Optional.of(condition))
 			.returning(Cypher.symbolicName("n"))
 			.build();
+
+		return CypherRenderer.create().render(statement);
 	}
 
 	private Condition createImpl(Part part) {

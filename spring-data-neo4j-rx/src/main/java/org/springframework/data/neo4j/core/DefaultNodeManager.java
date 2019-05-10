@@ -18,14 +18,20 @@
  */
 package org.springframework.data.neo4j.core;
 
+import static java.util.stream.Collectors.*;
+
+import lombok.RequiredArgsConstructor;
+
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import org.apiguardian.api.API;
 import org.neo4j.driver.Transaction;
+import org.neo4j.driver.exceptions.NoSuchRecordException;
 import org.springframework.data.neo4j.core.Neo4jClient.MappingSpec;
+import org.springframework.data.neo4j.core.Neo4jClient.RecordFetchSpec;
 import org.springframework.data.neo4j.core.context.DefaultPersistenceContext;
 import org.springframework.data.neo4j.core.context.PersistenceContext;
 import org.springframework.data.neo4j.core.schema.NodeDescription;
@@ -54,7 +60,7 @@ class DefaultNodeManager implements NodeManager {
 		this.neo4jClient = neo4jClient;
 		this.transaction = transaction;
 
-		this.persistenceContext = new DefaultPersistenceContext(schema);
+		this.persistenceContext = new DefaultPersistenceContext();
 	}
 
 	@Override
@@ -64,39 +70,25 @@ class DefaultNodeManager implements NodeManager {
 	}
 
 	@Override
-	public Object executeQuery(String query) {
-		return neo4jClient.newQuery(query).fetch().all();
-	}
+	public <T> ExecutableQuery<T> createQuery(Class<T> resultType, String query, Map<String, Object> parameters) {
 
-	@Override
-	public <T> Optional<T> executeTypedQueryForObject(Class<T> resultType, String querySupplier, Map<String, Object> parameters) {
-
-		MappingSpec<Optional<T>, Collection<T>, T> mappingSpec = neo4jClient.newQuery(querySupplier)
+		MappingSpec<Optional<T>, Collection<T>, T> mappingSpec = neo4jClient.newQuery(query)
 			.bindAll(parameters)
 			.fetchAs(resultType);
-		return schema.getMappingFunctionFor(resultType)
+		RecordFetchSpec<Optional<T>, Collection<T>, T> fetchSpec = schema
+			.getMappingFunctionFor(resultType)
 			.map(mappingFunction -> mappingSpec.mappedBy(mappingFunction))
-			.orElse(mappingSpec)
-			.one();
-	}
+			.orElse(mappingSpec);
 
-	@Override
-	public <T> Collection<T> executeTypedQueryForObjects(Class<T> resultType, String querySupplier, Map<String, Object> parameters) {
-
-		MappingSpec<Optional<T>, Collection<T>, T> mappingSpec = neo4jClient.newQuery(querySupplier)
-			.bindAll(parameters)
-			.fetchAs(resultType);
-		return schema.getMappingFunctionFor(resultType)
-			.map(mappingFunction -> mappingSpec.mappedBy(mappingFunction))
-			.orElse(mappingSpec)
-			.all();
+		return new DefaultExecutableQuery(schema.getNodeDescription(resultType), query, fetchSpec);
 	}
 
 	@Override
 	public <T> T save(T entityWithUnknownState) {
 
 		// TODO if already registered, here or in the context?
-		this.persistenceContext.register(entityWithUnknownState);
+		this.persistenceContext
+			.register(entityWithUnknownState, schema.getRequiredNodeDescription(entityWithUnknownState.getClass()));
 
 		throw new UnsupportedOperationException("Not there yet.");
 	}
@@ -107,5 +99,38 @@ class DefaultNodeManager implements NodeManager {
 		this.persistenceContext.deregister(managedEntity);
 
 		throw new UnsupportedOperationException("Not there yet.");
+	}
+
+	@RequiredArgsConstructor
+	class DefaultExecutableQuery<T> implements ExecutableQuery<T> {
+
+		private final Optional<NodeDescription<?>> optionalNodeDescription;
+		private final String query;
+		private final RecordFetchSpec<Optional<T>, Collection<T>, T> fetchSpec;
+
+		@Override
+		public List<T> getResults() {
+			return fetchSpec.all().stream().map(this::register).collect(toList());
+		}
+
+		@Override
+		public Optional<T> getSingleResult() {
+			try {
+				return fetchSpec.one().map(this::register);
+			} catch (NoSuchRecordException e) {
+				return Optional.empty();
+			}
+		}
+
+		@Override
+		public T getRequiredSingleResult() {
+			return fetchSpec.one().map(this::register).orElseThrow(() -> new NoResultException(1L, query));
+		}
+
+		private T register(T entity) {
+			this.optionalNodeDescription.ifPresent(
+				nodeDescription -> DefaultNodeManager.this.persistenceContext.register(entity, nodeDescription));
+			return entity;
+		}
 	}
 }

@@ -20,16 +20,9 @@ package org.springframework.data.neo4j.repository.query;
 
 import static java.util.stream.Collectors.*;
 
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.data.neo4j.core.NodeManager;
-import org.springframework.data.neo4j.core.cypher.Statement;
-import org.springframework.data.neo4j.core.cypher.renderer.CypherRenderer;
 import org.springframework.data.neo4j.core.mapping.Neo4jMappingContext;
 import org.springframework.data.neo4j.repository.query.Neo4jQueryMethod.Neo4jParameters;
 import org.springframework.data.repository.query.RepositoryQuery;
@@ -43,13 +36,13 @@ import org.springframework.data.repository.query.parser.PartTree;
  * @author Michael J. Simons
  * @since 1.0
  */
-public class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
+final class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
 
 	private final Neo4jMappingContext neo4jMappingContext;
 	private final ResultProcessor processor;
 	private final PartTree tree;
 
-	public PartTreeNeo4jQuery(
+	PartTreeNeo4jQuery(
 		NodeManager nodeManager,
 		Neo4jMappingContext neo4jMappingContext,
 		Neo4jQueryMethod queryMethod
@@ -63,24 +56,20 @@ public class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
 	}
 
 	@Override
-	protected ExecutableQuery createExecutableQuery(Object[] parameters) {
+	protected PreparedQuery<?> prepareQuery(Object[] parameters) {
 
 		Neo4jParameters formalParameters = (Neo4jParameters) this.queryMethod.getParameters();
-		CypherQueryCreator statementCreator = new CypherQueryCreator(
+		CypherQueryCreator queryCreator = new CypherQueryCreator(
 			neo4jMappingContext, domainType, formalParameters, tree
 		);
 
-		Statement statement = statementCreator.createQuery();
-
-		final Map<String, Object> actualParameters = formalParameters
+		String cypherQuery = queryCreator.createQuery();
+		Map<String, Object> actualParameters = formalParameters
 			.getBindableParameters().stream()
 			.collect(toMap(Neo4jQueryMethod.Neo4jParameter::getNameOrIndex, formalParameter -> parameters[formalParameter.getIndex()]));
 
-		System.out.println(CypherRenderer.create().render(statement));
-		System.out.println(actualParameters);
-
-
-		throw new UnsupportedOperationException("Not there yet.");
+		return new PreparedQuery<>(super.domainType, super.queryMethod.isCollectionQuery(), cypherQuery,
+			actualParameters);
 	}
 
 	@Override

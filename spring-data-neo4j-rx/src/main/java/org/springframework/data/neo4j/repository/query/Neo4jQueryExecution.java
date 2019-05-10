@@ -20,6 +20,7 @@ package org.springframework.data.neo4j.repository.query;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.data.neo4j.core.ExecutableQuery;
 import org.springframework.data.neo4j.core.NodeManager;
 
 /**
@@ -33,7 +34,7 @@ import org.springframework.data.neo4j.core.NodeManager;
 @FunctionalInterface
 interface Neo4jQueryExecution {
 
-	Object execute(ExecutableQuery query);
+	Object execute(PreparedQuery description);
 
 	@RequiredArgsConstructor
 	class DefaultQueryExecution implements Neo4jQueryExecution {
@@ -41,17 +42,18 @@ interface Neo4jQueryExecution {
 		private final NodeManager nodeManager;
 
 		@Override
-		public Object execute(ExecutableQuery query) {
+		public Object execute(PreparedQuery description) {
 
-			Class<?> returnedType = query.getResultType();
-			boolean collectionQuery = query.isCollectionQuery();
+			Class<?> returnedType = description.getResultType();
+			boolean collectionQuery = description.isCollectionQuery();
 
+			ExecutableQuery executableQuery = nodeManager
+				.createQuery(returnedType, description.getCypherQuery(), description.getParameters());
 			if (collectionQuery) {
-				return nodeManager.executeTypedQueryForObjects(returnedType, query.getCypher());
+				return executableQuery.getResults();
 			} else {
-				return nodeManager.executeTypedQueryForObject(returnedType, query.getCypher());
+				return executableQuery.getSingleResult();
 			}
-
 		}
 	}
 }

@@ -21,6 +21,7 @@ package org.springframework.data.neo4j.core;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apiguardian.api.API;
 
@@ -75,5 +76,18 @@ final class NamedParameters {
 	 */
 	Map<String, Object> get() {
 		return Collections.unmodifiableMap(parameters);
+	}
+
+	public boolean isEmpty() {
+		return parameters.isEmpty();
+	}
+
+	@Override
+	public String toString() {
+		return parameters
+			.entrySet()
+			.stream()
+			.map(e -> String.format("%s: %s", e.getKey(), e.getValue()))
+			.collect(Collectors.joining(",", "{", "}"));
 	}
 }

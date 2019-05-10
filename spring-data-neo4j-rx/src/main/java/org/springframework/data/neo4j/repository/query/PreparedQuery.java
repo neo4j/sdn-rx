@@ -18,15 +18,26 @@
  */
 package org.springframework.data.neo4j.repository.query;
 
-import org.springframework.data.repository.core.EntityInformation;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+import java.util.Map;
 
 /**
- * Neo4j specific {@link EntityInformation}
+ * Typed preparation of a query that is used to create an {@link org.springframework.data.neo4j.core.ExecutableQuery} of the same type.
  *
- * @author Gerrit Meier
+ * @param <T> The type of the objects returned by this query.
+ * @author Michael J. Simons
+ * @soundtrack Deichkind - Arbeit nervt
+ * @since 1.0
  */
-public interface Neo4jEntityInformation<T, ID> extends EntityInformation<T, ID> {
+@RequiredArgsConstructor
+@Getter
+final class PreparedQuery<T> {
 
-	String getIdPropertyName();
+	private final Class<T> resultType;
+	private final boolean collectionQuery;
+	private final String cypherQuery;
+	private final Map<String, Object> parameters;
 
 }

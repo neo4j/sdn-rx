@@ -22,27 +22,23 @@ import static java.lang.String.*;
 
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.core.MethodParameter;
-import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.QueryMethod;
-import org.springframework.lang.Nullable;
 
 /**
- * Neo4j specific implementation of {@link QueryMethod}.
+ * Neo4j specific implementation of {@link QueryMethod}. It contains a custom implementation of {@link Parameter} which
+ * supports Neo4js specific placeholder as well as a convinient method to return either the parameters index or name without placeholder.
  *
  * @author Gerrit Meier
  * @author Michael J. Simons
  * @since 1.0
  */
-public class Neo4jQueryMethod extends QueryMethod {
-
-	private final Method method;
+final class Neo4jQueryMethod extends QueryMethod {
 
 	/**
 	 * Creates a new {@link Neo4jQueryMethod} from the given parameters. Looks up the correct query to use for following
@@ -52,30 +48,8 @@ public class Neo4jQueryMethod extends QueryMethod {
 	 * @param metadata must not be {@literal null}.
 	 * @param factory must not be {@literal null}.
 	 */
-	public Neo4jQueryMethod(Method method, RepositoryMetadata metadata, ProjectionFactory factory) {
+	Neo4jQueryMethod(Method method, RepositoryMetadata metadata, ProjectionFactory factory) {
 		super(method, metadata, factory);
-		this.method = method;
-	}
-
-	/**
-	 * Determines if this is a custom Cypher query method.
-	 *
-	 * @return true, if method has {@link Query} annotation. Otherwise false.
-	 */
-	public boolean hasAnnotatedQuery() {
-		return getQueryAnnotation().isPresent();
-	}
-
-	@Nullable
-	String getAnnotatedQuery() {
-		return getQueryAnnotation().map(Query::value).orElse(null);
-	}
-
-	/**
-	 * @return the {@link Query} annotation that is applied to the method or an empty {@link Optional} if none available.
-	 */
-	Optional<Query> getQueryAnnotation() {
-		return Optional.ofNullable(AnnotatedElementUtils.findMergedAnnotation(method, Query.class));
 	}
 
 	@Override

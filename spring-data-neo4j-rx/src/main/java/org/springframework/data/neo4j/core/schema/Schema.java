@@ -26,8 +26,7 @@ import java.util.function.Function;
 import org.apiguardian.api.API;
 import org.neo4j.driver.Record;
 import org.springframework.data.neo4j.core.cypher.Condition;
-import org.springframework.data.neo4j.core.cypher.Node;
-import org.springframework.data.neo4j.core.cypher.StatementBuilder;
+import org.springframework.data.neo4j.core.cypher.StatementBuilder.OngoingMatchWithWhere;
 
 /**
  * Contains the descriptions of all nodes, their properties and relationships known to SDN-RX.
@@ -89,9 +88,17 @@ public interface Schema {
 	 *
 	 * @param targetClass The target class to which to map to.
 	 * @param <T>         Type of the target class
-	 * @return An emtpy optional if the target class is unknown, otherwise an optional containing a stateless, reusable mapping function
+	 * @return An empty optional if the target class is unknown, otherwise an optional containing a stateless, reusable mapping function
 	 */
 	<T> Optional<Function<Record, T>> getMappingFunctionFor(Class<T> targetClass);
 
-	StatementBuilder.OngoingMatchWithWhere prepareMatchOf(NodeDescription<?> nodeDescription, Optional<Condition> condition);
+	/**
+	 * This will create a match statement that fits the given node description and may contains additional conditions.
+	 * The method must return the node to be match under the symbolic name of {@literal n}.
+	 *
+	 * @param nodeDescription The node description for which a match clause should be generated
+	 * @param condition       Optional conditions to add
+	 * @return An ongoing match
+	 */
+	OngoingMatchWithWhere prepareMatchOf(NodeDescription<?> nodeDescription, Optional<Condition> condition);
 }

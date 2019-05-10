@@ -18,25 +18,19 @@
  */
 package org.springframework.data.neo4j.repository.support;
 
-import java.lang.reflect.Method;
 import java.util.Optional;
 
 import org.springframework.data.neo4j.core.NodeManager;
 import org.springframework.data.neo4j.core.mapping.Neo4jMappingContext;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
-import org.springframework.data.neo4j.repository.query.Neo4jQueryMethod;
-import org.springframework.data.neo4j.repository.query.PartTreeNeo4jQuery;
-import org.springframework.data.neo4j.repository.query.StringBasedNeo4jQuery;
-import org.springframework.data.projection.ProjectionFactory;
+import org.springframework.data.neo4j.repository.query.Neo4jQueryLookupStrategy;
 import org.springframework.data.repository.core.EntityInformation;
-import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.data.repository.query.QueryLookupStrategy.Key;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
-import org.springframework.data.repository.query.RepositoryQuery;
 
 /**
  * Factory to create {@link Neo4jRepository} instances.
@@ -80,36 +74,5 @@ final class Neo4jRepositoryFactory extends RepositoryFactorySupport {
 			QueryMethodEvaluationContextProvider evaluationContextProvider) {
 
 		return Optional.of(new Neo4jQueryLookupStrategy(nodeManager, mappingContext, evaluationContextProvider));
-	}
-
-	private class Neo4jQueryLookupStrategy implements QueryLookupStrategy {
-
-		private final NodeManager nodeManager;
-		private final Neo4jMappingContext mappingContext;
-		private final QueryMethodEvaluationContextProvider evaluationContextProvider;
-
-		private Neo4jQueryLookupStrategy(NodeManager nodeManager,
-			Neo4jMappingContext mappingContext,
-				QueryMethodEvaluationContextProvider evaluationContextProvider) {
-
-			this.nodeManager = nodeManager;
-			this.mappingContext = mappingContext;
-			this.evaluationContextProvider = evaluationContextProvider;
-		}
-
-		/* (non-Javadoc)
-		 * @see org.springframework.data.repository.query.QueryLookupStrategy#resolveQuery(java.lang.reflect.Method, org.springframework.data.repository.core.RepositoryMetadata, org.springframework.data.projection.ProjectionFactory, org.springframework.data.repository.core.NamedQueries)
-		 */
-		@Override
-		public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, ProjectionFactory factory,
-				NamedQueries namedQueries) {
-
-			Neo4jQueryMethod queryMethod = new Neo4jQueryMethod(method, metadata, factory);
-			if (queryMethod.hasAnnotatedQuery()) {
-				return new StringBasedNeo4jQuery(nodeManager, queryMethod);
-			}
-
-			return new PartTreeNeo4jQuery(nodeManager, mappingContext, queryMethod);
-		}
 	}
 }

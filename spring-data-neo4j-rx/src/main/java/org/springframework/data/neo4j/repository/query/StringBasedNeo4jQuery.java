@@ -29,24 +29,26 @@ import org.springframework.data.repository.query.RepositoryQuery;
  *
  * @author Gerrit Meier
  * @author Michael J. Simons
+ * @since 1.0
  */
-public class StringBasedNeo4jQuery extends AbstractNeo4jQuery {
+final class StringBasedNeo4jQuery extends AbstractNeo4jQuery {
 
-	private final Neo4jQueryMethod queryMethod;
-	private final NodeManager nodeManager;
+	private final String cypherQuery;
+
+	private final boolean collectionQuery;
 
 	private final boolean countQuery;
 	private final boolean existsQuery;
 	private final boolean deleteQuery;
 
-	public StringBasedNeo4jQuery(NodeManager nodeManager, Neo4jQueryMethod queryMethod) {
+	StringBasedNeo4jQuery(NodeManager nodeManager, Neo4jQueryMethod queryMethod, String cypherQuery,
+		Optional<Query> optionalQueryAnnotation) {
 
 		super(nodeManager, queryMethod);
 
-		this.queryMethod = queryMethod;
-		this.nodeManager = nodeManager;
+		this.cypherQuery = cypherQuery;
+		this.collectionQuery = queryMethod.isCollectionQuery();
 
-		Optional<Query> optionalQueryAnnotation = queryMethod.getQueryAnnotation();
 		if (optionalQueryAnnotation.isPresent()) {
 			Query queryAnnotation = optionalQueryAnnotation.get();
 			countQuery = queryAnnotation.count();
@@ -60,11 +62,9 @@ public class StringBasedNeo4jQuery extends AbstractNeo4jQuery {
 	}
 
 	@Override
-	protected ExecutableQuery createExecutableQuery(Object[] parameters) {
+	protected PreparedQuery<?> prepareQuery(Object[] parameters) {
 
-		boolean collectionQuery = queryMethod.isCollectionQuery();
-
-		return new ExecutableQuery(super.domainType, collectionQuery, queryMethod.getAnnotatedQuery(), Collections.emptyMap());
+		return new PreparedQuery<>(super.domainType, collectionQuery, cypherQuery, Collections.emptyMap());
 	}
 
 	@Override

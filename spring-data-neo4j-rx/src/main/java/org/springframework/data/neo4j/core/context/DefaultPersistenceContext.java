@@ -32,7 +32,6 @@ import org.springframework.data.neo4j.core.context.tracking.EntityChangeEvent;
 import org.springframework.data.neo4j.core.context.tracking.EntityComparisonStrategy;
 import org.springframework.data.neo4j.core.context.tracking.EntityTrackingStrategy;
 import org.springframework.data.neo4j.core.schema.NodeDescription;
-import org.springframework.data.neo4j.core.schema.Schema;
 
 /**
  * TODO explain what the persistence context should do other than being the plural of EntityTrackingStrategy :D
@@ -43,22 +42,16 @@ import org.springframework.data.neo4j.core.schema.Schema;
 @Slf4j
 public class DefaultPersistenceContext implements PersistenceContext {
 
-	/**
-	 * The schema is required to find out which properties to track with the {@link #entityTrackingStrategy}.
-	 */
-	private final Schema schema;
-
 	private final EntityTrackingStrategy entityTrackingStrategy;
 
 	private final Set<Integer> registeredObjectIds = new HashSet<>();
 
-	public DefaultPersistenceContext(final Schema schema) {
-		this.schema = schema;
+	public DefaultPersistenceContext() {
 		this.entityTrackingStrategy = getEntityTrackingStrategy();
 	}
 
 	@Override
-	public void register(Object entity) {
+	public void register(Object entity, NodeDescription<?> description) {
 
 		Objects.requireNonNull(entity, "Cannot track null-entity!");
 
@@ -69,11 +62,8 @@ public class DefaultPersistenceContext implements PersistenceContext {
 			return;
 		}
 
-		NodeDescription nodeDescription = schema.getNodeDescription(entity.getClass())
-				.orElseThrow(() -> new IllegalStateException("Cannot track entity that has no schema entry!"));
-
 		registeredObjectIds.add(identityOfEntity);
-		entityTrackingStrategy.track(nodeDescription, entity);
+		entityTrackingStrategy.track(description, entity);
 	}
 
 	@Override
