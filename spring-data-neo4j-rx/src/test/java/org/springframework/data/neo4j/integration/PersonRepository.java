@@ -63,7 +63,7 @@ public interface PersonRepository extends Neo4jRepository<PersonWithAllConstruct
 	@Query("MATCH (n:PersonWithWither{name:'Test'}) return n")
 	Optional<PersonWithWither> getOptionalPersonsWithWitherViaQuery();
 
-	Optional<PersonWithAllConstructor> findOneByName(String name);
+	Optional<PersonWithAllConstructor> findOneByNameAndFirstName(String name, String firstName);
 
 	List<PersonWithAllConstructor> findAllBySameValue(String sameValue);
 }

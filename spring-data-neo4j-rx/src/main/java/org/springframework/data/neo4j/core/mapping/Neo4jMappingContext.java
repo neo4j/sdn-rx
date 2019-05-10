@@ -39,6 +39,12 @@ import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.context.AbstractMappingContext;
 import org.springframework.data.mapping.model.Property;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
+import org.springframework.data.neo4j.core.cypher.Condition;
+import org.springframework.data.neo4j.core.cypher.Conditions;
+import org.springframework.data.neo4j.core.cypher.Cypher;
+import org.springframework.data.neo4j.core.cypher.Node;
+import org.springframework.data.neo4j.core.cypher.Statement;
+import org.springframework.data.neo4j.core.cypher.StatementBuilder;
 import org.springframework.data.neo4j.core.schema.NodeDescription;
 import org.springframework.data.neo4j.core.schema.Relationship;
 import org.springframework.data.neo4j.core.schema.RelationshipDescription;
@@ -163,6 +169,12 @@ public class Neo4jMappingContext
 		return this.getNodeDescription(targetClass)
 			.map(Neo4jPersistentEntity.class::cast)
 			.map(neo4jPersistentEntity -> new DefaultNeo4jMappingFunction<>(instantiators, neo4jPersistentEntity));
+	}
+
+	@Override
+	public StatementBuilder.OngoingMatchWithWhere prepareMatchOf(NodeDescription<?> nodeDescription, Optional<Condition> condition) {
+		Node rootNode = Cypher.node(nodeDescription.getPrimaryLabel()).named("n");
+		return Cypher.match(rootNode).where(condition.orElse(Conditions.noCondition()));
 	}
 
 	private Collection<RelationshipDescription> computeRelationshipsOf(String primaryLabel) {

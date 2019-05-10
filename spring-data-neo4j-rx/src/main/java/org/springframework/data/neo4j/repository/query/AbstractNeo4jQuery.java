@@ -34,6 +34,7 @@ abstract class AbstractNeo4jQuery implements RepositoryQuery {
 
 	protected final NodeManager nodeManager;
 	protected final Neo4jQueryMethod queryMethod;
+	protected final Class<?> domainType;
 
 	AbstractNeo4jQuery(NodeManager nodeManager, Neo4jQueryMethod queryMethod) {
 
@@ -42,6 +43,7 @@ abstract class AbstractNeo4jQuery implements RepositoryQuery {
 
 		this.nodeManager = nodeManager;
 		this.queryMethod = queryMethod;
+		this.domainType = queryMethod.getReturnedObjectType();
 	}
 
 	@Override
@@ -51,7 +53,6 @@ abstract class AbstractNeo4jQuery implements RepositoryQuery {
 
 	@Override
 	public final Object execute(Object[] parameters) {
-
 		return new Neo4jQueryExecution.DefaultQueryExecution(nodeManager).execute(createExecutableQuery(parameters));
 	}
 

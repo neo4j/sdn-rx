@@ -18,9 +18,23 @@
  */
 package org.springframework.data.neo4j.repository.query;
 
+import static org.springframework.data.neo4j.core.cypher.Cypher.*;
+
 import java.util.Iterator;
+import java.util.Optional;
 
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mapping.PersistentPropertyPath;
+import org.springframework.data.neo4j.core.cypher.Condition;
+import org.springframework.data.neo4j.core.cypher.Cypher;
+import org.springframework.data.neo4j.core.cypher.Statement;
+import org.springframework.data.neo4j.core.mapping.Neo4jMappingContext;
+import org.springframework.data.neo4j.core.mapping.Neo4jPersistentProperty;
+import org.springframework.data.neo4j.core.schema.NodeDescription;
+import org.springframework.data.neo4j.repository.query.Neo4jQueryMethod.Neo4jParameter;
+import org.springframework.data.neo4j.repository.query.Neo4jQueryMethod.Neo4jParameters;
+import org.springframework.data.repository.query.Parameter;
+import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
@@ -31,29 +45,70 @@ import org.springframework.data.repository.query.parser.PartTree;
  * @author Michael J. Simons
  * @since
  */
-public class CypherQueryCreator extends AbstractQueryCreator<ExecutableQuery, Object> {
+public class CypherQueryCreator extends AbstractQueryCreator<Statement, Condition> {
 
-	public CypherQueryCreator(PartTree tree, Class<?> domainType) {
+	private final Neo4jMappingContext mappingContext;
+	private final Class<?> domainType;
+	private final NodeDescription<?> nodeDescription;
+
+	private final Parameters<Neo4jParameters, Neo4jParameter> formalParameters;
+	private Iterator<Neo4jParameter> it;
+
+	public CypherQueryCreator(Neo4jMappingContext mappingContext, Class<?> domainType,
+		Parameters<Neo4jParameters, Neo4jParameter>  formalParameters, PartTree tree
+	) {
 		super(tree);
+
+		this.mappingContext = mappingContext;
+		this.domainType = domainType;
+		this.nodeDescription = this.mappingContext.getRequiredNodeDescription(this.domainType);
+		this.formalParameters = formalParameters;
 	}
 
 	@Override
-	protected Object create(Part part, Iterator<Object> iterator) {
-		return null;
+	protected Condition create(Part part, Iterator<Object> iterator) {
+
+		this.it = formalParameters.iterator();
+		return createImpl(part);
 	}
 
 	@Override
-	protected Object and(Part part, Object base, Iterator<Object> iterator) {
-		return null;
+	protected Condition and(Part part, Condition base, Iterator<Object> iterator) {
+
+		if (base == null) {
+			return create(part, iterator);
+		}
+
+		return base.and(createImpl(part));
 	}
 
 	@Override
-	protected Object or(Object base, Object criteria) {
-		return null;
+	protected Condition or(Condition base, Condition condition) {
+		return base.or(condition);
 	}
 
 	@Override
-	protected ExecutableQuery complete(Object criteria, Sort sort) {
-		return null;
+	protected Statement complete(Condition condition, Sort sort) {
+
+		return mappingContext
+			.prepareMatchOf(nodeDescription, Optional.of(condition))
+			.returning(Cypher.symbolicName("n"))
+			.build();
+	}
+
+	private Condition createImpl(Part part) {
+		PersistentPropertyPath<Neo4jPersistentProperty> path = mappingContext
+			.getPersistentPropertyPath(part.getProperty());
+		Neo4jPersistentProperty persistentProperty = path.getLeafProperty();
+
+		Neo4jParameter formalParameter = it.next();
+		switch (part.getType()) {
+
+			case SIMPLE_PROPERTY:
+				return property("n", persistentProperty.getPropertyName())
+					.isEqualTo(parameter(formalParameter.getNameOrIndex()));
+			default:
+				throw new IllegalArgumentException("Unsupported part type: " + part.getType());
+		}
 	}
 }

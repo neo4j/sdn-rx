@@ -18,10 +18,20 @@
  */
 package org.springframework.data.neo4j.repository.query;
 
+import static java.util.stream.Collectors.*;
+
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.data.neo4j.core.NodeManager;
-import org.springframework.data.repository.query.QueryMethod;
+import org.springframework.data.neo4j.core.cypher.Statement;
+import org.springframework.data.neo4j.core.cypher.renderer.CypherRenderer;
+import org.springframework.data.neo4j.core.mapping.Neo4jMappingContext;
+import org.springframework.data.neo4j.repository.query.Neo4jQueryMethod.Neo4jParameters;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.data.repository.query.ResultProcessor;
 import org.springframework.data.repository.query.parser.PartTree;
@@ -35,24 +45,41 @@ import org.springframework.data.repository.query.parser.PartTree;
  */
 public class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
 
-	private final PartTree tree;
+	private final Neo4jMappingContext neo4jMappingContext;
 	private final ResultProcessor processor;
+	private final PartTree tree;
 
-	public PartTreeNeo4jQuery(NodeManager nodeManager, Neo4jQueryMethod queryMethod) {
+	public PartTreeNeo4jQuery(
+		NodeManager nodeManager,
+		Neo4jMappingContext neo4jMappingContext,
+		Neo4jQueryMethod queryMethod
+	) {
 		super(nodeManager, queryMethod);
 
+		this.neo4jMappingContext = neo4jMappingContext;
 		this.processor = queryMethod.getResultProcessor();
-		this.tree = new PartTree(queryMethod.getName(), processor.getReturnedType().getDomainType());
 
+		this.tree = new PartTree(queryMethod.getName(), domainType);
 	}
 
 	@Override
 	protected ExecutableQuery createExecutableQuery(Object[] parameters) {
-		queryMethod.getParameters().forEach(p -> {
 
-			System.out.println(p + ", " + p.getName() + " " + p.getIndex() + " " + p.getPlaceholder());
-		});
-		Arrays.stream(parameters).forEach(System.out::println);
+		Neo4jParameters formalParameters = (Neo4jParameters) this.queryMethod.getParameters();
+		CypherQueryCreator statementCreator = new CypherQueryCreator(
+			neo4jMappingContext, domainType, formalParameters, tree
+		);
+
+		Statement statement = statementCreator.createQuery();
+
+		final Map<String, Object> actualParameters = formalParameters
+			.getBindableParameters().stream()
+			.collect(toMap(Neo4jQueryMethod.Neo4jParameter::getNameOrIndex, formalParameter -> parameters[formalParameter.getIndex()]));
+
+		System.out.println(CypherRenderer.create().render(statement));
+		System.out.println(actualParameters);
+
+
 		throw new UnsupportedOperationException("Not there yet.");
 	}
 

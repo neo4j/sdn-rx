@@ -65,12 +65,11 @@ class DefaultNodeManager implements NodeManager {
 
 	@Override
 	public Object executeQuery(String query) {
-
 		return neo4jClient.newQuery(query).fetch().all();
 	}
 
 	@Override
-	public <T> Optional<T> executeTypedQueryForObject(Supplier<String> querySupplier, Class<T> resultType, Map<String, Object> parameters) {
+	public <T> Optional<T> executeTypedQueryForObject(Class<T> resultType, String querySupplier, Map<String, Object> parameters) {
 
 		MappingSpec<Optional<T>, Collection<T>, T> mappingSpec = neo4jClient.newQuery(querySupplier)
 			.bindAll(parameters)
@@ -82,7 +81,7 @@ class DefaultNodeManager implements NodeManager {
 	}
 
 	@Override
-	public <T> Collection<T> executeTypedQueryForObjects(Supplier<String> querySupplier, Class<T> resultType, Map<String, Object> parameters) {
+	public <T> Collection<T> executeTypedQueryForObjects(Class<T> resultType, String querySupplier, Map<String, Object> parameters) {
 
 		MappingSpec<Optional<T>, Collection<T>, T> mappingSpec = neo4jClient.newQuery(querySupplier)
 			.bindAll(parameters)
@@ -108,14 +107,5 @@ class DefaultNodeManager implements NodeManager {
 		this.persistenceContext.deregister(managedEntity);
 
 		throw new UnsupportedOperationException("Not there yet.");
-	}
-
-	@Override
-	public NodeDescription<?> describe(Class<?> clazz) {
-
-		// @formatter:off
-		return schema.getNodeDescription(clazz)
-			.orElseThrow(() -> new IllegalArgumentException(String.format("%s is not a managed class", clazz.getName())));
-		// @formatter:on
 	}
 }

@@ -47,9 +47,9 @@ interface Neo4jQueryExecution {
 			boolean collectionQuery = query.isCollectionQuery();
 
 			if (collectionQuery) {
-				return nodeManager.executeTypedQueryForObjects(query.getQuerySupplier(), returnedType);
+				return nodeManager.executeTypedQueryForObjects(returnedType, query.getCypher());
 			} else {
-				return nodeManager.executeTypedQueryForObject(query.getQuerySupplier(), returnedType);
+				return nodeManager.executeTypedQueryForObject(returnedType, query.getCypher());
 			}
 
 		}

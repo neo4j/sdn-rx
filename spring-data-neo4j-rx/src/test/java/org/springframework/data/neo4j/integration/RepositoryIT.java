@@ -308,7 +308,7 @@ class RepositoryIT {
 	@Test
 	void findOneBySimpleProperty() {
 
-		Optional<PersonWithAllConstructor> optionalPerson = repository.findOneByName(TEST_PERSON1_NAME);
+		Optional<PersonWithAllConstructor> optionalPerson = repository.findOneByNameAndFirstName(TEST_PERSON1_NAME, TEST_PERSON1_FIRST_NAME);
 		assertThat(optionalPerson).isPresent().contains(person1);
 	}
 

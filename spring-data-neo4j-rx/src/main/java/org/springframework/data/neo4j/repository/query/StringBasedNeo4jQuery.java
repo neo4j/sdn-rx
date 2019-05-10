@@ -62,10 +62,9 @@ public class StringBasedNeo4jQuery extends AbstractNeo4jQuery {
 	@Override
 	protected ExecutableQuery createExecutableQuery(Object[] parameters) {
 
-		Class<?> returnedType = queryMethod.getReturnedObjectType();
 		boolean collectionQuery = queryMethod.isCollectionQuery();
 
-		return new ExecutableQuery(returnedType, collectionQuery, queryMethod::getAnnotatedQuery, Collections.emptyMap());
+		return new ExecutableQuery(super.domainType, collectionQuery, queryMethod.getAnnotatedQuery(), Collections.emptyMap());
 	}
 
 	@Override

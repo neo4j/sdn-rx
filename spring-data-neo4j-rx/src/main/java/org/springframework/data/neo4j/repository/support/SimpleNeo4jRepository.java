@@ -37,12 +37,13 @@ import org.springframework.data.neo4j.core.cypher.Conditions;
 import org.springframework.data.neo4j.core.cypher.Cypher;
 import org.springframework.data.neo4j.core.cypher.Expression;
 import org.springframework.data.neo4j.core.cypher.Functions;
-import org.springframework.data.neo4j.core.cypher.Node;
 import org.springframework.data.neo4j.core.cypher.SortItem;
 import org.springframework.data.neo4j.core.cypher.Statement;
 import org.springframework.data.neo4j.core.cypher.StatementBuilder;
+import org.springframework.data.neo4j.core.cypher.SymbolicName;
 import org.springframework.data.neo4j.core.cypher.renderer.CypherRenderer;
 import org.springframework.data.neo4j.core.cypher.renderer.Renderer;
+import org.springframework.data.neo4j.core.mapping.Neo4jMappingContext;
 import org.springframework.data.neo4j.core.schema.GraphPropertyDescription;
 import org.springframework.data.neo4j.core.schema.IdDescription;
 import org.springframework.data.neo4j.core.schema.NodeDescription;
@@ -66,28 +67,32 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 
 	private final NodeManager nodeManager;
 
+	private final Neo4jMappingContext mappingContext;
+
 	private final Class<T> nodeClass;
 
 	private final NodeDescription nodeDescription;
-	private Node node;
+	private SymbolicName rootNode;
 	private Expression idExpression;
 
-	SimpleNeo4jRepository(NodeManager nodeManager, Class<T> nodeClass) {
+	SimpleNeo4jRepository(NodeManager nodeManager, Neo4jMappingContext mappingContext, Class<T> nodeClass) {
+
 		this.nodeManager = nodeManager;
+		this.mappingContext = mappingContext;
 		this.nodeClass = nodeClass;
 
-		this.nodeDescription = nodeManager.describe(nodeClass);
-		this.node = Cypher.node(nodeDescription.getPrimaryLabel()).named("n");
+		this.nodeDescription = mappingContext.getRequiredNodeDescription(nodeClass);
+		this.rootNode = Cypher.symbolicName("n");
 
 		IdDescription idDescription = this.nodeDescription.getIdDescription();
 		switch (idDescription.getIdStrategy()) {
 			case INTERNAL:
-				idExpression = node.internalId();
+				idExpression = Functions.id(rootNode);
 				break;
 			case ASSIGNED:
 			case GENERATED:
 				idExpression = idDescription.getGraphPropertyName()
-					.map(this.node::property).get();
+					.map(propertyName -> property(rootNode.getName(), propertyName)).get();
 				break;
 			default:
 				throw new IllegalStateException("Unsupported ID strategy: %s" + idDescription.getIdStrategy());
@@ -97,20 +102,25 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 	@Override
 	public Iterable<T> findAll(Sort sort) {
 
-		Statement statement = match(node).returning(node).orderBy(createSort(sort)).build();
-		return nodeManager.executeTypedQueryForObjects(() -> renderer.render(statement), nodeClass);
+		Statement statement = mappingContext.prepareMatchOf(nodeDescription, Optional.empty())
+			.returning(rootNode)
+			.orderBy(createSort(sort))
+			.build();
+		return nodeManager.executeTypedQueryForObjects(nodeClass, renderer.render(statement));
 	}
 
 	@Override
 	public Page<T> findAll(Pageable pageable) {
 
-		StatementBuilder.OngoingMatchAndReturn returning = match(node).returning(node);
+		StatementBuilder.OngoingMatchAndReturn returning = mappingContext
+			.prepareMatchOf(nodeDescription, Optional.empty()).returning(rootNode);
 
 		StatementBuilder.BuildableMatch returningWithPaging = addPagingParameter(pageable, returning);
 
 		Statement statement = returningWithPaging.build();
 
-		List<T> allResult = new ArrayList<>(nodeManager.executeTypedQueryForObjects(() -> renderer.render(statement), nodeClass));
+		List<T> allResult = new ArrayList<>(
+			nodeManager.executeTypedQueryForObjects(nodeClass, renderer.render(statement)));
 		LongSupplier totalCountSupplier = this::count;
 		return PageableExecutionUtils.getPage(allResult, pageable, totalCountSupplier);
 	}
@@ -118,13 +128,15 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 	@Override
 	public <S extends T> Page<S> findAll(Example<S> example, Pageable pageable) {
 
-		StatementBuilder.OngoingMatchAndReturn returning = match(node).where(createAndConditions(example)).returning(node);
+		StatementBuilder.OngoingMatchAndReturn returning = mappingContext
+			.prepareMatchOf(nodeDescription, Optional.of(createAndConditions(example))).returning(rootNode);
 
 		StatementBuilder.BuildableMatch returningWithPaging = addPagingParameter(pageable, returning);
 
 		Statement statement = returningWithPaging.build();
 
-		List<T> allResult = new ArrayList<>(nodeManager.executeTypedQueryForObjects(() -> renderer.render(statement), nodeClass));
+		List<T> allResult = new ArrayList<>(
+			nodeManager.executeTypedQueryForObjects(nodeClass, renderer.render(statement)));
 		LongSupplier totalCountSupplier = this::count;
 		return (Page<S>) PageableExecutionUtils.getPage(allResult, pageable, totalCountSupplier);
 	}
@@ -154,9 +166,12 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 
 	@Override
 	public Optional<T> findById(ID id) {
-		Statement statement = match(node).where(idExpression.isEqualTo(literalOf(id))).returning(node)
-				.build();
-		return nodeManager.executeTypedQueryForObject(() -> renderer.render(statement), nodeClass);
+
+		Statement statement = mappingContext
+			.prepareMatchOf(nodeDescription, Optional.of(idExpression.isEqualTo(literalOf(id))))
+			.returning(rootNode)
+			.build();
+		return nodeManager.executeTypedQueryForObject(nodeClass, renderer.render(statement));
 	}
 
 	@Override
@@ -167,23 +182,27 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 	@Override
 	public Iterable<T> findAll() {
 
-		Statement statement = match(node).returning(node).build();
-		return nodeManager.executeTypedQueryForObjects(() -> renderer.render(statement), nodeClass);
+		Statement statement = mappingContext.prepareMatchOf(nodeDescription, Optional.empty()).returning(rootNode)
+			.build();
+		return nodeManager.executeTypedQueryForObjects(nodeClass, renderer.render(statement));
 	}
 
 	@Override
 	public Iterable<T> findAllById(Iterable<ID> ids) {
-		Statement statement = match(node).where(idExpression.isIn((Iterable<Long>) ids)).returning(node)
-				.build();
-		return nodeManager.executeTypedQueryForObjects(() -> renderer.render(statement), nodeClass);
+
+		Statement statement = mappingContext
+			.prepareMatchOf(nodeDescription, Optional.of(idExpression.isIn((Iterable<Long>) ids))).returning(rootNode)
+			.build();
+		return nodeManager.executeTypedQueryForObjects(nodeClass, renderer.render(statement));
 	}
 
 	@Override
 	public long count() {
 
-		Statement statement = match(node).returning(Functions.count(node)).build();
+		Statement statement = mappingContext.prepareMatchOf(nodeDescription, Optional.empty())
+			.returning(Functions.count(rootNode)).build();
 
-		return nodeManager.executeTypedQueryForObject(() -> renderer.render(statement), Long.class).get();
+		return nodeManager.executeTypedQueryForObject(Long.class, renderer.render(statement)).get();
 	}
 
 	@Override
@@ -217,30 +236,42 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 	@Override
 	public <S extends T> Optional<S> findOne(Example<S> example) {
 
-		Statement statement = match(node).where(createAndConditions(example)).returning(node).build();
+		Statement statement = mappingContext
+			.prepareMatchOf(nodeDescription, Optional.of(createAndConditions(example)))
+			.returning(rootNode)
+			.build();
 
-		return (Optional<S>) nodeManager.executeTypedQueryForObject(() -> renderer.render(statement), nodeClass);
+		return (Optional<S>) nodeManager.executeTypedQueryForObject(nodeClass, renderer.render(statement));
 	}
 
 	@Override
 	public <S extends T> Iterable<S> findAll(Example<S> example) {
-		Statement statement = match(node).where(createAndConditions(example)).returning(node).build();
 
-		return (Collection<S>) nodeManager.executeTypedQueryForObjects(() -> renderer.render(statement), nodeClass);
+		Statement statement = mappingContext.prepareMatchOf(nodeDescription, Optional.of(createAndConditions(example)))
+			.returning(Cypher.symbolicName("n"))
+			.build();
+
+		return (Collection<S>) nodeManager.executeTypedQueryForObjects(nodeClass, renderer.render(statement));
 	}
 
 	@Override
 	public <S extends T> Iterable<S> findAll(Example<S> example, Sort sort) {
-		Statement statement = match(node).where(createAndConditions(example)).returning(node).orderBy(createSort(sort)).build();
+		Statement statement = mappingContext
+			.prepareMatchOf(nodeDescription, Optional.of(createAndConditions(example)))
+			.returning(rootNode)
+			.orderBy(createSort(sort)).build();
 
-		return (Collection<S>) nodeManager.executeTypedQueryForObjects(() -> renderer.render(statement), nodeClass);
+		return (Collection<S>) nodeManager.executeTypedQueryForObjects(nodeClass, renderer.render(statement));
 	}
 
 	@Override
 	public <S extends T> long count(Example<S> example) {
-		Statement statement = match(node).where(createAndConditions(example)).returning(Functions.count(node)).build();
+		Statement statement = mappingContext
+			.prepareMatchOf(nodeDescription, Optional.of(createAndConditions(example)))
+			.returning(Functions.count(rootNode))
+			.build();
 
-		return nodeManager.executeTypedQueryForObject(() -> renderer.render(statement), Long.class).get();
+		return nodeManager.executeTypedQueryForObject(Long.class, renderer.render(statement)).get();
 	}
 
 	@Override
@@ -282,7 +313,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 
 			String propertyName = graphProperty.getPropertyName();
 
-			Condition condition = node.property(propertyName).isEqualTo(literalOf(propertyValue));
+			Condition condition = property(rootNode, propertyName).isEqualTo(literalOf(propertyValue));
 			conditionList.add(condition);
 		}
 
@@ -293,7 +324,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 
 		return sort.stream().map(order -> {
 			String property = order.getProperty();
-			SortItem sortItem = Cypher.sort(node.property(property));
+			SortItem sortItem = Cypher.sort(property(rootNode, property));
 
 			// Spring's Sort.Order defaults to ascending, so we just need to change this if we have descending order.
 			if (order.isDescending()) {

@@ -25,6 +25,9 @@ import java.util.function.Function;
 
 import org.apiguardian.api.API;
 import org.neo4j.driver.Record;
+import org.springframework.data.neo4j.core.cypher.Condition;
+import org.springframework.data.neo4j.core.cypher.Node;
+import org.springframework.data.neo4j.core.cypher.StatementBuilder;
 
 /**
  * Contains the descriptions of all nodes, their properties and relationships known to SDN-RX.
@@ -58,6 +61,14 @@ public interface Schema {
 	 */
 	Optional<NodeDescription<?>> getNodeDescription(Class<?> underlyingClass);
 
+	default NodeDescription<?> getRequiredNodeDescription(Class<?> underlyingClass) {
+
+		// @formatter:off
+		return getNodeDescription(underlyingClass)
+			.orElseThrow(() -> new IllegalArgumentException(String.format("%s is not a managed class", underlyingClass.getName())));
+		// @formatter:on
+	}
+
 	/**
 	 * This returns the outgoing relationships this node has to other nodes.
 	 *
@@ -81,4 +92,6 @@ public interface Schema {
 	 * @return An emtpy optional if the target class is unknown, otherwise an optional containing a stateless, reusable mapping function
 	 */
 	<T> Optional<Function<Record, T>> getMappingFunctionFor(Class<T> targetClass);
+
+	StatementBuilder.OngoingMatchWithWhere prepareMatchOf(NodeDescription<?> nodeDescription, Optional<Condition> condition);
 }

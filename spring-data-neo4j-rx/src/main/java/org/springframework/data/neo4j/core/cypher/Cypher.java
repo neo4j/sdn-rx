@@ -62,13 +62,26 @@ public final class Cypher {
 		return Node.create().named(symbolicName);
 	}
 
+	public static Property property(String containerName, String name) {
+		return property(symbolicName(containerName), name);
+	}
+
+	public static Property property(SymbolicName containerName, String name) {
+		return Property.create(containerName, name);
+	}
+
+	public static SymbolicName symbolicName(String value) {
+		return new SymbolicName(value);
+	}
+
 	/**
-	 * Creates a new parameter placeholder.
-	 * @param name
-	 * @return
+	 * Creates a new parameter placeholder. Existing $-signs will be removed.
+	 *
+	 * @param name The name of the parameter, must not be null
+	 * @return The new parameter
 	 */
 	public static Parameter parameter(String name) {
-		return new Parameter(name);
+		return Parameter.create(name);
 	}
 
 	/**

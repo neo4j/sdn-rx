@@ -44,7 +44,11 @@ public interface Expression extends Visitable {
 	}
 
 	default Condition isEqualTo(Expression rhs) {
-		return Comparison.create(this, "=", rhs);
+		return Conditions.isEqualTo(this, rhs);
+	}
+
+	default Condition matches(String s) {
+		return Conditions.matches(this, Cypher.literalOf(s));
 	}
 
 	// WIP

@@ -45,6 +45,17 @@ public final class Conditions {
 	}
 
 	/**
+	 * Creates a condition that matches if both expressions are equals according to {@code =}.
+	 *
+	 * @param lhs The left hand side of the comparision
+	 * @param rhs The right hand side of the comparision
+	 * @return An "equals" comparision
+	 */
+	static Condition isEqualTo(Expression lhs, Expression rhs) {
+		return Comparison.create(lhs, "=", rhs);
+	}
+
+	/**
 	 * Negates the given condition.
 	 *
 	 * @param condition The condition to negate. Must not be null.

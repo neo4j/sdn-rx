@@ -174,9 +174,8 @@ class RenderingVisitor extends ReflectiveVisitor {
 			.append(direction.getSymbol());
 	}
 
-	void enter(Property property) {
+	void leave(Property property) {
 		builder
-			.append(property.getParentAlias())
 			.append(".")
 			.append(property.getName());
 	}
