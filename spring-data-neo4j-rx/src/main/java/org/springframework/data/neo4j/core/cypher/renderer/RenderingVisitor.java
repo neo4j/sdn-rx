@@ -137,6 +137,9 @@ class RenderingVisitor extends ReflectiveVisitor {
 
 	void enter(Return returning) {
 		builder.append("RETURN ");
+		if (returning.isDistinct()) {
+			builder.append("DISTINCT ");
+		}
 	}
 
 	void enter(Delete delete) {

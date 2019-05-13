@@ -21,23 +21,27 @@ package org.springframework.data.neo4j.core.cypher;
 import org.apiguardian.api.API;
 import org.springframework.data.neo4j.core.cypher.support.Visitable;
 import org.springframework.data.neo4j.core.cypher.support.Visitor;
+import org.springframework.lang.Nullable;
 
 /**
- * See <a href="https://s3.amazonaws.com/artifacts.opencypher.org/M14/railroad/Return.html">Return</a>.
+ * See <a href="https://s3.amazonaws.com/artifacts.opencypher.org/M14/railroad/With.html">With</a>.
  *
  * @author Michael J. Simons
+ * @soundtrack Ferris MC - Ferris MC's Audiobiographie
  * @since 1.0
  */
 @API(status = API.Status.INTERNAL, since = "1.0")
-public final class Return implements Visitable {
-
+public final class With implements Visitable {
 	private final boolean distinct;
 
 	private final ReturnBody body;
 
-	Return(boolean distinct, ExpressionList returnItems, Order order, Skip skip, Limit limit) {
+	@Nullable private final Where where;
+
+	With(boolean distinct, ExpressionList returnItems, Order order, Skip skip, Limit limit, @Nullable Where where) {
 		this.distinct = distinct;
 		this.body = new ReturnBody(returnItems, order, skip, limit);
+		this.where = where;
 	}
 
 	public boolean isDistinct() {
@@ -48,6 +52,7 @@ public final class Return implements Visitable {
 	public void accept(Visitor visitor) {
 		visitor.enter(this);
 		this.body.accept(visitor);
+		Visitable.visitIfNotNull(where, visitor);
 		visitor.leave(this);
 	}
 }

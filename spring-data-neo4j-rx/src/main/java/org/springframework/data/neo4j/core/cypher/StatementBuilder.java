@@ -98,7 +98,7 @@ public interface StatementBuilder {
 	 * A match that exposes {@code returning} and for which it is not decided whether the optional
 	 * where part has been used or note.
 	 */
-	interface OngoingMatch extends ExposesReturning, OngoingDetachDelete {
+	interface OngoingMatch extends ExposesReturning, ExposesWith, OngoingDetachDelete {
 
 		/**
 		 * Starts building a delete step that will use {@code DETACH} to remove relationships.
@@ -112,6 +112,12 @@ public interface StatementBuilder {
 	 * A match that knows what to return and which is ready to be build.
 	 */
 	interface OngoingMatchAndReturn extends ExposesOrderBy, ExposesSkip, ExposesLimit {
+	}
+
+	/**
+	 * A match that knows what to pipe to the next part of a multi part query.
+	 */
+	interface OngoingMatchAndWith extends OngoingMatchAndReturn, ExposesReturning {
 	}
 
 	interface OngoingMatchAndReturnWithOrder extends ExposesSkip, ExposesLimit {
@@ -156,6 +162,7 @@ public interface StatementBuilder {
 	}
 
 	interface ExposesReturning {
+
 		/**
 		 * Create a match that returns one or more expressions.
 		 *
@@ -163,6 +170,33 @@ public interface StatementBuilder {
 		 * @return A match that can be build now
 		 */
 		OngoingMatchAndReturn returning(Expression... expressions);
+
+		/**
+		 * Create a match that returns the distinct set of one or more expressions.
+		 *
+		 * @param expressions The expressions to be returned. Must not be null and be at least one expression.
+		 * @return A match that can be build now
+		 */
+		OngoingMatchAndReturn returningDistinct(Expression... expressions);
+	}
+
+	interface ExposesWith {
+
+		/**
+		 * Create a match that returns one or more expressions.
+		 *
+		 * @param expressions The expressions to be returned. Must not be null and be at least one expression.
+		 * @return A match that can be build now
+		 */
+		OngoingMatchAndWith with(Expression... expressions);
+
+		/**
+		 * Create a match that returns the distinct set of one or more expressions.
+		 *
+		 * @param expressions The expressions to be returned. Must not be null and be at least one expression.
+		 * @return A match that can be build now
+		 */
+		OngoingMatchAndWith withDistinct(Expression... expressions);
 	}
 
 	/**

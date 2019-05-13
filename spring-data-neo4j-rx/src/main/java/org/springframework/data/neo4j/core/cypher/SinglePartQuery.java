@@ -34,11 +34,11 @@ import org.springframework.util.Assert;
 @API(status = API.Status.INTERNAL, since = "1.0")
 public final class SinglePartQuery implements SingleQuery {
 
-	private @Nullable final ReadingClause readingClause;
+	@Nullable private final ReadingClause readingClause;
 
-	private @Nullable final UpdatingClause updatingClause;
+	@Nullable private final UpdatingClause updatingClause;
 
-	private @Nullable final Return aReturn;
+	@Nullable private final Return aReturn;
 
 	/**
 	 * Creates a single part query consisting of a return clause with an optional reading clause

@@ -19,35 +19,23 @@
 package org.springframework.data.neo4j.core.cypher;
 
 import org.apiguardian.api.API;
-import org.springframework.data.neo4j.core.cypher.support.Visitable;
-import org.springframework.data.neo4j.core.cypher.support.Visitor;
+import org.springframework.data.neo4j.core.cypher.Statement.SingleQuery;
 
 /**
- * See <a href="https://s3.amazonaws.com/artifacts.opencypher.org/M14/railroad/Return.html">Return</a>.
+ * See <a href="https://s3.amazonaws.com/artifacts.opencypher.org/M14/railroad/MultiPartQuery.html">MultiPartQuery</a>.
  *
  * @author Michael J. Simons
+ * @soundtrack Ferris MC - Ferris MC's Audiobiographie
  * @since 1.0
  */
 @API(status = API.Status.INTERNAL, since = "1.0")
-public final class Return implements Visitable {
+public class MultiPartQuery implements SingleQuery {
+/*
+	private @Nullable final ReadingClause readingClause;
 
-	private final boolean distinct;
+	private @Nullable final UpdatingClause updatingClause;
 
-	private final ReturnBody body;
+ */
 
-	Return(boolean distinct, ExpressionList returnItems, Order order, Skip skip, Limit limit) {
-		this.distinct = distinct;
-		this.body = new ReturnBody(returnItems, order, skip, limit);
-	}
-
-	public boolean isDistinct() {
-		return distinct;
-	}
-
-	@Override
-	public void accept(Visitor visitor) {
-		visitor.enter(this);
-		this.body.accept(visitor);
-		visitor.leave(this);
-	}
+ //static class MultiPartQueryElement
 }

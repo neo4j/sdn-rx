@@ -248,9 +248,32 @@ public class CypherTest {
 					.isEqualTo(
 						"MATCH (u:`User`) RETURN u SKIP 1 LIMIT 1");
 			}
+
+			@Test
+			void distinct() {
+				Statement statement = Cypher.match(userNode).returningDistinct(userNode).skip(1).limit(1).build();
+				assertThat(cypherRenderer.render(statement))
+					.isEqualTo(
+						"MATCH (u:`User`) RETURN DISTINCT u SKIP 1 LIMIT 1");
+			}
 		}
 	}
 
+	@Nested
+	class SingleQueryMultiPart {
+		@Test
+		void simpleWith() {
+			Statement statement = Cypher
+				.match(userNode.relationshipTo(bikeNode, "OWNS"))
+				.where(userNode.property("a").isNull())
+				.with(bikeNode, userNode)
+				.returning(bikeNode, userNode)
+				.build();
+
+			assertThat(cypherRenderer.render(statement))
+				.isEqualTo("MATCH (u:`User`)-[:`OWNS`]->(b:`Bike`) WITH b, u RETURN u");
+		}
+	}
 	@Nested
 	class MultipleMatches {
 		@Test
@@ -772,6 +795,15 @@ public class CypherTest {
 				.isEqualTo(
 					"MATCH (u:`User`) WHERE (u.a IS NOT NULL AND u.b IS NULL) DETACH DELETE u RETURN u ORDER BY u.a ASC SKIP 2 LIMIT 1");
 
+			statement = Cypher.match(userNode)
+				.where(userNode.property("a").isNotNull()).and(userNode.property("b").isNull())
+				.detach().delete(userNode)
+				.returningDistinct(userNode).orderBy(userNode.property("a").ascending()).skip(2).limit(1)
+				.build();
+
+			assertThat(cypherRenderer.render(statement))
+				.isEqualTo(
+					"MATCH (u:`User`) WHERE (u.a IS NOT NULL AND u.b IS NULL) DETACH DELETE u RETURN DISTINCT u ORDER BY u.a ASC SKIP 2 LIMIT 1");
 		}
 
 		@Test

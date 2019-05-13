@@ -21,33 +21,37 @@ package org.springframework.data.neo4j.core.cypher;
 import org.apiguardian.api.API;
 import org.springframework.data.neo4j.core.cypher.support.Visitable;
 import org.springframework.data.neo4j.core.cypher.support.Visitor;
+import org.springframework.lang.Nullable;
 
 /**
- * See <a href="https://s3.amazonaws.com/artifacts.opencypher.org/M14/railroad/Return.html">Return</a>.
+ * The container or "body" for return items, order and optional skip and things.
+ * See <a href="https://s3.amazonaws.com/artifacts.opencypher.org/M14/railroad/ReturnBody.html">ReturnBody</a>
  *
  * @author Michael J. Simons
+ * @soundtrack Ferris MC - Ferris MC's Audiobiographie
  * @since 1.0
  */
 @API(status = API.Status.INTERNAL, since = "1.0")
-public final class Return implements Visitable {
+public final class ReturnBody implements Visitable {
 
-	private final boolean distinct;
+	private final ExpressionList returnItems;
 
-	private final ReturnBody body;
+	@Nullable private final Order order;
+	@Nullable private final Skip skip;
+	@Nullable private final Limit limit;
 
-	Return(boolean distinct, ExpressionList returnItems, Order order, Skip skip, Limit limit) {
-		this.distinct = distinct;
-		this.body = new ReturnBody(returnItems, order, skip, limit);
-	}
-
-	public boolean isDistinct() {
-		return distinct;
+	ReturnBody(ExpressionList returnItems, @Nullable Order order, @Nullable Skip skip, @Nullable Limit limit) {
+		this.returnItems = returnItems;
+		this.order = order;
+		this.skip = skip;
+		this.limit = limit;
 	}
 
 	@Override
 	public void accept(Visitor visitor) {
-		visitor.enter(this);
-		this.body.accept(visitor);
-		visitor.leave(this);
+		returnItems.accept(visitor);
+		Visitable.visitIfNotNull(order, visitor);
+		Visitable.visitIfNotNull(skip, visitor);
+		Visitable.visitIfNotNull(limit, visitor);
 	}
 }

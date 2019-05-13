@@ -80,9 +80,33 @@ class DefaultStatementBuilder
 	@Override
 	public OngoingMatchAndReturn returning(Expression... expressions) {
 
-		DefaultStatementWithReturnBuilder ongoingMatchAndReturn = new DefaultStatementWithReturnBuilder();
+		DefaultStatementWithReturnBuilder ongoingMatchAndReturn = new DefaultStatementWithReturnBuilder(false);
 		ongoingMatchAndReturn.addExpressions(expressions);
 		return ongoingMatchAndReturn;
+	}
+
+	@Override
+	public OngoingMatchAndReturn returningDistinct(Expression... expressions) {
+
+		DefaultStatementWithReturnBuilder ongoingMatchAndReturn = new DefaultStatementWithReturnBuilder(true);
+		ongoingMatchAndReturn.addExpressions(expressions);
+		return ongoingMatchAndReturn;
+	}
+
+	@Override
+	public OngoingMatchAndWith with(Expression... expressions) {
+
+		DefaultStatementWithWithBuilder ongoingMatchAndWith = new DefaultStatementWithWithBuilder(false);
+		ongoingMatchAndWith.addExpressions(expressions);
+		return ongoingMatchAndWith;
+	}
+
+	@Override
+	public OngoingMatchAndWith withDistinct(Expression... expressions) {
+
+		DefaultStatementWithWithBuilder ongoingMatchAndWith = new DefaultStatementWithWithBuilder(true);
+		ongoingMatchAndWith.addExpressions(expressions);
+		return ongoingMatchAndWith;
 	}
 
 	@Override
@@ -131,9 +155,14 @@ class DefaultStatementBuilder
 
 		private final List<Expression> returnList = new ArrayList<>();
 		private final List<SortItem> sortItemList = new ArrayList<>();
+		private boolean distinct;
 		private SortItem lastSortItem;
 		private Skip skip;
 		private Limit limit;
+
+		DefaultStatementWithReturnBuilder(boolean distinct) {
+			this.distinct = distinct;
+		}
 
 		protected final DefaultStatementWithReturnBuilder addExpressions(Expression... expressions) {
 
@@ -199,7 +228,7 @@ class DefaultStatementBuilder
 				sortItemList.add(lastSortItem);
 			}
 			Order order = sortItemList.size() > 0 ? new Order(sortItemList) : null;
-			return Optional.of(new Return(returnItems, order, skip, limit));
+			return Optional.of(new Return(distinct, returnItems, order, skip, limit));
 		}
 
 		@Override
@@ -212,6 +241,22 @@ class DefaultStatementBuilder
 		}
 	}
 
+	class DefaultStatementWithWithBuilder extends DefaultStatementWithReturnBuilder implements OngoingMatchAndWith {
+		DefaultStatementWithWithBuilder(boolean distinct) {
+			super(distinct);
+		}
+
+		@Override
+		public OngoingMatchAndReturn returning(Expression... expressions) {
+			return this;
+		}
+
+		@Override
+		public OngoingMatchAndReturn returningDistinct(Expression... expressions) {
+			return this;
+		}
+	}
+
 	class DefaultStatementWithDeleteBuilder extends DefaultStatementWithReturnBuilder
 		implements OngoingDetachDelete, OngoingMatchAndDelete {
 
@@ -219,6 +264,8 @@ class DefaultStatementBuilder
 		private final boolean detach;
 
 		DefaultStatementWithDeleteBuilder(boolean detach) {
+
+			super(false);
 			this.detach = detach;
 		}
 
@@ -240,6 +287,14 @@ class DefaultStatementBuilder
 			Assert.notEmpty(expressions, "At least one expressions to return is required.");
 
 			super.returnList.addAll(Arrays.asList(expressions));
+			return this;
+		}
+
+		@Override
+		public OngoingMatchAndReturn returningDistinct(Expression... expressions) {
+
+			returning(expressions);
+			super.distinct = true;
 			return this;
 		}
 
