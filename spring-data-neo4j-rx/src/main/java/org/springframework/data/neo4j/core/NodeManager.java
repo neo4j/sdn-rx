@@ -18,9 +18,6 @@
  */
 package org.springframework.data.neo4j.core;
 
-import java.util.Collections;
-import java.util.Map;
-
 import org.apiguardian.api.API;
 import org.neo4j.driver.Transaction;
 import org.springframework.lang.Nullable;
@@ -47,11 +44,7 @@ public interface NodeManager {
 	@Nullable
 	Transaction getTransaction();
 
-	default <T> ExecutableQuery<T> createQuery(Class<T> resultType, String query) {
-		return createQuery(resultType, query, Collections.emptyMap());
-	}
-
-	<T> ExecutableQuery<T> createQuery(Class<T> resultType, String query, Map<String, Object> parameters);
+	<T> ExecutableQuery<T> toExecutableQuery(PreparedQuery<T> preparedQuery);
 
 	/**
 	 * Saves an entity. When the entity is not yet managed in this instance of the NodeManager, and will be registered as

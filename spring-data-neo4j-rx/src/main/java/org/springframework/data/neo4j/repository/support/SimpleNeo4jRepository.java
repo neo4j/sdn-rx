@@ -24,14 +24,17 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.LongSupplier;
 
+import org.neo4j.driver.Record;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.neo4j.core.NodeManager;
+import org.springframework.data.neo4j.core.PreparedQuery;
 import org.springframework.data.neo4j.core.cypher.Condition;
 import org.springframework.data.neo4j.core.cypher.Conditions;
 import org.springframework.data.neo4j.core.cypher.Cypher;
@@ -72,6 +75,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 	private final Class<T> nodeClass;
 
 	private final NodeDescription<?> nodeDescription;
+	private final Function<Record, ?> mappingFunction;
 	private SymbolicName rootNode;
 	private Expression idExpression;
 
@@ -82,6 +86,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 		this.nodeClass = nodeClass;
 
 		this.nodeDescription = mappingContext.getRequiredNodeDescription(nodeClass);
+		this.mappingFunction = mappingContext.getRequiredMappingFunctionFor(nodeClass);
 		this.rootNode = Cypher.symbolicName("n");
 
 		IdDescription idDescription = this.nodeDescription.getIdDescription();
@@ -106,7 +111,8 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 			.returning(rootNode)
 			.orderBy(createSort(sort))
 			.build();
-		return nodeManager.createQuery(nodeClass, renderer.render(statement)).getResults();
+
+		return nodeManager.toExecutableQuery(prepareQuery(statement)).getResults();
 	}
 
 	@Override
@@ -119,7 +125,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 
 		Statement statement = returningWithPaging.build();
 
-		List<T> allResult = nodeManager.createQuery(nodeClass, renderer.render(statement)).getResults();
+		List<T> allResult = nodeManager.toExecutableQuery(prepareQuery(statement)).getResults();
 		LongSupplier totalCountSupplier = this::count;
 		return PageableExecutionUtils.getPage(allResult, pageable, totalCountSupplier);
 	}
@@ -134,7 +140,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 
 		Statement statement = returningWithPaging.build();
 
-		List<T> allResult = nodeManager.createQuery(nodeClass, renderer.render(statement)).getResults();
+		List<T> allResult = nodeManager.toExecutableQuery(prepareQuery(statement)).getResults();
 		LongSupplier totalCountSupplier = this::count;
 		return (Page<S>) PageableExecutionUtils.getPage(allResult, pageable, totalCountSupplier);
 	}
@@ -169,7 +175,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 			.prepareMatchOf(nodeDescription, Optional.of(idExpression.isEqualTo(literalOf(id))))
 			.returning(rootNode)
 			.build();
-		return nodeManager.createQuery(nodeClass, renderer.render(statement)).getSingleResult();
+		return nodeManager.toExecutableQuery(prepareQuery(statement)).getSingleResult();
 	}
 
 	@Override
@@ -182,7 +188,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 
 		Statement statement = mappingContext.prepareMatchOf(nodeDescription, Optional.empty()).returning(rootNode)
 			.build();
-		return nodeManager.createQuery(nodeClass, renderer.render(statement)).getResults();
+		return nodeManager.toExecutableQuery(prepareQuery(statement)).getResults();
 	}
 
 	@Override
@@ -191,7 +197,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 		Statement statement = mappingContext
 			.prepareMatchOf(nodeDescription, Optional.of(idExpression.isIn((Iterable<Long>) ids))).returning(rootNode)
 			.build();
-		return nodeManager.createQuery(nodeClass, renderer.render(statement)).getResults();
+		return nodeManager.toExecutableQuery(prepareQuery(statement)).getResults();
 	}
 
 	@Override
@@ -200,7 +206,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 		Statement statement = mappingContext.prepareMatchOf(nodeDescription, Optional.empty())
 			.returning(Functions.count(rootNode)).build();
 
-		return nodeManager.createQuery(Long.class, renderer.render(statement)).getRequiredSingleResult();
+		return nodeManager.toExecutableQuery(prepareQuery(Long.class, statement)).getRequiredSingleResult();
 	}
 
 	@Override
@@ -240,7 +246,8 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 			.returning(rootNode)
 			.build();
 
-		return nodeManager.createQuery(example.getProbeType(), renderer.render(statement)).getSingleResult();
+		return nodeManager.toExecutableQuery(prepareQuery(example.getProbeType(), statement))
+			.getSingleResult();
 	}
 
 	@Override
@@ -251,7 +258,8 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 			.returning(rootNode)
 			.build();
 
-		return nodeManager.createQuery(example.getProbeType(), renderer.render(statement)).getResults();
+		return nodeManager.toExecutableQuery(
+			prepareQuery(example.getProbeType(), statement)).getResults();
 	}
 
 	@Override
@@ -263,7 +271,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 			.returning(rootNode)
 			.orderBy(createSort(sort)).build();
 
-		return nodeManager.createQuery(example.getProbeType(), renderer.render(statement)).getResults();
+		return nodeManager.toExecutableQuery(prepareQuery(example.getProbeType(), statement)).getResults();
 	}
 
 	@Override
@@ -275,7 +283,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 			.returning(Functions.count(rootNode))
 			.build();
 
-		return nodeManager.createQuery(Long.class, renderer.render(statement)).getRequiredSingleResult();
+		return nodeManager.toExecutableQuery(prepareQuery(Long.class, statement)).getRequiredSingleResult();
 	}
 
 	@Override
@@ -337,5 +345,22 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 			}
 			return sortItem;
 		}).toArray(SortItem[]::new);
+	}
+
+	private PreparedQuery<T> prepareQuery(Statement statement) {
+		return prepareQuery(nodeClass, statement);
+	}
+
+	private <T> PreparedQuery<T> prepareQuery(Class<T> resultType, Statement statement) {
+
+		Function<Record, ?> mappingFunctionToUse = this.mappingFunction;
+		if (!this.nodeClass.equals(resultType)) {
+			mappingFunctionToUse = mappingContext.getMappingFunctionFor(resultType).orElse(null);
+		}
+
+		return PreparedQuery.queryFor(resultType)
+			.withCypherQuery(renderer.render(statement))
+			.usingMappingFunction(mappingFunctionToUse)
+			.build();
 	}
 }

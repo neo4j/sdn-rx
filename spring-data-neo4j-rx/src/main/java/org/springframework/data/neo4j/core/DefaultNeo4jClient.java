@@ -30,7 +30,6 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Collection;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -249,11 +248,11 @@ class DefaultNeo4jClient implements Neo4jClient {
 			String statementTemplate = cypherSupplier.get();
 
 			if (cypherLog.isDebugEnabled()) {
-				String parametersAsString = "";
-				if (!parameters.isEmpty()) {
-					parametersAsString = String.format(Locale.ENGLISH, "%n:params %s", parameters);
+				cypherLog.debug("Executing:{}{}", System.lineSeparator(), statementTemplate);
+
+				if (cypherLog.isTraceEnabled() && !parameters.isEmpty()) {
+					cypherLog.trace("with parameters:{}{}", System.lineSeparator(), parameters);
 				}
-				cypherLog.debug("Executing:{}{}{}", System.lineSeparator(), statementTemplate, parametersAsString);
 			}
 
 			StatementResult result = statementRunner.run(statementTemplate, parameters.get());

@@ -24,7 +24,6 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.apiguardian.api.API;
@@ -70,17 +69,17 @@ class DefaultNodeManager implements NodeManager {
 	}
 
 	@Override
-	public <T> ExecutableQuery<T> createQuery(Class<T> resultType, String query, Map<String, Object> parameters) {
+	public <T> ExecutableQuery<T> toExecutableQuery(PreparedQuery<T> preparedQuery) {
 
-		MappingSpec<Optional<T>, Collection<T>, T> mappingSpec = neo4jClient.newQuery(query)
-			.bindAll(parameters)
+		Class<T> resultType = preparedQuery.getResultType();
+		MappingSpec<Optional<T>, Collection<T>, T> mappingSpec = neo4jClient.newQuery(preparedQuery.getCypherQuery())
+			.bindAll(preparedQuery.getParameters())
 			.fetchAs(resultType);
-		RecordFetchSpec<Optional<T>, Collection<T>, T> fetchSpec = schema
-			.getMappingFunctionFor(resultType)
+		RecordFetchSpec<Optional<T>, Collection<T>, T> fetchSpec = preparedQuery.getOptionalMappingFunction()
 			.map(mappingFunction -> mappingSpec.mappedBy(mappingFunction))
 			.orElse(mappingSpec);
 
-		return new DefaultExecutableQuery(schema.getNodeDescription(resultType), query, fetchSpec);
+		return new DefaultExecutableQuery(preparedQuery, schema.getNodeDescription(resultType), fetchSpec);
 	}
 
 	@Override
@@ -104,8 +103,8 @@ class DefaultNodeManager implements NodeManager {
 	@RequiredArgsConstructor
 	class DefaultExecutableQuery<T> implements ExecutableQuery<T> {
 
+		private final PreparedQuery<T> preparedQuery;
 		private final Optional<NodeDescription<?>> optionalNodeDescription;
-		private final String query;
 		private final RecordFetchSpec<Optional<T>, Collection<T>, T> fetchSpec;
 
 		@Override
@@ -124,7 +123,8 @@ class DefaultNodeManager implements NodeManager {
 
 		@Override
 		public T getRequiredSingleResult() {
-			return fetchSpec.one().map(this::register).orElseThrow(() -> new NoResultException(1L, query));
+			return fetchSpec.one().map(this::register)
+				.orElseThrow(() -> new NoResultException(1L, preparedQuery.getCypherQuery()));
 		}
 
 		private T register(T entity) {

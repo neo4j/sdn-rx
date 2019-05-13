@@ -23,6 +23,7 @@ import static java.util.stream.Collectors.*;
 import java.util.Map;
 
 import org.springframework.data.neo4j.core.NodeManager;
+import org.springframework.data.neo4j.core.PreparedQuery;
 import org.springframework.data.neo4j.core.mapping.Neo4jMappingContext;
 import org.springframework.data.neo4j.repository.query.Neo4jQueryMethod.Neo4jParameters;
 import org.springframework.data.repository.query.ParameterAccessor;
@@ -40,20 +41,17 @@ import org.springframework.data.repository.query.parser.PartTree;
  */
 final class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
 
-	private final Neo4jMappingContext neo4jMappingContext;
 	private final ResultProcessor processor;
 	private final PartTree tree;
 
 	PartTreeNeo4jQuery(
 		NodeManager nodeManager,
-		Neo4jMappingContext neo4jMappingContext,
+		Neo4jMappingContext mappingContext,
 		Neo4jQueryMethod queryMethod
 	) {
-		super(nodeManager, queryMethod);
+		super(nodeManager, mappingContext, queryMethod);
 
-		this.neo4jMappingContext = neo4jMappingContext;
 		this.processor = queryMethod.getResultProcessor();
-
 		this.tree = new PartTree(queryMethod.getName(), domainType);
 	}
 
@@ -63,7 +61,7 @@ final class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
 		Neo4jParameters formalParameters = (Neo4jParameters) this.queryMethod.getParameters();
 		ParameterAccessor actualParameters = new ParametersParameterAccessor(formalParameters, parameters);
 		CypherQueryCreator queryCreator = new CypherQueryCreator(
-			neo4jMappingContext, domainType, tree, formalParameters, actualParameters
+			mappingContext, domainType, tree, formalParameters, actualParameters
 		);
 
 		String cypherQuery = queryCreator.createQuery();
@@ -71,8 +69,10 @@ final class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
 			.getBindableParameters().stream()
 			.collect(toMap(Neo4jQueryMethod.Neo4jParameter::getNameOrIndex, formalParameter -> parameters[formalParameter.getIndex()]));
 
-		return new PreparedQuery<>(super.domainType, super.queryMethod.isCollectionQuery(), cypherQuery,
-			boundedParameters);
+		return PreparedQuery.queryFor(super.domainType).withCypherQuery(cypherQuery)
+			.withParameters(boundedParameters)
+			.usingMappingFunction(mappingContext.getMappingFunctionFor(super.domainType).orElse(null))
+			.build();
 	}
 
 	@Override

@@ -61,7 +61,7 @@ public final class Neo4jQueryLookupStrategy implements QueryLookupStrategy {
 
 		Optional<Query> optionalQueryAnnotation = getQueryAnnotationOf(method);
 		if (optionalQueryAnnotation.isPresent()) {
-			return new StringBasedNeo4jQuery(nodeManager, queryMethod,
+			return new StringBasedNeo4jQuery(nodeManager, mappingContext, queryMethod,
 				getCypherQuery(optionalQueryAnnotation), optionalQueryAnnotation);
 		}
 

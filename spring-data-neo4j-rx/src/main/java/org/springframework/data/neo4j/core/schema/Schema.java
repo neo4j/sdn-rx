@@ -60,12 +60,14 @@ public interface Schema {
 	 */
 	Optional<NodeDescription<?>> getNodeDescription(Class<?> underlyingClass);
 
+	/**
+	 * @param underlyingClass
+	 * @return The node description for the given. class
+	 * @throws IllegalStateException When {@code targetClass} is not a known entity class.
+	 */
 	default NodeDescription<?> getRequiredNodeDescription(Class<?> underlyingClass) {
 
-		// @formatter:off
-		return getNodeDescription(underlyingClass)
-			.orElseThrow(() -> new IllegalArgumentException(String.format("%s is not a managed class", underlyingClass.getName())));
-		// @formatter:on
+		return getNodeDescription(underlyingClass).orElseThrow(() -> new UnknownEntityException(underlyingClass));
 	}
 
 	/**
@@ -91,6 +93,18 @@ public interface Schema {
 	 * @return An empty optional if the target class is unknown, otherwise an optional containing a stateless, reusable mapping function
 	 */
 	<T> Optional<Function<Record, T>> getMappingFunctionFor(Class<T> targetClass);
+
+	/**
+	 * @param targetClass The target class to which to map to.
+	 * @param <T>         Type of the target class
+	 * @return The default mapping function for the given target class
+	 * @throws IllegalStateException When {@code targetClass} is not a managed class
+	 * @see #getMappingFunctionFor(Class)
+	 */
+	default <T> Function<Record, T> getRequiredMappingFunctionFor(Class<T> targetClass) {
+
+		return getMappingFunctionFor(targetClass).orElseThrow(() -> new UnknownEntityException(targetClass));
+	}
 
 	/**
 	 * This will create a match statement that fits the given node description and may contains additional conditions.

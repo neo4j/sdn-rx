@@ -21,6 +21,8 @@ package org.springframework.data.neo4j.core;
 import java.util.List;
 import java.util.Optional;
 
+import org.apiguardian.api.API;
+
 /**
  * Interface for controlling query execution.
  *
@@ -29,6 +31,7 @@ import java.util.Optional;
  * @soundtrack Deichkind - Niveau weshalb warum
  * @since 1.0
  */
+@API(status = API.Status.STABLE, since = "1.0")
 public interface ExecutableQuery<T> {
 
 	/**

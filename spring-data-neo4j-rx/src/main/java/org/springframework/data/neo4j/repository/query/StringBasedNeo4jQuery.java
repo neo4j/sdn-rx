@@ -22,6 +22,8 @@ import java.util.Collections;
 import java.util.Optional;
 
 import org.springframework.data.neo4j.core.NodeManager;
+import org.springframework.data.neo4j.core.PreparedQuery;
+import org.springframework.data.neo4j.core.mapping.Neo4jMappingContext;
 import org.springframework.data.repository.query.RepositoryQuery;
 
 /**
@@ -35,19 +37,17 @@ final class StringBasedNeo4jQuery extends AbstractNeo4jQuery {
 
 	private final String cypherQuery;
 
-	private final boolean collectionQuery;
-
 	private final boolean countQuery;
 	private final boolean existsQuery;
 	private final boolean deleteQuery;
 
-	StringBasedNeo4jQuery(NodeManager nodeManager, Neo4jQueryMethod queryMethod, String cypherQuery,
+	StringBasedNeo4jQuery(NodeManager nodeManager, Neo4jMappingContext mappingContext, Neo4jQueryMethod queryMethod,
+		String cypherQuery,
 		Optional<Query> optionalQueryAnnotation) {
 
-		super(nodeManager, queryMethod);
+		super(nodeManager, mappingContext, queryMethod);
 
 		this.cypherQuery = cypherQuery;
-		this.collectionQuery = queryMethod.isCollectionQuery();
 
 		if (optionalQueryAnnotation.isPresent()) {
 			Query queryAnnotation = optionalQueryAnnotation.get();
@@ -64,7 +64,11 @@ final class StringBasedNeo4jQuery extends AbstractNeo4jQuery {
 	@Override
 	protected PreparedQuery<?> prepareQuery(Object[] parameters) {
 
-		return new PreparedQuery<>(super.domainType, collectionQuery, cypherQuery, Collections.emptyMap());
+		return PreparedQuery.queryFor(super.domainType)
+			.withCypherQuery(cypherQuery)
+			.withParameters(Collections.emptyMap()) // TODO Map parameters.
+			.usingMappingFunction(mappingContext.getMappingFunctionFor(super.domainType).orElse(null)) // Null is fine
+			.build();
 	}
 
 	@Override

@@ -16,28 +16,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.neo4j.repository.query;
+package org.springframework.data.neo4j.core.schema;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
-import java.util.Map;
+import org.apiguardian.api.API;
 
 /**
- * Typed preparation of a query that is used to create an {@link org.springframework.data.neo4j.core.ExecutableQuery} of the same type.
+ * Thrown when required information about a class or primary label is requested from the {@link Schema} and those information
+ * is not available.
  *
- * @param <T> The type of the objects returned by this query.
  * @author Michael J. Simons
- * @soundtrack Deichkind - Arbeit nervt
  * @since 1.0
  */
-@RequiredArgsConstructor
-@Getter
-final class PreparedQuery<T> {
+@API(status = API.Status.STABLE, since = "1.0")
+public final class UnknownEntityException extends IllegalStateException {
 
-	private final Class<T> resultType;
-	private final boolean collectionQuery;
-	private final String cypherQuery;
-	private final Map<String, Object> parameters;
+	private final Class<?> targetClass;
 
+	UnknownEntityException(Class<?> targetClass) {
+		super(String.format("%s is not a known entity", targetClass.getName()));
+		this.targetClass = targetClass;
+	}
+
+	public Class<?> getTargetClass() {
+		return targetClass;
+	}
 }

@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.neo4j.core.ExecutableQuery;
 import org.springframework.data.neo4j.core.NodeManager;
+import org.springframework.data.neo4j.core.PreparedQuery;
 
 /**
  * Set of classes to contain query execution strategies. Depending (mostly) on the return type of a
@@ -34,7 +35,7 @@ import org.springframework.data.neo4j.core.NodeManager;
 @FunctionalInterface
 interface Neo4jQueryExecution {
 
-	Object execute(PreparedQuery description);
+	Object execute(PreparedQuery description, boolean asCollectionQuery);
 
 	@RequiredArgsConstructor
 	class DefaultQueryExecution implements Neo4jQueryExecution {
@@ -42,14 +43,10 @@ interface Neo4jQueryExecution {
 		private final NodeManager nodeManager;
 
 		@Override
-		public Object execute(PreparedQuery description) {
+		public Object execute(PreparedQuery preparedQuery, boolean asCollectionQuery) {
 
-			Class<?> returnedType = description.getResultType();
-			boolean collectionQuery = description.isCollectionQuery();
-
-			ExecutableQuery executableQuery = nodeManager
-				.createQuery(returnedType, description.getCypherQuery(), description.getParameters());
-			if (collectionQuery) {
+			ExecutableQuery executableQuery = nodeManager.toExecutableQuery(preparedQuery);
+			if (asCollectionQuery) {
 				return executableQuery.getResults();
 			} else {
 				return executableQuery.getSingleResult();

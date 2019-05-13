@@ -19,6 +19,8 @@
 package org.springframework.data.neo4j.repository.query;
 
 import org.springframework.data.neo4j.core.NodeManager;
+import org.springframework.data.neo4j.core.PreparedQuery;
+import org.springframework.data.neo4j.core.mapping.Neo4jMappingContext;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.util.Assert;
@@ -33,15 +35,19 @@ import org.springframework.util.Assert;
 abstract class AbstractNeo4jQuery implements RepositoryQuery {
 
 	protected final NodeManager nodeManager;
+	protected final Neo4jMappingContext mappingContext;
 	protected final Neo4jQueryMethod queryMethod;
 	protected final Class<?> domainType;
 
-	AbstractNeo4jQuery(NodeManager nodeManager, Neo4jQueryMethod queryMethod) {
+	AbstractNeo4jQuery(NodeManager nodeManager,
+		Neo4jMappingContext mappingContext, Neo4jQueryMethod queryMethod) {
 
 		Assert.notNull(nodeManager, "The node manager is required.");
+		Assert.notNull(mappingContext, "The mapping context is required.");
 		Assert.notNull(queryMethod, "Query method must not be null!");
 
 		this.nodeManager = nodeManager;
+		this.mappingContext = mappingContext;
 		this.queryMethod = queryMethod;
 		this.domainType = queryMethod.getReturnedObjectType();
 	}
@@ -53,7 +59,8 @@ abstract class AbstractNeo4jQuery implements RepositoryQuery {
 
 	@Override
 	public final Object execute(Object[] parameters) {
-		return new Neo4jQueryExecution.DefaultQueryExecution(nodeManager).execute(prepareQuery(parameters));
+		return new Neo4jQueryExecution.DefaultQueryExecution(nodeManager)
+			.execute(prepareQuery(parameters), queryMethod.isCollectionQuery());
 	}
 
 	protected abstract PreparedQuery prepareQuery(Object[] parameters);
