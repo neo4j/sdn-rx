@@ -41,7 +41,7 @@ class Neo4jQueryLookupStrategyTest {
 
 		Method method = queryMethod("annotatedQuery");
 		Optional<Query> optionalQueryAnnotation = Neo4jQueryLookupStrategy.getQueryAnnotationOf(method);
-		assertThat(Neo4jQueryLookupStrategy.getCyperQuery(optionalQueryAnnotation)).isEqualTo(CUSTOM_CYPHER_QUERY);
+		assertThat(Neo4jQueryLookupStrategy.getCypherQuery(optionalQueryAnnotation)).isEqualTo(CUSTOM_CYPHER_QUERY);
 	}
 
 	@Test
@@ -50,7 +50,7 @@ class Neo4jQueryLookupStrategyTest {
 		Method method = queryMethod("invalidAnnotatedQuery");
 		Optional<Query> optionalQueryAnnotation = Neo4jQueryLookupStrategy.getQueryAnnotationOf(method);
 		assertThatExceptionOfType(MappingException.class)
-			.isThrownBy(() -> Neo4jQueryLookupStrategy.getCyperQuery(optionalQueryAnnotation))
+			.isThrownBy(() -> Neo4jQueryLookupStrategy.getCypherQuery(optionalQueryAnnotation))
 			.withMessage("Expected @Query annotation to have a value, but it did not.");
 	}
 

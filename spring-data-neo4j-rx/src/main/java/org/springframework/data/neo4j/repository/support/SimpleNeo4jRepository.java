@@ -248,7 +248,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 
 		NodeDescription<?> probeNodeDescription = mappingContext.getRequiredNodeDescription(example.getProbeType());
 		Statement statement = mappingContext.prepareMatchOf(probeNodeDescription, Optional.of(createAndConditions(example)))
-			.returning(Cypher.symbolicName("n"))
+			.returning(rootNode)
 			.build();
 
 		return nodeManager.createQuery(example.getProbeType(), renderer.render(statement)).getResults();

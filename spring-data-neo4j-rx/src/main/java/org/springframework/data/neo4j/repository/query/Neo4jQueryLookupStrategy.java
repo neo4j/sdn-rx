@@ -62,7 +62,7 @@ public final class Neo4jQueryLookupStrategy implements QueryLookupStrategy {
 		Optional<Query> optionalQueryAnnotation = getQueryAnnotationOf(method);
 		if (optionalQueryAnnotation.isPresent()) {
 			return new StringBasedNeo4jQuery(nodeManager, queryMethod,
-				getCyperQuery(optionalQueryAnnotation), optionalQueryAnnotation);
+				getCypherQuery(optionalQueryAnnotation), optionalQueryAnnotation);
 		}
 
 		return new PartTreeNeo4jQuery(nodeManager, mappingContext, queryMethod);
@@ -75,7 +75,7 @@ public final class Neo4jQueryLookupStrategy implements QueryLookupStrategy {
 		return Optional.ofNullable(AnnotatedElementUtils.findMergedAnnotation(method, Query.class));
 	}
 
-	static String getCyperQuery(Optional<Query> optionalQueryAnnotation) {
+	static String getCypherQuery(Optional<Query> optionalQueryAnnotation) {
 		return optionalQueryAnnotation.map(Query::value).filter(s -> !s.isEmpty())
 			.orElseThrow(() -> new MappingException("Expected @Query annotation to have a value, but it did not."));
 	}
