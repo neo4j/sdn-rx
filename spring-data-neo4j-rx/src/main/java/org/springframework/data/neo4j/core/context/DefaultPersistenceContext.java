@@ -58,12 +58,12 @@ public class DefaultPersistenceContext implements PersistenceContext {
 		int identityOfEntity = getIdentityOf(entity);
 
 		if (registeredObjectIds.contains(identityOfEntity)) {
-			log.info("Object " + entity + " was already registered");
+			log.debug("Object " + entity + " was already registered");
 			return;
 		}
 
 		registeredObjectIds.add(identityOfEntity);
-		entityTrackingStrategy.track(description, entity);
+		entityTrackingStrategy.track(entity, description);
 	}
 
 	@Override
@@ -71,7 +71,7 @@ public class DefaultPersistenceContext implements PersistenceContext {
 
 		int identityOfEntity = getIdentityOf(managedEntity);
 		if (!registeredObjectIds.contains(identityOfEntity)) {
-			log.warn("Cannot deregister " + managedEntity + " because it were never registered");
+			log.info("Cannot deregister " + managedEntity + " because it were never registered");
 			return;
 		}
 

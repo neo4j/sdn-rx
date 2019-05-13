@@ -63,7 +63,7 @@ public interface Schema {
 	/**
 	 * @param underlyingClass
 	 * @return The node description for the given. class
-	 * @throws IllegalStateException When {@code targetClass} is not a known entity class.
+	 * @throws UnknownEntityException When {@code targetClass} is not a known entity class.
 	 */
 	default NodeDescription<?> getRequiredNodeDescription(Class<?> underlyingClass) {
 

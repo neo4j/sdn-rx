@@ -31,7 +31,7 @@ import org.springframework.data.neo4j.core.PersistenceException.IllegalResultSiz
 @API(status = API.Status.STABLE, since = "1.0")
 public class NoResultException extends IllegalResultSizeException {
 
-	public NoResultException(long expectedNumberOfResults, String query) {
+	NoResultException(long expectedNumberOfResults, String query) {
 		super(expectedNumberOfResults, 0L, query);
 	}
 }

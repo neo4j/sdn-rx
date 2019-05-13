@@ -74,7 +74,7 @@ public interface PreparedQuery<T> {
 		Map<String, Object> parameters = Collections.emptyMap();
 		@Nullable Function<Record, ?> mappingFunction;
 
-		public OptionalBuildSteps(Class<CT> resultType, String cypherQuery) {
+		OptionalBuildSteps(Class<CT> resultType, String cypherQuery) {
 			this.resultType = resultType;
 			this.cypherQuery = cypherQuery;
 		}

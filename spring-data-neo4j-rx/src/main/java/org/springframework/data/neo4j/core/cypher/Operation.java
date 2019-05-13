@@ -23,7 +23,7 @@ import org.springframework.data.neo4j.core.cypher.support.Visitor;
 import org.springframework.util.Assert;
 
 /**
- * An binary operation.
+ * A binary operation.
  *
  * @author Michael J. Simons
  * @since 1.0
