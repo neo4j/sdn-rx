@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -46,25 +45,31 @@ class DefaultStatementBuilder
 	/**
 	 * Current list of matches to be generated.
 	 */
-	private final List<DefaultOngoingMatch> matchesList = new ArrayList<>();
-	/**
-	 * Will the next match generated be optional?
-	 */
-	private final AtomicBoolean nextMatchShouldBeOptional = new AtomicBoolean(false);
+	private final List<DefaultMatchBuilder> matchesList = new ArrayList<>();
+
 	/**
 	 * The latest ongoing match,
 	 */
-	private DefaultOngoingMatch currentOngoingMatch;
+	private DefaultMatchBuilder currentOngoingMatch;
+
+	/**
+	 * A list of already build withs.
+	 */
+	private final List<With> withList = new ArrayList<>();
 
 	@Override
-	public ExposesMatch optional() {
+	public OngoingMatchWithoutWhere optionalMatch(PatternElement... pattern) {
 
-		nextMatchShouldBeOptional.set(true);
-		return this;
+		return this.match(true, pattern);
 	}
 
 	@Override
 	public OngoingMatchWithoutWhere match(PatternElement... pattern) {
+
+		return this.match(false, pattern);
+	}
+
+	private OngoingMatchWithoutWhere match(boolean optional, PatternElement... pattern) {
 
 		Assert.notNull(pattern, "Patterns to match are required.");
 		Assert.notEmpty(pattern, "At least one pattern to match is required.");
@@ -72,7 +77,7 @@ class DefaultStatementBuilder
 		if (this.currentOngoingMatch != null) {
 			this.matchesList.add(this.currentOngoingMatch);
 		}
-		this.currentOngoingMatch = new DefaultOngoingMatch(this.nextMatchShouldBeOptional.getAndSet(false));
+		this.currentOngoingMatch = new DefaultMatchBuilder(optional);
 		this.currentOngoingMatch.matchList.addAll(Arrays.asList(pattern));
 		return this;
 	}
@@ -94,71 +99,86 @@ class DefaultStatementBuilder
 	}
 
 	@Override
-	public OngoingMatchAndWith with(Expression... expressions) {
+	public OngoingMatchAndWithWithoutWhere with(Expression... expressions) {
 
-		DefaultStatementWithWithBuilder ongoingMatchAndWith = new DefaultStatementWithWithBuilder(false);
+		return with(false, expressions);
+	}
+
+	@Override
+	public OngoingMatchAndWithWithoutWhere withDistinct(Expression... expressions) {
+
+		return with(true, expressions);
+	}
+
+	private OngoingMatchAndWithWithoutWhere with(boolean distinct, Expression... expressions) {
+
+		DefaultStatementWithWithBuilder ongoingMatchAndWith = new DefaultStatementWithWithBuilder(distinct,
+			buildMatchList().orElse(null), null);
 		ongoingMatchAndWith.addExpressions(expressions);
 		return ongoingMatchAndWith;
 	}
 
-	@Override
-	public OngoingMatchAndWith withDistinct(Expression... expressions) {
-
-		DefaultStatementWithWithBuilder ongoingMatchAndWith = new DefaultStatementWithWithBuilder(true);
-		ongoingMatchAndWith.addExpressions(expressions);
-		return ongoingMatchAndWith;
-	}
-
-	@Override
-	public OngoingDetachDelete detach() {
-
-		return new DefaultStatementWithDeleteBuilder(true);
-	}
 
 	@Override
 	public OngoingMatchAndDelete delete(Expression... expressions) {
 
-		return new DefaultStatementWithDeleteBuilder(false).delete(expressions);
+		return new DefaultStatementWithDeleteBuilder(false, expressions);
+	}
+
+	@Override
+	public OngoingMatchAndDelete detachDelete(Expression... expressions) {
+
+		return new DefaultStatementWithDeleteBuilder(true, expressions);
 	}
 
 	@Override
 	public OngoingMatchWithWhere where(Condition newCondition) {
 
-		this.currentOngoingMatch.where(newCondition);
+		this.currentOngoingMatch.conditionBuilder.where(newCondition);
 		return this;
 	}
 
 	@Override
 	public OngoingMatchWithWhere and(Condition additionalCondition) {
 
-		this.currentOngoingMatch.and(additionalCondition);
+		this.currentOngoingMatch.conditionBuilder.and(additionalCondition);
 		return this;
 	}
 
 	@Override
 	public OngoingMatchWithWhere or(Condition additionalCondition) {
 
-		this.currentOngoingMatch.or(additionalCondition);
+		this.currentOngoingMatch.conditionBuilder.or(additionalCondition);
 		return this;
 	}
 
-	protected MatchList buildMatchList() {
-		List<Match> matchList = Stream.concat(this.matchesList.stream(),
+	protected Optional<MatchList> buildMatchList() {
+		List<Match> completeMatchesList = Stream.concat(this.matchesList.stream(),
 			this.currentOngoingMatch == null ? Stream.empty() : Stream.of(this.currentOngoingMatch))
-			.map(DefaultOngoingMatch::buildMatch)
+			.map(DefaultMatchBuilder::buildMatch)
 			.collect(Collectors.toList());
-		return new MatchList(matchList);
+
+		this.currentOngoingMatch = null;
+		this.matchesList.clear();
+		return completeMatchesList.isEmpty() ? Optional.empty() : Optional.of(new MatchList(completeMatchesList));
 	}
+
+	DefaultStatementBuilder addFinishedWith(With with) {
+
+		withList.add(with);
+		return this;
+	}
+
 
 	class DefaultStatementWithReturnBuilder
 		implements OngoingMatchAndReturn, OngoingOrderDefinition, OngoingMatchAndReturnWithOrder {
 
-		private final List<Expression> returnList = new ArrayList<>();
-		private final List<SortItem> sortItemList = new ArrayList<>();
-		private boolean distinct;
-		private SortItem lastSortItem;
-		private Skip skip;
-		private Limit limit;
+		protected final List<Expression> returnList = new ArrayList<>();
+		protected final List<SortItem> sortItemList = new ArrayList<>();
+		protected boolean distinct;
+		protected SortItem lastSortItem;
+		protected Skip skip;
+		protected Limit limit;
 
 		DefaultStatementWithReturnBuilder(boolean distinct) {
 			this.distinct = distinct;
@@ -234,50 +254,152 @@ class DefaultStatementBuilder
 		@Override
 		public Statement build() {
 
-			MatchList matchList = buildMatchList();
 			// This must be filled at this stage
 			Return aReturn = buildReturn().get();
-			return SinglePartQuery.createReturningQuery(aReturn, matchList);
+			// The match list can be null (only return or the remainder of a with)
+			Optional<MatchList> optionalMatchList = buildMatchList();
+
+			SinglePartQuery singlePartQuery = SinglePartQuery
+				.createReturningQuery(aReturn, optionalMatchList.orElse(null));
+
+			if (withList.isEmpty()) {
+				return singlePartQuery;
+			} else {
+				return new MultiPartQuery(withList, singlePartQuery);
+			}
 		}
 	}
 
-	class DefaultStatementWithWithBuilder extends DefaultStatementWithReturnBuilder implements OngoingMatchAndWith {
-		DefaultStatementWithWithBuilder(boolean distinct) {
+	class DefaultStatementWithWithBuilder extends DefaultStatementWithReturnBuilder
+		implements OngoingMatchAndWithWithoutWhere, OngoingMatchAndWithWithWhere {
+
+		private final DefaultConditionBuilder conditionBuilder = new DefaultConditionBuilder();
+
+		private final ReadingClause readingClause;
+
+		private final UpdatingClause updatingClause;
+
+		DefaultStatementWithWithBuilder(boolean distinct, ReadingClause readingClause, UpdatingClause updatingClause) {
 			super(distinct);
+			this.readingClause = readingClause;
+			this.updatingClause = updatingClause;
+		}
+
+		protected final With buildWith() {
+
+			ExpressionList returnItems = new ExpressionList(super.returnList);
+
+			if (lastSortItem != null) {
+				sortItemList.add(lastSortItem);
+			}
+			Order order = sortItemList.size() > 0 ? new Order(sortItemList) : null;
+			Where where = conditionBuilder.buildCondition().map(Where::new).orElse(null);
+
+			if (readingClause != null) {
+				return With.createReadingWith(readingClause, distinct, returnItems, order, skip, limit, where);
+			}
+			throw new UnsupportedOperationException();
 		}
 
 		@Override
 		public OngoingMatchAndReturn returning(Expression... expressions) {
-			return this;
+
+			return DefaultStatementBuilder.this
+				.addFinishedWith(buildWith())
+				.returning(expressions);
 		}
 
 		@Override
 		public OngoingMatchAndReturn returningDistinct(Expression... expressions) {
-			return this;
-		}
-	}
 
-	class DefaultStatementWithDeleteBuilder extends DefaultStatementWithReturnBuilder
-		implements OngoingDetachDelete, OngoingMatchAndDelete {
-
-		private final List<Expression> deleteList = new ArrayList<>();
-		private final boolean detach;
-
-		DefaultStatementWithDeleteBuilder(boolean detach) {
-
-			super(false);
-			this.detach = detach;
+			return DefaultStatementBuilder.this
+				.addFinishedWith(buildWith())
+				.returning(expressions);
 		}
 
 		@Override
 		public OngoingMatchAndDelete delete(Expression... expressions) {
 
+			return DefaultStatementBuilder.this
+				.addFinishedWith(buildWith())
+				.delete(expressions);
+		}
+
+		@Override
+		public OngoingMatchAndDelete detachDelete(Expression... expressions) {
+
+			return DefaultStatementBuilder.this
+				.addFinishedWith(buildWith())
+				.detachDelete(expressions);
+		}
+
+		public OngoingMatchAndWithWithoutWhere with(Expression... expressions) {
+
+			return DefaultStatementBuilder.this
+				.addFinishedWith(buildWith())
+				.with(expressions);
+		}
+
+		@Override
+		public OngoingMatchAndWithWithoutWhere withDistinct(Expression... expressions) {
+
+			return DefaultStatementBuilder.this
+				.addFinishedWith(buildWith())
+				.withDistinct(expressions);
+		}
+
+		@Override
+		public OngoingMatchAndWithWithWhere where(Condition newCondition) {
+
+			this.conditionBuilder.where(newCondition);
+			return this;
+		}
+
+		@Override
+		public OngoingMatchAndWithWithWhere and(Condition additionalCondition) {
+
+			this.conditionBuilder.and(additionalCondition);
+			return this;
+		}
+
+		@Override
+		public OngoingMatchAndWithWithWhere or(Condition additionalCondition) {
+
+			this.conditionBuilder.or(additionalCondition);
+			return this;
+		}
+
+		@Override
+		public OngoingMatchWithoutWhere match(PatternElement... pattern) {
+
+			return DefaultStatementBuilder.this
+				.addFinishedWith(buildWith())
+				.match(pattern);
+		}
+
+		@Override
+		public OngoingMatchWithoutWhere optionalMatch(PatternElement... pattern) {
+
+			return DefaultStatementBuilder.this
+				.addFinishedWith(buildWith())
+				.optionalMatch(pattern);
+		}
+	}
+
+	class DefaultStatementWithDeleteBuilder extends DefaultStatementWithReturnBuilder
+		implements OngoingMatchAndDelete {
+
+		private final List<Expression> deleteList;
+		private final boolean detach;
+
+		DefaultStatementWithDeleteBuilder(boolean detach, Expression... expressions) {
+			super(false);
+			this.detach = detach;
+
 			Assert.notNull(expressions, "Expressions to delete are required.");
 			Assert.notEmpty(expressions, "At least one expressions to delete is required.");
 
-			this.deleteList.addAll(Arrays.asList(expressions));
-
-			return this;
+			this.deleteList = Arrays.asList(expressions);
 		}
 
 		@Override
@@ -307,25 +429,44 @@ class DefaultStatementBuilder
 		@Override
 		public Statement build() {
 
-			MatchList matchList = buildMatchList();
+			MatchList matchList = buildMatchList().get();
 			Delete delete = buildDelete();
 			Optional<Return> optionalReturn = buildReturn();
 
 			return SinglePartQuery.createUpdatingQuery(matchList, delete, optionalReturn.orElse(null));
 		}
+
+		@Override
+		public OngoingMatchAndWithWithoutWhere with(Expression... expressions) {
+			return null;
+		}
+
+		@Override
+		public OngoingMatchAndWithWithoutWhere withDistinct(Expression... expressions) {
+			return null;
+		}
 	}
 
-	class DefaultOngoingMatch {
+	static class DefaultMatchBuilder {
 
 		private final List<PatternElement> matchList = new ArrayList<>();
 
+		private final DefaultConditionBuilder conditionBuilder = new DefaultConditionBuilder();
+
 		private final boolean optional;
 
-		private Condition condition;
-
-		DefaultOngoingMatch(boolean optional) {
+		DefaultMatchBuilder(boolean optional) {
 			this.optional = optional;
 		}
+
+		Match buildMatch() {
+			Pattern pattern = new Pattern(this.matchList);
+			return new Match(optional, pattern, conditionBuilder.buildCondition().map(Where::new).orElse(null));
+		}
+	}
+
+	static final class DefaultConditionBuilder {
+		protected Condition condition;
 
 		void where(Condition newCondition) {
 
@@ -342,13 +483,12 @@ class DefaultStatementBuilder
 			this.condition = this.condition.or(additionalCondition);
 		}
 
-		boolean hasCondition() {
+		private boolean hasCondition() {
 			return !(this.condition == null || this.condition == CompoundCondition.EMPTY_CONDITION);
 		}
 
-		Match buildMatch() {
-			Pattern pattern = new Pattern(this.matchList);
-			return new Match(optional, pattern, hasCondition() ? new Where(this.condition) : null);
+		Optional<Condition> buildCondition() {
+			return hasCondition() ? Optional.of(this.condition) : Optional.empty();
 		}
 	}
 

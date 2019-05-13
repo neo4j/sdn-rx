@@ -87,11 +87,12 @@ public final class Cypher {
 	/**
 	 * Prepares an optional match statement.
 	 *
-	 * @return An optional match without any patterns yet.
+	 * @param pattern The patterns to match
+	 * @return An ongoing match that is used to specify an optional where and a required return clause
 	 */
-	public static ExposesMatch optional() {
+	public static ExposesMatch optionalMatch(PatternElement... pattern) {
 
-		return Statement.builder().optional();
+		return Statement.builder().optionalMatch(pattern);
 	}
 
 	/**

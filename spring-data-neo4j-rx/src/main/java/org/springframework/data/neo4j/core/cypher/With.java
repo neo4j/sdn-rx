@@ -32,13 +32,29 @@ import org.springframework.lang.Nullable;
  */
 @API(status = API.Status.INTERNAL, since = "1.0")
 public final class With implements Visitable {
+
+	@Nullable
+	private final ReadingClause readingClause;
+
+	private final UpdatingClause updatingClause;
+
 	private final boolean distinct;
 
 	private final ReturnBody body;
 
-	@Nullable private final Where where;
+	@Nullable
+	private final Where where;
 
-	With(boolean distinct, ExpressionList returnItems, Order order, Skip skip, Limit limit, @Nullable Where where) {
+	static With createReadingWith(ReadingClause readingClause, boolean distinct, ExpressionList returnItems,
+		Order order, Skip skip, Limit limit, @Nullable Where where) {
+
+		return new With(readingClause, null, distinct, returnItems, order, skip, limit, where);
+	}
+
+	private With(@Nullable ReadingClause readingClause, @Nullable UpdatingClause updatingClause, boolean distinct,
+		ExpressionList returnItems, Order order, Skip skip, Limit limit, @Nullable Where where) {
+		this.readingClause = readingClause;
+		this.updatingClause = updatingClause;
 		this.distinct = distinct;
 		this.body = new ReturnBody(returnItems, order, skip, limit);
 		this.where = where;
@@ -50,6 +66,7 @@ public final class With implements Visitable {
 
 	@Override
 	public void accept(Visitor visitor) {
+		Visitable.visitIfNotNull(readingClause, visitor);
 		visitor.enter(this);
 		this.body.accept(visitor);
 		Visitable.visitIfNotNull(where, visitor);

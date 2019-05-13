@@ -142,6 +142,17 @@ class RenderingVisitor extends ReflectiveVisitor {
 		}
 	}
 
+	void enter(With with) {
+		builder.append("WITH ");
+		if (with.isDistinct()) {
+			builder.append("DISTINCT ");
+		}
+	}
+
+	void leave(With with) {
+		builder.append(" ");
+	}
+
 	void enter(Delete delete) {
 
 		if (delete.isDetach()) {

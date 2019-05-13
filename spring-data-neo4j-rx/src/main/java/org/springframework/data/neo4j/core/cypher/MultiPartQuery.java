@@ -18,8 +18,12 @@
  */
 package org.springframework.data.neo4j.core.cypher;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apiguardian.api.API;
 import org.springframework.data.neo4j.core.cypher.Statement.SingleQuery;
+import org.springframework.data.neo4j.core.cypher.support.Visitor;
 
 /**
  * See <a href="https://s3.amazonaws.com/artifacts.opencypher.org/M14/railroad/MultiPartQuery.html">MultiPartQuery</a>.
@@ -30,12 +34,20 @@ import org.springframework.data.neo4j.core.cypher.Statement.SingleQuery;
  */
 @API(status = API.Status.INTERNAL, since = "1.0")
 public class MultiPartQuery implements SingleQuery {
-/*
-	private @Nullable final ReadingClause readingClause;
 
-	private @Nullable final UpdatingClause updatingClause;
+	private final List<With> withs;
 
- */
+	private final SinglePartQuery remainder;
 
- //static class MultiPartQueryElement
+	public MultiPartQuery(List<With> withs, SinglePartQuery remainder) {
+		this.withs = new ArrayList<>(withs);
+		this.remainder = remainder;
+	}
+
+	@Override
+	public void accept(Visitor visitor) {
+
+		withs.forEach(w -> w.accept(visitor));
+		remainder.accept(visitor);
+	}
 }
