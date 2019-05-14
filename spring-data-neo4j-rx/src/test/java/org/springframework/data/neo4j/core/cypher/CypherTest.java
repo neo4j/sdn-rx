@@ -57,7 +57,7 @@ public class CypherTest {
 			@Test
 			void asterikShouldWork() {
 				Statement statement = Cypher.match(bikeNode, userNode, Cypher.node("U").named("o"))
-					.returning(Cypher.asterik())
+					.returning(Cypher.asterisk())
 					.build();
 
 				assertThat(cypherRenderer.render(statement))

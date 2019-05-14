@@ -112,7 +112,7 @@ public interface Schema {
 	 * The {@code WITH} clause of this statement contains all nodes and relationships necessary to map a record to
 	 * the given {@code nodeDescription}.
 	 * <p/>
-	 * It is recommended to use {@link Cypher#asterik()} to return everything from the query in the end.
+	 * It is recommended to use {@link Cypher#asterisk()} to return everything from the query in the end.
 	 * <p/>
 	 * The root node is guaranted to have the symbolic name {@code n}.
 	 *

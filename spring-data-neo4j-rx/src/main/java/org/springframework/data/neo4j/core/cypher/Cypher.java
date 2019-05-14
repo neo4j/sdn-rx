@@ -58,7 +58,7 @@ public final class Cypher {
 	/**
 	 * @return The {@code *} wildcard literal.
 	 */
-	public static Asterisk asterik() {
+	public static Asterisk asterisk() {
 		return Asterisk.INSTANCE;
 	}
 
