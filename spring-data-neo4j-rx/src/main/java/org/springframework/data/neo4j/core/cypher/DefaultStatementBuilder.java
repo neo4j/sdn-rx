@@ -447,9 +447,9 @@ class DefaultStatementBuilder
 			return delete(true, expressions);
 		}
 
-		private OngoingMatchAndDelete delete(boolean detach, Expression... expressions) {
+		private OngoingMatchAndDelete delete(boolean nextDetach, Expression... expressions) {
 			DefaultStatementBuilder.this.addUpdatingClause(buildDelete());
-			return DefaultStatementBuilder.this.new DefaultStatementWithDeleteBuilder(detach, expressions);
+			return DefaultStatementBuilder.this.new DefaultStatementWithDeleteBuilder(nextDetach, expressions);
 		}
 
 		@Override
