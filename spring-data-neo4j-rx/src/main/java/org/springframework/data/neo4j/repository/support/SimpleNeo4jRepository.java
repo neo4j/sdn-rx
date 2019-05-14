@@ -76,7 +76,6 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 
 	private final NodeDescription<?> nodeDescription;
 	private final Function<Record, ?> mappingFunction;
-	private SymbolicName rootNode;
 	private Expression idExpression;
 
 	SimpleNeo4jRepository(NodeManager nodeManager, Neo4jMappingContext mappingContext, Class<T> nodeClass) {
@@ -87,9 +86,9 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 
 		this.nodeDescription = mappingContext.getRequiredNodeDescription(nodeClass);
 		this.mappingFunction = mappingContext.getRequiredMappingFunctionFor(nodeClass);
-		this.rootNode = Cypher.symbolicName("n");
 
-		IdDescription idDescription = this.nodeDescription.getIdDescription();
+		final SymbolicName rootNode = Cypher.symbolicName("n");
+		final IdDescription idDescription = this.nodeDescription.getIdDescription();
 		switch (idDescription.getIdStrategy()) {
 			case INTERNAL:
 				idExpression = Functions.id(rootNode);
@@ -108,7 +107,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 	public Iterable<T> findAll(Sort sort) {
 
 		Statement statement = mappingContext.prepareMatchOf(nodeDescription, Optional.empty())
-			.returning(rootNode)
+			.returning(asterik())
 			.orderBy(createSort(sort))
 			.build();
 
@@ -119,7 +118,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 	public Page<T> findAll(Pageable pageable) {
 
 		StatementBuilder.OngoingMatchAndReturn returning = mappingContext
-			.prepareMatchOf(nodeDescription, Optional.empty()).returning(rootNode);
+			.prepareMatchOf(nodeDescription, Optional.empty()).returning(asterik());
 
 		StatementBuilder.BuildableMatch returningWithPaging = addPagingParameter(pageable, returning);
 
@@ -134,7 +133,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 	public <S extends T> Page<S> findAll(Example<S> example, Pageable pageable) {
 
 		StatementBuilder.OngoingMatchAndReturn returning = mappingContext
-			.prepareMatchOf(nodeDescription, Optional.of(createAndConditions(example))).returning(rootNode);
+			.prepareMatchOf(nodeDescription, Optional.of(createAndConditions(example))).returning(asterik());
 
 		StatementBuilder.BuildableMatch returningWithPaging = addPagingParameter(pageable, returning);
 
@@ -173,7 +172,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 
 		Statement statement = mappingContext
 			.prepareMatchOf(nodeDescription, Optional.of(idExpression.isEqualTo(literalOf(id))))
-			.returning(rootNode)
+			.returning(asterik())
 			.build();
 		return nodeManager.toExecutableQuery(prepareQuery(statement)).getSingleResult();
 	}
@@ -186,7 +185,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 	@Override
 	public Iterable<T> findAll() {
 
-		Statement statement = mappingContext.prepareMatchOf(nodeDescription, Optional.empty()).returning(rootNode)
+		Statement statement = mappingContext.prepareMatchOf(nodeDescription, Optional.empty()).returning(asterik())
 			.build();
 		return nodeManager.toExecutableQuery(prepareQuery(statement)).getResults();
 	}
@@ -195,7 +194,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 	public Iterable<T> findAllById(Iterable<ID> ids) {
 
 		Statement statement = mappingContext
-			.prepareMatchOf(nodeDescription, Optional.of(idExpression.isIn((Iterable<Long>) ids))).returning(rootNode)
+			.prepareMatchOf(nodeDescription, Optional.of(idExpression.isIn((Iterable<Long>) ids))).returning(asterik())
 			.build();
 		return nodeManager.toExecutableQuery(prepareQuery(statement)).getResults();
 	}
@@ -204,7 +203,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 	public long count() {
 
 		Statement statement = mappingContext.prepareMatchOf(nodeDescription, Optional.empty())
-			.returning(Functions.count(rootNode)).build();
+			.returning(Functions.count(asterik())).build();
 
 		return nodeManager.toExecutableQuery(prepareQuery(Long.class, statement)).getRequiredSingleResult();
 	}
@@ -243,7 +242,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 		NodeDescription<?> probeNodeDescription = mappingContext.getRequiredNodeDescription(example.getProbeType());
 		Statement statement = mappingContext
 			.prepareMatchOf(probeNodeDescription, Optional.of(createAndConditions(example)))
-			.returning(rootNode)
+			.returning(asterik())
 			.build();
 
 		return nodeManager.toExecutableQuery(prepareQuery(example.getProbeType(), statement))
@@ -255,7 +254,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 
 		NodeDescription<?> probeNodeDescription = mappingContext.getRequiredNodeDescription(example.getProbeType());
 		Statement statement = mappingContext.prepareMatchOf(probeNodeDescription, Optional.of(createAndConditions(example)))
-			.returning(rootNode)
+			.returning(asterik())
 			.build();
 
 		return nodeManager.toExecutableQuery(
@@ -268,7 +267,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 		NodeDescription<?> probeNodeDescription = mappingContext.getRequiredNodeDescription(example.getProbeType());
 		Statement statement = mappingContext
 			.prepareMatchOf(probeNodeDescription, Optional.of(createAndConditions(example)))
-			.returning(rootNode)
+			.returning(asterik())
 			.orderBy(createSort(sort)).build();
 
 		return nodeManager.toExecutableQuery(prepareQuery(example.getProbeType(), statement)).getResults();
@@ -280,7 +279,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 		NodeDescription<?> probeNodeDescription = mappingContext.getRequiredNodeDescription(example.getProbeType());
 		Statement statement = mappingContext
 			.prepareMatchOf(probeNodeDescription, Optional.of(createAndConditions(example)))
-			.returning(Functions.count(rootNode))
+			.returning(Functions.count(asterik()))
 			.build();
 
 		return nodeManager.toExecutableQuery(prepareQuery(Long.class, statement)).getRequiredSingleResult();
@@ -306,6 +305,7 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 	private <S extends T> List<Condition> createConditionsFromProperties(Example<S> example) {
 
 		NodeDescription<?> probeNodeDescription = mappingContext.getRequiredNodeDescription(example.getProbeType());
+		SymbolicName rootNode = Cypher.symbolicName("n");
 		Collection<GraphPropertyDescription> graphProperties = probeNodeDescription.getGraphProperties();
 		DirectFieldAccessFallbackBeanWrapper beanWrapper = new DirectFieldAccessFallbackBeanWrapper(example.getProbe());
 		ExampleMatcher matcher = example.getMatcher();
@@ -334,6 +334,8 @@ class SimpleNeo4jRepository<T, ID> implements Neo4jRepository<T, ID> {
 	}
 
 	private SortItem[] createSort(Sort sort) {
+
+		SymbolicName rootNode = Cypher.symbolicName("n");
 
 		return sort.stream().map(order -> {
 			String property = order.getProperty();

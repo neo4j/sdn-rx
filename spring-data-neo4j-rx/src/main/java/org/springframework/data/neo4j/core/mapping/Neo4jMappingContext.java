@@ -43,7 +43,7 @@ import org.springframework.data.neo4j.core.cypher.Condition;
 import org.springframework.data.neo4j.core.cypher.Conditions;
 import org.springframework.data.neo4j.core.cypher.Cypher;
 import org.springframework.data.neo4j.core.cypher.Node;
-import org.springframework.data.neo4j.core.cypher.StatementBuilder;
+import org.springframework.data.neo4j.core.cypher.StatementBuilder.OngoingMatchAndWith;
 import org.springframework.data.neo4j.core.schema.NodeDescription;
 import org.springframework.data.neo4j.core.schema.Relationship;
 import org.springframework.data.neo4j.core.schema.RelationshipDescription;
@@ -171,9 +171,9 @@ public class Neo4jMappingContext
 	}
 
 	@Override
-	public StatementBuilder.OngoingMatchWithWhere prepareMatchOf(NodeDescription<?> nodeDescription, Optional<Condition> condition) {
+	public OngoingMatchAndWith prepareMatchOf(NodeDescription<?> nodeDescription, Optional<Condition> condition) {
 		Node rootNode = Cypher.node(nodeDescription.getPrimaryLabel()).named("n");
-		return Cypher.match(rootNode).where(condition.orElse(Conditions.noCondition()));
+		return Cypher.match(rootNode).where(condition.orElse(Conditions.noCondition())).with(rootNode);
 	}
 
 	private Collection<RelationshipDescription> computeRelationshipsOf(String primaryLabel) {
