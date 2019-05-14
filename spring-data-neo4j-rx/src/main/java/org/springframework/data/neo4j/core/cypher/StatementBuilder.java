@@ -303,6 +303,6 @@ public interface StatementBuilder {
 	/**
 	 * A buildable step that will create a MATCH ... DELETE statement.
 	 */
-	interface OngoingMatchAndDelete extends BuildableMatch, ExposesReturning, ExposesWith {
+	interface OngoingMatchAndDelete extends BuildableMatch, ExposesReturning, ExposesWith, ExposesDelete {
 	}
 }

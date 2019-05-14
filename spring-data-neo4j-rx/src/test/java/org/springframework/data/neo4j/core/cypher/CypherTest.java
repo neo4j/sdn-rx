@@ -894,7 +894,6 @@ public class CypherTest {
 					"MATCH (n) WHERE id(n) = 4711 OPTIONAL MATCH (n)-[r0]-() DELETE r0, n");
 		}
 
-		/*
 		@Test
 		void shouldRenderChainedDeletes() {
 			Node n = anyNode("n");
@@ -909,9 +908,8 @@ public class CypherTest {
 
 			assertThat(cypherRenderer.render(statement))
 				.isEqualTo(
-					"MATCH (n) WHERE id(n) = 4711 OPTIONAL MATCH (n)-[r0]-() DELETE r0, n, DELETE b DETACH DELETE u");
+					"MATCH (n) WHERE id(n) = 4711 OPTIONAL MATCH (n)-[r0]-() DELETE r0, n DELETE b DETACH DELETE u");
 		}
-		 */
 	}
 
 	@Nested

@@ -438,6 +438,21 @@ class DefaultStatementBuilder
 		}
 
 		@Override
+		public OngoingMatchAndDelete delete(Expression... expressions) {
+			return delete(false, expressions);
+		}
+
+		@Override
+		public OngoingMatchAndDelete detachDelete(Expression... expressions) {
+			return delete(true, expressions);
+		}
+
+		private OngoingMatchAndDelete delete(boolean detach, Expression... expressions) {
+			DefaultStatementBuilder.this.addUpdatingClause(buildDelete());
+			return DefaultStatementBuilder.this.new DefaultStatementWithDeleteBuilder(detach, expressions);
+		}
+
+		@Override
 		public OngoingMatchAndWithWithoutWhere with(Expression... expressions) {
 			return this.with(false, expressions);
 		}
