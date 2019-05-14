@@ -56,6 +56,13 @@ public final class Cypher {
 	}
 
 	/**
+	 * @return The {@code *} wildcard literal.
+	 */
+	public static Asterisk asterik() {
+		return Asterisk.INSTANCE;
+	}
+
+	/**
 	 * @return A node matching any node with the symbolic the given {@code symbolicName}.
 	 */
 	public static Node anyNode(String symbolicName) {
