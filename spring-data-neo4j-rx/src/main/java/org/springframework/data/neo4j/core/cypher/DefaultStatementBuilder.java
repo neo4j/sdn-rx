@@ -247,13 +247,12 @@ class DefaultStatementBuilder
 			}
 		}
 
-		protected final DefaultStatementWithReturnBuilder addExpressions(Expression... expressions) {
+		protected final void addExpressions(Expression... expressions) {
 
 			Assert.notNull(expressions, "Expressions to return are required.");
 			Assert.notEmpty(expressions, "At least one expressions to return is required.");
 
 			this.returnList.addAll(Arrays.asList(expressions));
-			return this;
 		}
 
 		protected final Optional<Return> buildReturn() {
