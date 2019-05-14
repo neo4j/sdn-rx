@@ -30,7 +30,7 @@ import org.springframework.lang.Nullable;
  * @since 1.0
  */
 @API(status = API.Status.INTERNAL, since = "1.0")
-public final class Match implements Visitable {
+public final class Match implements ReadingClause {
 
 	private final boolean optional;
 

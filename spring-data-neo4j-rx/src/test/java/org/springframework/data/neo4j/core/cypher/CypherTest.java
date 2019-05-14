@@ -303,9 +303,42 @@ public class CypherTest {
 				.build();
 
 			assertThat(cypherRenderer.render(statement))
-				.isEqualTo("MATCH (u:`User`)-[:`OWNS`]->(b:`Bike`) DELETE u WITH b, u RETURN u");
+				.isEqualTo("MATCH (u:`User`)-[:`OWNS`]->(b:`Bike`) WHERE u.a IS NULL DELETE u WITH b, u RETURN b, u");
+		}
+
+		@Test
+		void deletingSimpleWithReverse() {
+			Statement statement = Cypher
+				.match(userNode.relationshipTo(bikeNode, "OWNS"))
+				.where(userNode.property("a").isNull())
+				.with(bikeNode, userNode)
+				.delete(userNode)
+				.returning(bikeNode, userNode)
+				.build();
+
+			assertThat(cypherRenderer.render(statement))
+				.isEqualTo("MATCH (u:`User`)-[:`OWNS`]->(b:`Bike`) WHERE u.a IS NULL WITH b, u DELETE u RETURN b, u");
+		}
+
+		@Test
+		void mixedClausesWithWith() {
+
+			Node tripNode = Cypher.node("Trip").named("t");
+			Statement statement = Cypher
+				.match(userNode.relationshipTo(bikeNode, "OWNS"))
+				.match(tripNode)
+				.delete(tripNode)
+				.with(bikeNode, tripNode)
+				.match(userNode)
+				.with(bikeNode, userNode)
+				.returning(bikeNode, userNode)
+				.build();
+
+			assertThat(cypherRenderer.render(statement))
+				.isEqualTo("MATCH (u:`User`)-[:`OWNS`]->(b:`Bike`) MATCH (t:`Trip`) DELETE t WITH b, t MATCH (u) WITH b, u RETURN b, u");
 		}
 	}
+
 	@Nested
 	class MultipleMatches {
 		@Test
@@ -850,6 +883,25 @@ public class CypherTest {
 				.isEqualTo(
 					"MATCH (n) WHERE id(n) = 4711 OPTIONAL MATCH (n)-[r0]-() DELETE r0, n");
 		}
+
+		/*
+		@Test
+		void shouldRenderChainedDeletes() {
+			Node n = anyNode("n");
+			Relationship r = n.relationshipBetween(anyNode()).named("r0");
+			Statement statement = Cypher
+				.match(n).where(n.internalId().isEqualTo(literalOf(4711)))
+				.optionalMatch(r)
+				.delete(r, n)
+				.delete(bikeNode)
+				.detachDelete(userNode)
+				.build();
+
+			assertThat(cypherRenderer.render(statement))
+				.isEqualTo(
+					"MATCH (n) WHERE id(n) = 4711 OPTIONAL MATCH (n)-[r0]-() DELETE r0, n, DELETE b DETACH DELETE u");
+		}
+		 */
 	}
 
 	@Nested

@@ -33,21 +33,22 @@ import org.springframework.data.neo4j.core.cypher.support.Visitor;
  * @since 1.0
  */
 @API(status = API.Status.INTERNAL, since = "1.0")
-public class MultiPartQuery implements SingleQuery {
+public final class MultiPartQuery implements SingleQuery {
 
-	private final List<With> withs;
+	private final List<MultiPartElement> parts;
 
 	private final SinglePartQuery remainder;
 
-	public MultiPartQuery(List<With> withs, SinglePartQuery remainder) {
-		this.withs = new ArrayList<>(withs);
+	public MultiPartQuery(List<MultiPartElement> parts, SinglePartQuery remainder) {
+
+		this.parts = new ArrayList<>(parts);
 		this.remainder = remainder;
 	}
 
 	@Override
 	public void accept(Visitor visitor) {
 
-		withs.forEach(w -> w.accept(visitor));
+		parts.forEach(p -> p.accept(visitor));
 		remainder.accept(visitor);
 	}
 }
