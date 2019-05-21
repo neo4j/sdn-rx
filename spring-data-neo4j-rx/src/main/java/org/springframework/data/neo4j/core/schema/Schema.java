@@ -26,10 +26,6 @@ import java.util.function.BiFunction;
 import org.apiguardian.api.API;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.types.TypeSystem;
-import org.springframework.data.neo4j.core.cypher.Condition;
-import org.springframework.data.neo4j.core.cypher.Cypher;
-import org.springframework.data.neo4j.core.cypher.StatementBuilder.OngoingMatchAndDelete;
-import org.springframework.data.neo4j.core.cypher.StatementBuilder.OngoingMatchAndWith;
 
 /**
  * Contains the descriptions of all nodes, their properties and relationships known to SDN-RX.

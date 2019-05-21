@@ -164,7 +164,7 @@ class DefaultNeo4jClient implements Neo4jClient {
 					cypherLog.trace("with parameters:{}{}", System.lineSeparator(), parameters);
 				}
 			}
-			
+
 			StatementResult result = statementRunner.run(statementTemplate, parameters.get());
 			return result;
 		}
@@ -249,7 +249,7 @@ class DefaultNeo4jClient implements Neo4jClient {
 
 		private BiFunction<TypeSystem, Record, T> mappingFunction;
 
-		public DefaultRecordFetchSpec(String targetDatabase, RunnableStatement runnableStatement,
+		DefaultRecordFetchSpec(String targetDatabase, RunnableStatement runnableStatement,
 			BiFunction<TypeSystem, Record, T> mappingFunction) {
 			this.targetDatabase = targetDatabase;
 			this.runnableStatement = runnableStatement;
