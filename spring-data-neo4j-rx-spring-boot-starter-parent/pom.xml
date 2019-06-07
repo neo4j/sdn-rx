@@ -42,11 +42,17 @@
 
 	<properties>
 		<neo4j-java-driver-spring-boot-starter.version>1.0.0-alpha02</neo4j-java-driver-spring-boot-starter.version>
+		<spring-data-neo4j-rx.version>1.0.0.BUILD-SNAPSHOT</spring-data-neo4j-rx.version>
 		<testcontainers.version>1.10.7</testcontainers.version>
 	</properties>
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>org.neo4j.springframework.data</groupId>
+				<artifactId>spring-data-neo4j-rx</artifactId>
+				<version>${spring-data-neo4j-rx.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>org.neo4j.driver</groupId>
 				<artifactId>neo4j-java-driver-spring-boot-starter</artifactId>
