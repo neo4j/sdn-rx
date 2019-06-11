@@ -103,7 +103,7 @@ public class Neo4jExtension implements BeforeAllCallback {
 		}
 	}
 
-	static class ContainerAdapter implements ExtensionContext.Store.CloseableResource {
+	public static class ContainerAdapter implements ExtensionContext.Store.CloseableResource {
 
 		private final String imageName = Optional.ofNullable(System.getenv("SDN_RX_NEO4J_VERSION")).orElse("3.5.0");
 
