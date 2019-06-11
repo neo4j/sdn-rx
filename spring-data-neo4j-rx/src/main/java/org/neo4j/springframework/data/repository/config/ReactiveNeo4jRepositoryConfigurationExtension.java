@@ -22,6 +22,7 @@ import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.Collections;
 
+import org.apiguardian.api.API;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.neo4j.springframework.data.core.schema.Node;
@@ -40,6 +41,7 @@ import org.springframework.data.repository.core.RepositoryMetadata;
  * @author Michael J. Simons
  * @author Gerrit Meier
  */
+@API(status = API.Status.INTERNAL)
 public class ReactiveNeo4jRepositoryConfigurationExtension extends RepositoryConfigurationExtensionSupport {
 
 	private static final String MODULE_PREFIX = "neo4j";

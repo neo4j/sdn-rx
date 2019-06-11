@@ -20,6 +20,7 @@ package org.neo4j.springframework.data.repository.support;
 
 import java.io.Serializable;
 
+import org.apiguardian.api.API;
 import org.neo4j.springframework.data.core.Neo4jClient;
 import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
 import org.springframework.data.repository.Repository;
@@ -33,6 +34,7 @@ import org.springframework.data.repository.core.support.TransactionalRepositoryF
  * @author Michael J. Simons
  * @author Gerrit Meier
  */
+@API(status = API.Status.INTERNAL)
 public class Neo4jRepositoryFactoryBean<T extends Repository<S, ID>, S, ID extends Serializable>
 	extends TransactionalRepositoryFactoryBeanSupport<T, S, ID> {
 

@@ -33,6 +33,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import org.apiguardian.api.API;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.types.TypeSystem;
 import org.springframework.data.convert.EntityInstantiators;
@@ -55,6 +56,7 @@ import org.springframework.data.util.TypeInformation;
  *
  * @author Michael J. Simons
  */
+@API(status = API.Status.INTERNAL)
 public class Neo4jMappingContext
 	extends AbstractMappingContext<Neo4jPersistentEntity<?>, Neo4jPersistentProperty> implements Schema {
 
