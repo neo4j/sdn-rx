@@ -41,7 +41,7 @@ import org.springframework.data.repository.config.RepositoryConfigurationSource;
  * @author Gerrit Meier
  */
 @API(status = API.Status.INTERNAL, since = "1.0")
-public class Neo4jRepositoryConfigurationExtension extends RepositoryConfigurationExtensionSupport {
+public final class Neo4jRepositoryConfigurationExtension extends RepositoryConfigurationExtensionSupport {
 
 	private static final String MODULE_PREFIX = "neo4j";
 

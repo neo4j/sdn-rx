@@ -45,7 +45,7 @@ import org.springframework.util.Assert;
 /**
  * @author Gerrit Meier
  */
-@API(status = API.Status.INTERNAL, since = "1.0")
+@API(status = API.Status.STABLE, since = "1.0")
 public class ReactiveNeo4jTransactionManager extends AbstractReactiveTransactionManager {
 
 	/**

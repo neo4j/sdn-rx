@@ -57,7 +57,7 @@ import org.springframework.data.util.TypeInformation;
  * @author Michael J. Simons
  */
 @API(status = API.Status.INTERNAL, since = "1.0")
-public class Neo4jMappingContext
+public final class Neo4jMappingContext
 	extends AbstractMappingContext<Neo4jPersistentEntity<?>, Neo4jPersistentProperty> implements Schema {
 
 	/**
