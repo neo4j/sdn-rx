@@ -29,6 +29,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Transaction;
+import org.neo4j.driver.Values;
 import org.neo4j.springframework.data.config.AbstractNeo4jConfig;
 import org.neo4j.springframework.data.integration.shared.KotlinPerson;
 import org.neo4j.springframework.data.repository.config.EnableNeo4jRepositories;
@@ -64,7 +65,7 @@ class KotlinIT {
 		Session session = driver.session();
 		Transaction transaction = session.beginTransaction();
 		transaction.run("MATCH (n) detach delete n");
-		transaction.run("CREATE (n:KotlinPerson) SET n.name = '" + PERSON_NAME + "'");
+		transaction.run("CREATE (n:KotlinPerson) SET n.name = $personName", Values.parameters("personName", PERSON_NAME));
 		transaction.success();
 		transaction.close();
 		session.close();
