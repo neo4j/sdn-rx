@@ -7,7 +7,8 @@
 		"vscjava.vscode-java-pack",
 		"vscjava.vscode-spring-initializr",
 		"pivotal.vscode-spring-boot",
-		"redhat.vscode-xml"
+		"redhat.vscode-xml",
+		"humao.rest-client"
 	],
 	"settings":{
 		"java.home": "/docker-java-home"
