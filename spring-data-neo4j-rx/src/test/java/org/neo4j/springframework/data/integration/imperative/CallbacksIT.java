@@ -23,57 +23,31 @@ import static org.assertj.core.api.Assertions.*;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.neo4j.driver.Driver;
-import org.neo4j.driver.Record;
-import org.neo4j.driver.Session;
-import org.neo4j.driver.Transaction;
-import org.neo4j.driver.Value;
-import org.neo4j.driver.Values;
-import org.neo4j.driver.types.Node;
 import org.neo4j.springframework.data.config.AbstractNeo4jConfig;
+import org.neo4j.springframework.data.integration.shared.CallbacksITBase;
 import org.neo4j.springframework.data.integration.shared.ThingWithAssignedId;
 import org.neo4j.springframework.data.repository.config.EnableNeo4jRepositories;
 import org.neo4j.springframework.data.repository.event.BeforeBindCallback;
-import org.neo4j.springframework.data.test.Neo4jExtension;
-import org.neo4j.springframework.data.test.Neo4jExtension.Neo4jConnectionSupport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * @author Michael J. Simons
  */
-@ExtendWith(SpringExtension.class)
-@ExtendWith(Neo4jExtension.class)
 @ContextConfiguration(classes = CallbacksIT.Config.class)
-class CallbacksIT {
-
-	private static Neo4jConnectionSupport neo4jConnectionSupport;
+class CallbacksIT extends CallbacksITBase {
 
 	private final ThingRepository thingRepository;
-	private final Driver driver;
 
 	@Autowired CallbacksIT(ThingRepository thingRepository, Driver driver) {
-
+		super(driver);
 		this.thingRepository = thingRepository;
-		this.driver = driver;
-	}
-
-	@BeforeEach
-	void setupData() {
-
-		try (Transaction transaction = driver.session().beginTransaction()) {
-			transaction.run("MATCH (n) detach delete n");
-			transaction.success();
-		}
 	}
 
 	@Test
@@ -85,16 +59,7 @@ class CallbacksIT {
 
 		assertThat(thing.getName()).isEqualTo("A name (Edited)");
 
-		try (Session session = driver.session()) {
-			Record record = session
-				.run("MATCH (n:Thing) WHERE n.theId = $id RETURN n", Values.parameters("id", thing.getTheId()))
-				.single();
-
-			assertThat(record.containsKey("n")).isTrue();
-			Node node = record.get("n").asNode();
-			assertThat(node.get("theId").asString()).isEqualTo(thing.getTheId());
-			assertThat(node.get("name").asString()).isEqualTo("A name (Edited)");
-		}
+		verifyDatabase(Collections.singletonList(thing));
 	}
 
 	@Test
@@ -109,17 +74,7 @@ class CallbacksIT {
 		assertThat(savedThings).extracting(ThingWithAssignedId::getName)
 			.containsExactlyInAnyOrder("A name (Edited)", "Another name (Edited)");
 
-		try (Session session = driver.session()) {
-			Record record = session
-				.run("MATCH (n:Thing) WHERE n.theId in $ids RETURN COLLECT(n.name) as names",
-					Values.parameters("ids", Arrays.asList("id1", "id2")))
-				.single();
-
-			List<String> names = record.get("names").asList(Value::asString);
-			assertThat(names)
-				.hasSize(2)
-				.containsExactlyInAnyOrder("A name (Edited)", "Another name (Edited)");
-		}
+		verifyDatabase(savedThings);
 	}
 
 	@Configuration

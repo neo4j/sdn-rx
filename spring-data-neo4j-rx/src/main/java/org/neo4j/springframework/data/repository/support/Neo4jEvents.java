@@ -19,12 +19,11 @@
 package org.neo4j.springframework.data.repository.support;
 
 import org.neo4j.springframework.data.repository.event.BeforeBindCallback;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.mapping.callback.EntityCallbacks;
 import org.springframework.lang.Nullable;
 
 /**
- * Utility class that orchestrates both an {@link ApplicationEventPublisher} and {@link EntityCallbacks}.
+ * Utility class that orchestrates {@link EntityCallbacks}.
  * All the methods provided here check for their availability and do nothing when an event cannot be published.
  *
  * @author Michael J. Simons
@@ -32,16 +31,13 @@ import org.springframework.lang.Nullable;
  */
 final class Neo4jEvents {
 
-	private final @Nullable ApplicationEventPublisher eventPublisher;
 	private final @Nullable EntityCallbacks entityCallbacks;
 
-	Neo4jEvents(@Nullable ApplicationEventPublisher eventPublisher,
-		@Nullable EntityCallbacks entityCallbacks) {
-		this.eventPublisher = eventPublisher;
+	Neo4jEvents(@Nullable EntityCallbacks entityCallbacks) {
 		this.entityCallbacks = entityCallbacks;
 	}
 
-	protected <T> T maybeCallBeforeBind(T object) {
+	<T> T maybeCallBeforeBind(T object) {
 		if (entityCallbacks != null) {
 			return entityCallbacks.callback(BeforeBindCallback.class, object);
 		}

@@ -25,14 +25,12 @@ import java.util.Collections;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.neo4j.driver.Driver;
 import org.neo4j.springframework.data.config.AbstractNeo4jConfig;
 import org.neo4j.springframework.data.config.EnableNeo4jAuditing;
 import org.neo4j.springframework.data.integration.shared.AuditingITBase;
 import org.neo4j.springframework.data.integration.shared.ImmutableAuditableThing;
 import org.neo4j.springframework.data.repository.config.EnableNeo4jRepositories;
-import org.neo4j.springframework.data.test.Neo4jExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -40,14 +38,11 @@ import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * @author Michael J. Simons
  */
-@ExtendWith(SpringExtension.class)
-@ExtendWith(Neo4jExtension.class)
 @ContextConfiguration(classes = AuditingIT.Config.class)
 class AuditingIT extends AuditingITBase {
 

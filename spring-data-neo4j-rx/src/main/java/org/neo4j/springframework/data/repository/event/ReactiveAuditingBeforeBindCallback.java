@@ -40,6 +40,8 @@ import org.springframework.util.Assert;
 @API(status = API.Status.INTERNAL, since = "1.0")
 public final class ReactiveAuditingBeforeBindCallback implements ReactiveBeforeBindCallback<Object>, Ordered {
 
+	public static final int NEO4J_REACTIVE_AUDITING_ORDER = 100;
+
 	private final ObjectFactory<IsNewAwareAuditingHandler> auditingHandlerFactory;
 
 	/**
@@ -69,6 +71,6 @@ public final class ReactiveAuditingBeforeBindCallback implements ReactiveBeforeB
 	 */
 	@Override
 	public int getOrder() {
-		return 100;
+		return NEO4J_REACTIVE_AUDITING_ORDER;
 	}
 }

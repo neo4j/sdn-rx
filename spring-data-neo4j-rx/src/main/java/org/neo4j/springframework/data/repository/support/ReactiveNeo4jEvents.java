@@ -21,30 +21,26 @@ package org.neo4j.springframework.data.repository.support;
 import reactor.core.publisher.Mono;
 
 import org.neo4j.springframework.data.repository.event.ReactiveBeforeBindCallback;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.mapping.callback.ReactiveEntityCallbacks;
 import org.springframework.lang.Nullable;
 
 /**
- * Utility class that orchestrates both an {@link ApplicationEventPublisher} and {@link ReactiveEntityCallbacks}.
+ * Utility class that orchestrates {@link ReactiveEntityCallbacks}.
  * All the methods provided here check for their availability and do nothing when an event cannot be published.
  *
  * @author Michael J. Simons
  * @soundtrack Iron Maiden - Killers
  * @since 1.0
  */
-class ReactiveNeo4jEvents {
+final class ReactiveNeo4jEvents {
 
-	private final @Nullable ApplicationEventPublisher eventPublisher;
 	private final @Nullable ReactiveEntityCallbacks entityCallbacks;
 
-	ReactiveNeo4jEvents(@Nullable ApplicationEventPublisher eventPublisher,
-		@Nullable ReactiveEntityCallbacks entityCallbacks) {
-		this.eventPublisher = eventPublisher;
+	ReactiveNeo4jEvents(@Nullable ReactiveEntityCallbacks entityCallbacks) {
 		this.entityCallbacks = entityCallbacks;
 	}
 
-	protected <T> Mono<T> maybeCallBeforeBind(T object) {
+	<T> Mono<T> maybeCallBeforeBind(T object) {
 
 		if (entityCallbacks != null) {
 			return entityCallbacks.callback(ReactiveBeforeBindCallback.class, object);

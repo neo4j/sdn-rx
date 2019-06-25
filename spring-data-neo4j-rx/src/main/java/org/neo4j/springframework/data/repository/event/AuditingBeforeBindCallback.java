@@ -36,6 +36,8 @@ import org.springframework.util.Assert;
 @API(status = API.Status.INTERNAL, since = "1.0")
 public final class AuditingBeforeBindCallback implements BeforeBindCallback<Object>, Ordered {
 
+	public static final int NEO4J_AUDITING_ORDER = 100;
+
 	private final ObjectFactory<IsNewAwareAuditingHandler> auditingHandlerFactory;
 
 	/**
@@ -65,6 +67,6 @@ public final class AuditingBeforeBindCallback implements BeforeBindCallback<Obje
 	 */
 	@Override
 	public int getOrder() {
-		return 100;
+		return NEO4J_AUDITING_ORDER;
 	}
 }

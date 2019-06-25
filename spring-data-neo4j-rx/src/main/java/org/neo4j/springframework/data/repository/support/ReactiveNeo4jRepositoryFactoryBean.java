@@ -25,7 +25,6 @@ import org.neo4j.springframework.data.core.ReactiveNeo4jClient;
 import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
 import org.neo4j.springframework.data.repository.config.ReactiveNeo4jRepositoryConfigurationExtension;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.mapping.callback.ReactiveEntityCallbacks;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
@@ -51,7 +50,6 @@ public final class ReactiveNeo4jRepositoryFactoryBean<T extends Repository<S, ID
 
 	private Neo4jMappingContext neo4jMappingContext;
 
-	private @Nullable ApplicationEventPublisher eventPublisher;
 	private @Nullable ReactiveEntityCallbacks entityCallbacks;
 
 	/**
@@ -74,7 +72,7 @@ public final class ReactiveNeo4jRepositoryFactoryBean<T extends Repository<S, ID
 
 	@Override
 	protected RepositoryFactorySupport doCreateRepositoryFactory() {
-		return new ReactiveNeo4jRepositoryFactory(neo4jClient, neo4jMappingContext, new ReactiveNeo4jEvents(eventPublisher, entityCallbacks));
+		return new ReactiveNeo4jRepositoryFactory(neo4jClient, neo4jMappingContext, new ReactiveNeo4jEvents(entityCallbacks));
 	}
 
 	@Override
@@ -82,12 +80,5 @@ public final class ReactiveNeo4jRepositoryFactoryBean<T extends Repository<S, ID
 		super.setBeanFactory(beanFactory);
 
 		this.entityCallbacks = ReactiveEntityCallbacks.create(beanFactory);
-	}
-
-	@Override
-	public void setApplicationEventPublisher(ApplicationEventPublisher publisher) {
-		super.setApplicationEventPublisher(publisher);
-
-		this.eventPublisher = publisher;
 	}
 }

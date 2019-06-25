@@ -30,14 +30,12 @@ import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.neo4j.driver.Driver;
 import org.neo4j.springframework.data.config.AbstractReactiveNeo4jConfig;
 import org.neo4j.springframework.data.config.EnableNeo4jAuditing;
 import org.neo4j.springframework.data.integration.shared.AuditingITBase;
 import org.neo4j.springframework.data.integration.shared.ImmutableAuditableThing;
 import org.neo4j.springframework.data.repository.config.EnableReactiveNeo4jRepositories;
-import org.neo4j.springframework.data.test.Neo4jExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -45,7 +43,6 @@ import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.reactive.TransactionalOperator;
@@ -53,8 +50,6 @@ import org.springframework.transaction.reactive.TransactionalOperator;
 /**
  * @author Michael J. Simons
  */
-@ExtendWith(SpringExtension.class)
-@ExtendWith(Neo4jExtension.class)
 @ContextConfiguration(classes = ReactiveAuditingIT.Config.class)
 class ReactiveAuditingIT extends AuditingITBase {
 

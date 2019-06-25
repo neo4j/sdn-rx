@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.*;
 import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Transaction;
@@ -30,12 +31,15 @@ import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.neo4j.driver.types.Node;
 import org.neo4j.springframework.data.test.Neo4jExtension;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
  * Shared information for both imperative and reactive auditing tests.
  *
  * @author Michael J. Simons
  */
+@ExtendWith(SpringExtension.class)
+@ExtendWith(Neo4jExtension.class)
 public abstract class AuditingITBase {
 	protected static Neo4jExtension.Neo4jConnectionSupport neo4jConnectionSupport;
 
@@ -48,7 +52,7 @@ public abstract class AuditingITBase {
 
 	protected Long idOfExistingThing;
 
-	public AuditingITBase(Driver driver) {
+	protected AuditingITBase(Driver driver) {
 		this.driver = driver;
 	}
 

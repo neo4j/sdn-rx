@@ -18,24 +18,20 @@
  */
 package org.neo4j.springframework.data.integration.reactive;
 
-import static org.neo4j.driver.Values.*;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.neo4j.driver.Driver;
-import org.neo4j.driver.Transaction;
-import org.neo4j.driver.Value;
-import org.neo4j.driver.reactive.RxSession;
 import org.neo4j.springframework.data.config.AbstractReactiveNeo4jConfig;
+import org.neo4j.springframework.data.integration.shared.CallbacksITBase;
 import org.neo4j.springframework.data.integration.shared.ThingWithAssignedId;
 import org.neo4j.springframework.data.repository.config.EnableReactiveNeo4jRepositories;
 import org.neo4j.springframework.data.repository.event.ReactiveBeforeBindCallback;
@@ -44,7 +40,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.reactive.TransactionalOperator;
@@ -52,33 +47,21 @@ import org.springframework.transaction.reactive.TransactionalOperator;
 /**
  * @author Michael J. Simons
  */
-@ExtendWith(SpringExtension.class)
-@ExtendWith(Neo4jExtension.class)
 @ContextConfiguration(classes = ReactiveCallbacksIT.Config.class)
-class ReactiveCallbacksIT {
+class ReactiveCallbacksIT extends CallbacksITBase {
 
 	private static Neo4jExtension.Neo4jConnectionSupport neo4jConnectionSupport;
 
 	private final ReactiveTransactionManager transactionManager;
 	private final ReactiveThingRepository thingRepository;
-	private final Driver driver;
 
 	@Autowired
 	ReactiveCallbacksIT(ReactiveTransactionManager transactionManager,
 		ReactiveThingRepository thingRepository, Driver driver) {
 
+		super(driver);
 		this.transactionManager = transactionManager;
 		this.thingRepository = thingRepository;
-		this.driver = driver;
-	}
-
-	@BeforeEach
-	void setupData() {
-
-		try (Transaction transaction = driver.session().beginTransaction()) {
-			transaction.run("MATCH (n) detach delete n");
-			transaction.success();
-		}
 	}
 
 	@Test
@@ -89,24 +72,16 @@ class ReactiveCallbacksIT {
 
 		Mono<ThingWithAssignedId> operationUnderTest = Mono.just(thing).flatMap(thingRepository::save);
 
+		List<ThingWithAssignedId> savedThings = new ArrayList<>();
 		TransactionalOperator transactionalOperator = TransactionalOperator.create(transactionManager);
 		transactionalOperator
 			.execute(t -> operationUnderTest)
-			.map(ThingWithAssignedId::getName)
 			.as(StepVerifier::create)
-			.expectNext("A name (Edited)")
+			.recordWith(() -> savedThings)
+			.expectNextMatches(t -> t.getName().equals("A name (Edited)"))
 			.verifyComplete();
 
-		Flux
-			.usingWhen(
-				Mono.fromSupplier(() -> driver.rxSession()),
-				s -> s.run("MATCH (n:Thing) WHERE n.theId = $id RETURN n", parameters("id", "aaBB")).records(),
-				RxSession::close
-			)
-			.map(r -> r.get("n").asNode().get("name").asString())
-			.as(StepVerifier::create)
-			.expectNext("A name (Edited)")
-			.verifyComplete();
+		verifyDatabase(savedThings);
 	}
 
 	@Test
@@ -120,31 +95,17 @@ class ReactiveCallbacksIT {
 
 		Flux<ThingWithAssignedId> operationUnderTest = thingRepository.saveAll(Arrays.asList(thing1, thing2));
 
+		List<ThingWithAssignedId> savedThings = new ArrayList<>();
 		TransactionalOperator transactionalOperator = TransactionalOperator.create(transactionManager);
 		transactionalOperator
 			.execute(t -> operationUnderTest)
-			.map(ThingWithAssignedId::getName)
 			.as(StepVerifier::create)
-			.expectNext("A name (Edited)")
-			.expectNext("Another name (Edited)")
+			.recordWith(() -> savedThings)
+			.expectNextMatches(t -> t.getName().equals("A name (Edited)"))
+			.expectNextMatches(t -> t.getName().equals("Another name (Edited)"))
 			.verifyComplete();
 
-		Flux
-			.usingWhen(
-				Mono.fromSupplier(() -> driver.rxSession()),
-				s -> {
-					Value parameters = parameters("ids", Arrays.asList("id1", "id2"));
-					return s.run("MATCH (n:Thing) WHERE n.theId IN ($ids) RETURN n.name as name ORDER BY n.name ASC",
-						parameters)
-						.records();
-				},
-				RxSession::close
-			)
-			.map(r -> r.get("name").asString())
-			.as(StepVerifier::create)
-			.expectNext("A name (Edited)")
-			.expectNext("Another name (Edited)")
-			.verifyComplete();
+		verifyDatabase(savedThings);
 	}
 
 	@Test
@@ -158,31 +119,17 @@ class ReactiveCallbacksIT {
 
 		Flux<ThingWithAssignedId> operationUnderTest = thingRepository.saveAll(Flux.just(thing1, thing2));
 
+		List<ThingWithAssignedId> savedThings = new ArrayList<>();
 		TransactionalOperator transactionalOperator = TransactionalOperator.create(transactionManager);
 		transactionalOperator
 			.execute(t -> operationUnderTest)
-			.map(ThingWithAssignedId::getName)
 			.as(StepVerifier::create)
-			.expectNext("A name (Edited)")
-			.expectNext("Another name (Edited)")
+			.recordWith(() -> savedThings)
+			.expectNextMatches(t -> t.getName().equals("A name (Edited)"))
+			.expectNextMatches(t -> t.getName().equals("Another name (Edited)"))
 			.verifyComplete();
 
-		Flux
-			.usingWhen(
-				Mono.fromSupplier(() -> driver.rxSession()),
-				s -> {
-					Value parameters = parameters("ids", Arrays.asList("id1", "id2"));
-					return s.run("MATCH (n:Thing) WHERE n.theId IN ($ids) RETURN n.name as name ORDER BY n.name ASC",
-						parameters)
-						.records();
-				},
-				RxSession::close
-			)
-			.map(r -> r.get("name").asString())
-			.as(StepVerifier::create)
-			.expectNext("A name (Edited)")
-			.expectNext("Another name (Edited)")
-			.verifyComplete();
+		verifyDatabase(savedThings);
 	}
 
 	@Configuration
