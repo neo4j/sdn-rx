@@ -133,6 +133,24 @@ public class Neo4jMappingContextTest {
 			assertThat(schema.getMappingFunctionFor(association.getInverse().getAssociationTargetType())).isPresent());
 	}
 
+	@Test
+	void shouldCacheIdGenerators() {
+
+		Neo4jMappingContext schema = new Neo4jMappingContext();
+		IdGenerator<?> dummyIdGenerator1 = schema.getOrCreateIdGeneratorOfType(DummyIdGenerator.class);
+		IdGenerator<?> dummyIdGenerator2 = schema.getOrCreateIdGeneratorOfType(DummyIdGenerator.class);
+
+		assertThat(dummyIdGenerator1).isSameAs(dummyIdGenerator2);
+	}
+
+	static class DummyIdGenerator implements IdGenerator<Void> {
+
+		@Override
+		public Void generateId(String primaryLabel, Object entity) {
+			return null;
+		}
+	}
+
 	@Node("User")
 	static class UserNode {
 

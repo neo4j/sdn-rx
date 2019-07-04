@@ -16,26 +16,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.springframework.data.core.schema;
+package org.neo4j.springframework.data.integration.shared;
 
-import org.apiguardian.api.API;
+import org.neo4j.springframework.data.core.schema.GeneratedValue;
+import org.neo4j.springframework.data.core.schema.Id;
+import org.neo4j.springframework.data.core.schema.Node;
 
 /**
- * Interface for generating ids for entities.
- *
- * @param <T> Type of the id to generate
  * @author Michael J. Simons
- * @since 1.0
  */
-@FunctionalInterface
-@API(status = API.Status.STABLE, since = "1.0")
-public interface IdGenerator<T> {
+@Node
+public class ThingWithGeneratedId {
 
-	/**
-	 * Generates a new id for given entity.
-	 *
-	 * @param entity the entity to be saved
-	 * @return id to be assigned to the entity
-	 */
-	T generateId(String primaryLabel, Object entity);
+	@Id @GeneratedValue(TestSequenceGenerator.class)
+	private String theId;
+
+	private String name;
+
+	public ThingWithGeneratedId(String name) {
+		this.name = name;
+	}
+
+	public String getTheId() {
+		return theId;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
 }

@@ -16,26 +16,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.springframework.data.core.schema;
+package org.neo4j.springframework.data.integration.shared;
 
-import org.apiguardian.api.API;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.neo4j.springframework.data.core.schema.IdGenerator;
+import org.springframework.util.StringUtils;
 
 /**
- * Interface for generating ids for entities.
+ * This is a naive sequence generator which must not be used in production.
  *
- * @param <T> Type of the id to generate
  * @author Michael J. Simons
- * @since 1.0
  */
-@FunctionalInterface
-@API(status = API.Status.STABLE, since = "1.0")
-public interface IdGenerator<T> {
+public class TestSequenceGenerator implements IdGenerator<String> {
 
-	/**
-	 * Generates a new id for given entity.
-	 *
-	 * @param entity the entity to be saved
-	 * @return id to be assigned to the entity
-	 */
-	T generateId(String primaryLabel, Object entity);
+	private final AtomicInteger sequence = new AtomicInteger(0);
+
+	@Override
+	public String generateId(String primaryLabel, Object entity) {
+		return StringUtils.uncapitalize(primaryLabel) + "-" + sequence.incrementAndGet();
+	}
 }

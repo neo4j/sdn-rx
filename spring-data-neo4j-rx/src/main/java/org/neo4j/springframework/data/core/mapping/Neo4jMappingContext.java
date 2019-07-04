@@ -36,17 +36,19 @@ import java.util.function.Predicate;
 import org.apiguardian.api.API;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.types.TypeSystem;
+import org.neo4j.springframework.data.core.schema.IdGenerator;
+import org.neo4j.springframework.data.core.schema.Neo4jSimpleTypes;
+import org.neo4j.springframework.data.core.schema.NodeDescription;
+import org.neo4j.springframework.data.core.schema.Relationship;
+import org.neo4j.springframework.data.core.schema.RelationshipDescription;
+import org.neo4j.springframework.data.core.schema.Schema;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.convert.EntityInstantiators;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.context.AbstractMappingContext;
 import org.springframework.data.mapping.model.Property;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
-import org.neo4j.springframework.data.core.schema.Neo4jSimpleTypes;
-import org.neo4j.springframework.data.core.schema.NodeDescription;
-import org.neo4j.springframework.data.core.schema.Relationship;
-import org.neo4j.springframework.data.core.schema.RelationshipDescription;
-import org.neo4j.springframework.data.core.schema.Schema;
 import org.springframework.data.util.TypeInformation;
 
 /**
@@ -75,6 +77,11 @@ public final class Neo4jMappingContext
 	private final Map<String, NodeDescription<?>> nodeDescriptionsByPrimaryLabel = new HashMap<>();
 
 	private final ConcurrentMap<String, Collection<RelationshipDescription>> relationshipsByPrimaryLabel = new ConcurrentHashMap<>();
+
+	/**
+	 * The known and loaded ID generators.
+	 */
+	private final Map<Class<? extends IdGenerator>, IdGenerator> idGenerators = new HashMap<>();
 
 	public Neo4jMappingContext() {
 		super.setSimpleTypeHolder(Neo4jSimpleTypes.SIMPLE_TYPE_HOLDER);
@@ -204,5 +211,10 @@ public final class Neo4jMappingContext
 		});
 
 		return Collections.unmodifiableCollection(relationships);
+	}
+
+	@Override
+	public IdGenerator<?> getOrCreateIdGeneratorOfType(Class<? extends IdGenerator<?>> idGeneratorType) {
+		return this.idGenerators.computeIfAbsent(idGeneratorType, BeanUtils::instantiateClass);
 	}
 }
