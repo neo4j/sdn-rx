@@ -19,6 +19,7 @@
 
 package org.neo4j.springframework.data.integration.shared
 
+import org.neo4j.springframework.data.core.schema.GeneratedValue
 import org.neo4j.springframework.data.core.schema.Id
 import org.neo4j.springframework.data.core.schema.Node
 
@@ -26,4 +27,4 @@ import org.neo4j.springframework.data.core.schema.Node
  * @author Gerrit Meier
  */
 @Node
-data class KotlinPerson(@Id val id: Long, val name: String)
+data class KotlinPerson(@Id @GeneratedValue val id: Long, val name: String)

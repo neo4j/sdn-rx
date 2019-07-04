@@ -24,6 +24,7 @@ import lombok.experimental.Wither;
 
 import java.time.LocalDateTime;
 
+import org.neo4j.springframework.data.core.schema.GeneratedValue;
 import org.neo4j.springframework.data.core.schema.Node;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
@@ -41,7 +42,7 @@ import org.springframework.data.annotation.PersistenceConstructor;
 @Node
 public class ImmutableAuditableThing {
 
-	@Id Long id;
+	@Id @GeneratedValue Long id;
 	@CreatedDate LocalDateTime createdAt;
 	@CreatedBy String createdBy;
 	@LastModifiedDate LocalDateTime modifiedAt;

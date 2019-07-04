@@ -18,8 +18,6 @@
  */
 package org.neo4j.springframework.data.integration.shared;
 
-import static org.neo4j.springframework.data.core.schema.Id.Strategy.*;
-
 import org.neo4j.springframework.data.core.schema.Id;
 import org.neo4j.springframework.data.core.schema.Node;
 
@@ -31,7 +29,7 @@ import org.neo4j.springframework.data.core.schema.Node;
 @Node("Thing")
 public class ThingWithAssignedId {
 
-	@Id(strategy = ASSIGNED)
+	@Id
 	private final String theId;
 
 	private String name;

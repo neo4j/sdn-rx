@@ -21,14 +21,15 @@ package org.neo4j.springframework.data.examples.references_and_aggregates.books;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.springframework.data.annotation.Id;
+import org.neo4j.springframework.data.core.schema.GeneratedValue;
+import org.neo4j.springframework.data.core.schema.Id;
 import org.springframework.util.Assert;
 
 /**
  * @author Michael J. Simons
  */
 public class Book {
-	@Id
+	@Id @GeneratedValue
 	private Long id;
 
 	private final String title;

@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import org.apiguardian.api.API;
 import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
 
 /**
  * Description how to generate Ids for entities.
@@ -33,42 +34,70 @@ import org.springframework.lang.Nullable;
 public final class IdDescription {
 
 	/**
-	 * The selected strategy.
+	 * The class representing a generator for new ids or null for assigned ids.
 	 */
-	private final Id.Strategy idStrategy;
-
-	/**
-	 * The class representing a generator for new ids.
-	 */
-	private @Nullable final Class<? extends IdGenerator> idGeneratorClass;
+	private @Nullable final Class<? extends IdGenerator<?>> idGeneratorClass;
 
 	/**
 	 * The property that stores the id if applicable.
 	 */
 	private @Nullable final String graphPropertyName;
 
-	public IdDescription() {
-		this(Id.Strategy.INTERNALLY_GENERATED, null, null);
+	public static IdDescription forAssignedIds(String graphPropertyName) {
+
+		Assert.notNull(graphPropertyName, "Graph property name is required.");
+		return new IdDescription(null, graphPropertyName);
 	}
 
-	public IdDescription(Id.Strategy idStrategy,
-		@Nullable Class<? extends IdGenerator> idGeneratorClass, @Nullable String graphPropertyName) {
-		this.idStrategy = idStrategy;
+	public static IdDescription forInternallyGeneratedIds() {
+		return new IdDescription(GeneratedValue.InternalIdGenerator.class, null);
+	}
+
+	public static IdDescription forExternallyGeneratedIds(Class<? extends IdGenerator<?>> idGeneratorClass,
+		String graphPropertyName) {
+
+		Assert.notNull(idGeneratorClass, "Class of id generator is required.");
+		Assert.isTrue(idGeneratorClass != GeneratedValue.InternalIdGenerator.class,
+			"Cannot use InternalIdGenerator for externally generated ids.");
+		Assert.notNull(graphPropertyName, "Graph property name is required.");
+
+		return new IdDescription(idGeneratorClass, graphPropertyName);
+	}
+
+	private IdDescription(Class<? extends IdGenerator<?>> idGeneratorClass,
+		@Nullable String graphPropertyName) {
 		this.idGeneratorClass = idGeneratorClass;
 		this.graphPropertyName = graphPropertyName;
 	}
 
-	public Id.Strategy getIdStrategy() {
-		return idStrategy;
-	}
-
-	public Optional<Class<? extends IdGenerator>> getIdGeneratorClass() {
+	public Optional<Class<? extends IdGenerator<?>>> getIdGeneratorClass() {
 		return Optional.ofNullable(idGeneratorClass);
 	}
 
 	/**
-	 * An ID description has only a corresponding graph property name when it's based on either {@link Id.Strategy#ASSIGNED}
-	 * or {@link Id.Strategy#EXTERNALLY_GENERATED}. An internal id has no corresponding graph property and therefor this method
+	 * @return True, if the database generated the ID.
+	 */
+	public boolean idIsGeneratedInternally() {
+		return this.idGeneratorClass == GeneratedValue.InternalIdGenerator.class;
+	}
+
+	/**
+	 * @return True, if the ID is assigned to the entity before the entity hits the database, either manually or through a generator.
+	 */
+	public boolean idIsAssigned() {
+		return this.idGeneratorClass == null;
+	}
+
+	/**
+	 * @return True, if the ID is externally generated.
+	 */
+	public boolean idIsGeneratedExternally() {
+		return this.idGeneratorClass != null && this.idGeneratorClass != GeneratedValue.InternalIdGenerator.class;
+	}
+
+	/**
+	 * An ID description has only a corresponding graph property name when it's bas on an external assigment.
+	 * An internal id has no corresponding graph property and therefor this method
 	 * will return an empty {@link Optional} in such cases.
 	 *
 	 * @return The name of an optional graph property.
