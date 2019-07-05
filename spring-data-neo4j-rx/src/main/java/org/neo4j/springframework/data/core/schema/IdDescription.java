@@ -39,6 +39,11 @@ public final class IdDescription {
 	private @Nullable final Class<? extends IdGenerator<?>> idGeneratorClass;
 
 	/**
+	 * A reference to an ID generator.
+	 */
+	private @Nullable final String idGeneratorRef;
+
+	/**
 	 * The property that stores the id if applicable.
 	 */
 	private @Nullable final String graphPropertyName;
@@ -46,32 +51,48 @@ public final class IdDescription {
 	public static IdDescription forAssignedIds(String graphPropertyName) {
 
 		Assert.notNull(graphPropertyName, "Graph property name is required.");
-		return new IdDescription(null, graphPropertyName);
+		return new IdDescription(null, null, graphPropertyName);
 	}
 
 	public static IdDescription forInternallyGeneratedIds() {
-		return new IdDescription(GeneratedValue.InternalIdGenerator.class, null);
+		return new IdDescription(GeneratedValue.InternalIdGenerator.class, null, null);
 	}
 
-	public static IdDescription forExternallyGeneratedIds(Class<? extends IdGenerator<?>> idGeneratorClass,
+	public static IdDescription forExternallyGeneratedIds(
+		@Nullable Class<? extends IdGenerator<?>> idGeneratorClass,
+		@Nullable String idGeneratorRef,
 		String graphPropertyName) {
 
-		Assert.notNull(idGeneratorClass, "Class of id generator is required.");
-		Assert.isTrue(idGeneratorClass != GeneratedValue.InternalIdGenerator.class,
-			"Cannot use InternalIdGenerator for externally generated ids.");
 		Assert.notNull(graphPropertyName, "Graph property name is required.");
+		try {
+			Assert.hasText(idGeneratorRef, "Reference to an ID generator has precedence.");
 
-		return new IdDescription(idGeneratorClass, graphPropertyName);
+			return new IdDescription(null, idGeneratorRef, graphPropertyName);
+		} catch (IllegalArgumentException e) {
+			Assert.notNull(idGeneratorClass, "Class of id generator is required.");
+			Assert.isTrue(idGeneratorClass != GeneratedValue.InternalIdGenerator.class,
+				"Cannot use InternalIdGenerator for externally generated ids.");
+
+			return new IdDescription(idGeneratorClass, null, graphPropertyName);
+		}
 	}
 
-	private IdDescription(Class<? extends IdGenerator<?>> idGeneratorClass,
-		@Nullable String graphPropertyName) {
+	public IdDescription(
+		@Nullable Class<? extends IdGenerator<?>> idGeneratorClass,
+		@Nullable String idGeneratorRef,
+		@Nullable String graphPropertyName
+	) {
 		this.idGeneratorClass = idGeneratorClass;
+		this.idGeneratorRef = idGeneratorRef != null && idGeneratorRef.isEmpty() ? null : idGeneratorRef;
 		this.graphPropertyName = graphPropertyName;
 	}
 
 	public Optional<Class<? extends IdGenerator<?>>> getIdGeneratorClass() {
 		return Optional.ofNullable(idGeneratorClass);
+	}
+
+	public Optional<String> getIdGeneratorRef() {
+		return Optional.ofNullable(idGeneratorRef);
 	}
 
 	/**
@@ -85,14 +106,15 @@ public final class IdDescription {
 	 * @return True, if the ID is assigned to the entity before the entity hits the database, either manually or through a generator.
 	 */
 	public boolean idIsAssigned() {
-		return this.idGeneratorClass == null;
+		return this.idGeneratorClass == null && this.idGeneratorRef == null;
 	}
 
 	/**
 	 * @return True, if the ID is externally generated.
 	 */
 	public boolean idIsGeneratedExternally() {
-		return this.idGeneratorClass != null && this.idGeneratorClass != GeneratedValue.InternalIdGenerator.class;
+		return (this.idGeneratorClass != null && this.idGeneratorClass != GeneratedValue.InternalIdGenerator.class)
+			|| this.idGeneratorRef != null;
 	}
 
 	/**

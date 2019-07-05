@@ -26,26 +26,16 @@ import org.neo4j.springframework.data.core.schema.Node;
  * @author Michael J. Simons
  */
 @Node
-public class ThingWithGeneratedId {
+public class ThingWithGeneratedId extends AbstractNamedThing {
 
 	@Id @GeneratedValue(TestSequenceGenerator.class)
 	private String theId;
 
-	private String name;
-
 	public ThingWithGeneratedId(String name) {
-		this.name = name;
+		super.setName(name);
 	}
 
 	public String getTheId() {
 		return theId;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
 	}
 }

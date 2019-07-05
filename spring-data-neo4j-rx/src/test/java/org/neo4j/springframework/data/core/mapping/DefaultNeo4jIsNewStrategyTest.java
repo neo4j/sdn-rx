@@ -94,7 +94,7 @@ class DefaultNeo4jIsNewStrategyTest {
 
 			Object a = new Object();
 			Object b = new Object();
-			IdDescription idDescription = IdDescription.forExternallyGeneratedIds(DummyIdGenerator.class, "na");
+			IdDescription idDescription = IdDescription.forExternallyGeneratedIds(DummyIdGenerator.class, null, "na");
 			doReturn(String.class).when(idProperty).getType();
 			doReturn(idDescription).when(entityMetaData).getIdDescription();
 			doReturn(idProperty).when(entityMetaData).getRequiredIdProperty();
@@ -109,7 +109,7 @@ class DefaultNeo4jIsNewStrategyTest {
 		@Test
 		void doesntNeedToDealWithPrimitives() {
 
-			IdDescription idDescription = IdDescription.forExternallyGeneratedIds(DummyIdGenerator.class, "na");
+			IdDescription idDescription = IdDescription.forExternallyGeneratedIds(DummyIdGenerator.class, null, "na");
 			doReturn(long.class).when(idProperty).getType();
 			doReturn(idDescription).when(entityMetaData).getIdDescription();
 			doReturn(idProperty).when(entityMetaData).getRequiredIdProperty();

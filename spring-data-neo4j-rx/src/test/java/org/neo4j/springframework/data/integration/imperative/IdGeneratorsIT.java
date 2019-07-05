@@ -31,8 +31,10 @@ import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
 import org.neo4j.springframework.data.config.AbstractNeo4jConfig;
+import org.neo4j.springframework.data.core.schema.IdGenerator;
 import org.neo4j.springframework.data.integration.shared.IdGeneratorsITBase;
 import org.neo4j.springframework.data.integration.shared.ThingWithGeneratedId;
+import org.neo4j.springframework.data.integration.shared.ThingWithIdGeneratedByBean;
 import org.neo4j.springframework.data.repository.config.EnableNeo4jRepositories;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -47,11 +49,16 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @ContextConfiguration(classes = IdGeneratorsIT.Config.class)
 class IdGeneratorsIT extends IdGeneratorsITBase {
 
-	private final TestRepository testRepository;
+	private final ThingsWithGeneratedIds thingsWithGeneratedIds;
 
-	@Autowired IdGeneratorsIT(TestRepository testRepository, Driver driver) {
+	private final ThingsWithBeanGeneratedIds thingsWithBeanGeneratedIds;
+
+	@Autowired IdGeneratorsIT(
+		ThingsWithGeneratedIds thingsWithGeneratedIds, ThingsWithBeanGeneratedIds thingsWithBeanGeneratedIds,
+		Driver driver) {
 		super(driver);
-		this.testRepository = testRepository;
+		this.thingsWithGeneratedIds = thingsWithGeneratedIds;
+		this.thingsWithBeanGeneratedIds = thingsWithBeanGeneratedIds;
 	}
 
 	@Test
@@ -59,12 +66,23 @@ class IdGeneratorsIT extends IdGeneratorsITBase {
 
 		ThingWithGeneratedId t = new ThingWithGeneratedId("Foobar");
 		t.setName("Foobar");
-		t = testRepository.save(t);
+		t = thingsWithGeneratedIds.save(t);
 		assertThat(t.getTheId())
 			.isNotBlank()
 			.matches("thingWithGeneratedId-\\d+");
 
-		verifyDatabase(t);
+		verifyDatabase(t.getTheId(), t.getName());
+	}
+
+	@Test
+	void idGenerationByBeansShouldWorkWork() {
+
+		ThingWithIdGeneratedByBean t = new ThingWithIdGeneratedByBean("Foobar");
+		t.setName("Foobar");
+		t = thingsWithBeanGeneratedIds.save(t);
+		assertThat(t.getTheId()).isEqualTo("ImperativeID.");
+
+		verifyDatabase(t.getTheId(), t.getName());
 	}
 
 	@Test
@@ -74,7 +92,7 @@ class IdGeneratorsIT extends IdGeneratorsITBase {
 			.mapToObj(i -> new ThingWithGeneratedId("name" + i))
 			.collect(toList());
 
-		Iterable<ThingWithGeneratedId> savedThings = testRepository.saveAll(things);
+		Iterable<ThingWithGeneratedId> savedThings = thingsWithGeneratedIds.saveAll(things);
 		assertThat(savedThings)
 			.hasSize(things.size())
 			.extracting(ThingWithGeneratedId::getTheId)
@@ -89,18 +107,21 @@ class IdGeneratorsIT extends IdGeneratorsITBase {
 	@Test
 	void shouldNotOverwriteExistingId() {
 
-		ThingWithGeneratedId t = testRepository.findById(ID_OF_EXISTING_THING).get();
+		ThingWithGeneratedId t = thingsWithGeneratedIds.findById(ID_OF_EXISTING_THING).get();
 		t.setName("changed");
-		t = testRepository.save(t);
+		t = thingsWithGeneratedIds.save(t);
 
 		assertThat(t.getTheId())
 			.isNotBlank()
 			.isEqualTo(ID_OF_EXISTING_THING);
 
-		verifyDatabase(t);
+		verifyDatabase(t.getTheId(), t.getName());
 	}
 
-	public interface TestRepository extends CrudRepository<ThingWithGeneratedId, String> {
+	public interface ThingsWithGeneratedIds extends CrudRepository<ThingWithGeneratedId, String> {
+	}
+
+	public interface ThingsWithBeanGeneratedIds extends CrudRepository<ThingWithIdGeneratedByBean, String> {
 	}
 
 	@Configuration
@@ -116,6 +137,11 @@ class IdGeneratorsIT extends IdGeneratorsITBase {
 		@Override
 		protected Collection<String> getMappingBasePackages() {
 			return Collections.singletonList(ThingWithGeneratedId.class.getPackage().getName());
+		}
+
+		@Bean
+		public IdGenerator<String> aFancyIdGenerator() {
+			return (label, entity) -> "ImperativeID.";
 		}
 	}
 }

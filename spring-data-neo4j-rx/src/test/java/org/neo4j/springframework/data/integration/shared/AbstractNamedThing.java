@@ -18,25 +18,18 @@
  */
 package org.neo4j.springframework.data.integration.shared;
 
-import org.neo4j.springframework.data.core.schema.Id;
-import org.neo4j.springframework.data.core.schema.Node;
-
 /**
- * Has an assigned id.
- *
  * @author Michael J. Simons
  */
-@Node("Thing")
-public class ThingWithAssignedId extends AbstractNamedThing {
+abstract class AbstractNamedThing {
 
-	@Id
-	private final String theId;
+	private String name;
 
-	public ThingWithAssignedId(String theId) {
-		this.theId = theId;
+	public String getName() {
+		return name;
 	}
 
-	public String getTheId() {
-		return theId;
+	public void setName(String name) {
+		this.name = name;
 	}
 }

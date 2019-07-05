@@ -18,6 +18,8 @@
  */
 package org.neo4j.springframework.data.repository.event;
 
+import java.util.Optional;
+
 import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentEntity;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentProperty;
@@ -62,9 +64,22 @@ final class IdPopulator {
 			return entity;
 		}
 
+		IdGenerator<?> idGenerator;
+
 		// Get or create the shared generator
-		IdGenerator<?> idGenerator = neo4jMappingContext
-			.getOrCreateIdGeneratorOfType(idDescription.getIdGeneratorClass().get());
+		// Ref has precedence over class
+		Optional<String> optionalIdGeneratorRef = idDescription.getIdGeneratorRef();
+		if (optionalIdGeneratorRef.isPresent()) {
+
+			idGenerator = neo4jMappingContext
+				.getIdGenerator(optionalIdGeneratorRef.get()).orElseThrow(() -> new IllegalStateException(
+					"Id generator named " + optionalIdGeneratorRef.get() + " not found!"));
+		} else {
+
+			// At this point, the class must be present, so we don't check the optional not anymore
+			idGenerator = neo4jMappingContext.getOrCreateIdGeneratorOfType(idDescription.getIdGeneratorClass().get());
+		}
+
 		propertyAccessor.setProperty(idProperty, idGenerator.generateId(nodeDescription.getPrimaryLabel(), entity));
 		return propertyAccessor.getBean();
 	}

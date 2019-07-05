@@ -149,7 +149,7 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 		}
 
 		// Internally generated ids.
-		if (generatedValueAnnotation.generatorClass() == GeneratedValue.InternalIdGenerator.class) {
+		if (generatedValueAnnotation.generatorClass() == GeneratedValue.InternalIdGenerator.class && generatedValueAnnotation.generatorRef().isEmpty()) {
 			if (idProperty.findAnnotation(Property.class) != null) {
 				throw new IllegalArgumentException(
 					"Cannot use internal id strategy with custom property " + idProperty.getPropertyName()
@@ -165,7 +165,8 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 
 		// Externally generated ids.
 		return IdDescription
-			.forExternallyGeneratedIds(generatedValueAnnotation.generatorClass(), idProperty.getPropertyName());
+			.forExternallyGeneratedIds(generatedValueAnnotation.generatorClass(),
+				generatedValueAnnotation.generatorRef(), idProperty.getPropertyName());
 	}
 
 	Collection<GraphPropertyDescription> computeGraphProperties() {

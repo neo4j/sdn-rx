@@ -126,5 +126,7 @@ public interface Schema {
 	 * @param idGeneratorType The type of the ID generator to return
 	 * @return The id generator.
 	 */
-	IdGenerator<?> getOrCreateIdGeneratorOfType(Class<? extends IdGenerator<?>> idGeneratorType);
+	<T extends IdGenerator<?>> T getOrCreateIdGeneratorOfType(Class<T> idGeneratorType);
+
+	<T extends IdGenerator<?>> Optional<T> getIdGenerator(String reference);
 }

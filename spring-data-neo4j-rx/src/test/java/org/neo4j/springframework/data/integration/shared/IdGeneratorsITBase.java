@@ -59,16 +59,16 @@ public abstract class IdGeneratorsITBase {
 		}
 	}
 
-	protected void verifyDatabase(ThingWithGeneratedId expectedValues) {
+	protected void verifyDatabase(String id, String name) {
 
 		try (Session session = driver.session()) {
 			Node node = session
-				.run("MATCH (t:ThingWithGeneratedId {theId: $theId}) RETURN t",
-					Values.parameters("theId", expectedValues.getTheId()))
+				.run("MATCH (t) WHERE t.theId = $theId RETURN t",
+					Values.parameters("theId", id))
 				.single().get("t").asNode();
 
-			assertThat(node.get("name").asString()).isEqualTo(expectedValues.getName());
-			assertThat(node.get("theId").asString()).isEqualTo(expectedValues.getTheId());
+			assertThat(node.get("name").asString()).isEqualTo(name);
+			assertThat(node.get("theId").asString()).isEqualTo(id);
 		}
 	}
 }

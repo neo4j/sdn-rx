@@ -60,6 +60,11 @@ public @interface GeneratedValue {
 	Class<? extends IdGenerator<?>> generatorClass() default GeneratedValue.InternalIdGenerator.class;
 
 	/**
+	 * @return An optional reference to a bean to be used as ID generator.
+	 */
+	String generatorRef() default "";
+
+	/**
 	 * This {@link IdGenerator} does nothing. It is used for relying on the internal, database-side created id.
 	 */
 	class InternalIdGenerator implements IdGenerator<Void> {

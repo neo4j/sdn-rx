@@ -35,8 +35,10 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
 import org.neo4j.springframework.data.config.AbstractReactiveNeo4jConfig;
+import org.neo4j.springframework.data.core.schema.IdGenerator;
 import org.neo4j.springframework.data.integration.shared.IdGeneratorsITBase;
 import org.neo4j.springframework.data.integration.shared.ThingWithGeneratedId;
+import org.neo4j.springframework.data.integration.shared.ThingWithIdGeneratedByBean;
 import org.neo4j.springframework.data.repository.config.EnableReactiveNeo4jRepositories;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -54,13 +56,17 @@ import org.springframework.transaction.reactive.TransactionalOperator;
 class ReactiveIdGeneratorsIT extends IdGeneratorsITBase {
 
 	private final ReactiveTransactionManager transactionManager;
-	private final TestRepository testRepository;
+	private final ThingsWithGeneratedIds thingsWithGeneratedIds;
+	private final ThingsWithBeanGeneratedIds thingsWithBeanGeneratedIds;
 
-	@Autowired ReactiveIdGeneratorsIT(ReactiveTransactionManager transactionManager, TestRepository testRepository,
+	@Autowired ReactiveIdGeneratorsIT(ReactiveTransactionManager transactionManager,
+		ThingsWithGeneratedIds thingsWithGeneratedIds,
+		ThingsWithBeanGeneratedIds thingsWithBeanGeneratedIds,
 		Driver driver) {
 		super(driver);
 		this.transactionManager = transactionManager;
-		this.testRepository = testRepository;
+		this.thingsWithGeneratedIds = thingsWithGeneratedIds;
+		this.thingsWithBeanGeneratedIds = thingsWithBeanGeneratedIds;
 	}
 
 	@Test
@@ -69,7 +75,7 @@ class ReactiveIdGeneratorsIT extends IdGeneratorsITBase {
 		List<ThingWithGeneratedId> savedThings = new ArrayList<>();
 		TransactionalOperator transactionalOperator = TransactionalOperator.create(transactionManager);
 		transactionalOperator
-			.execute(t -> testRepository.save(new ThingWithGeneratedId("Foobar")))
+			.execute(t -> thingsWithGeneratedIds.save(new ThingWithGeneratedId("Foobar")))
 			.as(StepVerifier::create)
 			.recordWith(() -> savedThings)
 			.consumeNextWith(savedThing -> {
@@ -81,7 +87,26 @@ class ReactiveIdGeneratorsIT extends IdGeneratorsITBase {
 			})
 			.verifyComplete();
 
-		verifyDatabase(savedThings.get(0));
+		verifyDatabase(savedThings.get(0).getTheId(), savedThings.get(0).getName());
+	}
+
+	@Test
+	void idGenerationByBeansShouldWorkWork() {
+
+		List<ThingWithIdGeneratedByBean> savedThings = new ArrayList<>();
+		TransactionalOperator transactionalOperator = TransactionalOperator.create(transactionManager);
+		transactionalOperator
+			.execute(t -> thingsWithBeanGeneratedIds.save(new ThingWithIdGeneratedByBean("Foobar")))
+			.as(StepVerifier::create)
+			.recordWith(() -> savedThings)
+			.consumeNextWith(savedThing -> {
+
+				assertThat(savedThing.getName()).isEqualTo("Foobar");
+				assertThat(savedThing.getTheId()).isEqualTo("ReactiveID.");
+			})
+			.verifyComplete();
+
+		verifyDatabase(savedThings.get(0).getTheId(), savedThings.get(0).getName());
 	}
 
 	@Test
@@ -94,7 +119,7 @@ class ReactiveIdGeneratorsIT extends IdGeneratorsITBase {
 		Set<String> generatedIds = new HashSet<>();
 		TransactionalOperator transactionalOperator = TransactionalOperator.create(transactionManager);
 		transactionalOperator
-			.execute(t -> testRepository.saveAll(things))
+			.execute(t -> thingsWithGeneratedIds.saveAll(things))
 			.map(ThingWithGeneratedId::getTheId)
 			.as(StepVerifier::create)
 			.recordWith(() -> generatedIds)
@@ -111,10 +136,10 @@ class ReactiveIdGeneratorsIT extends IdGeneratorsITBase {
 	@Test
 	void shouldNotOverwriteExistingId() {
 
-		Mono<ThingWithGeneratedId> findAndUpdateAThing = testRepository.findById(ID_OF_EXISTING_THING)
+		Mono<ThingWithGeneratedId> findAndUpdateAThing = thingsWithGeneratedIds.findById(ID_OF_EXISTING_THING)
 			.flatMap(thing -> {
 				thing.setName("changed");
-				return testRepository.save(thing);
+				return thingsWithGeneratedIds.save(thing);
 			});
 
 		List<ThingWithGeneratedId> savedThings = new ArrayList<>();
@@ -130,10 +155,13 @@ class ReactiveIdGeneratorsIT extends IdGeneratorsITBase {
 			})
 			.verifyComplete();
 
-		verifyDatabase(savedThings.get(0));
+		verifyDatabase(savedThings.get(0).getTheId(), savedThings.get(0).getName());
 	}
 
-	public interface TestRepository extends ReactiveCrudRepository<ThingWithGeneratedId, String> {
+	public interface ThingsWithGeneratedIds extends ReactiveCrudRepository<ThingWithGeneratedId, String> {
+	}
+
+	public interface ThingsWithBeanGeneratedIds extends ReactiveCrudRepository<ThingWithIdGeneratedByBean, String> {
 	}
 
 	@Configuration
@@ -149,6 +177,11 @@ class ReactiveIdGeneratorsIT extends IdGeneratorsITBase {
 		@Override
 		protected Collection<String> getMappingBasePackages() {
 			return Collections.singletonList(ThingWithGeneratedId.class.getPackage().getName());
+		}
+
+		@Bean
+		public IdGenerator<String> aFancyIdGenerator() {
+			return (label, entity) -> "ReactiveID.";
 		}
 	}
 }

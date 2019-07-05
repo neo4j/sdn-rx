@@ -18,22 +18,21 @@
  */
 package org.neo4j.springframework.data.integration.shared;
 
+import org.neo4j.springframework.data.core.schema.GeneratedValue;
 import org.neo4j.springframework.data.core.schema.Id;
 import org.neo4j.springframework.data.core.schema.Node;
 
 /**
- * Has an assigned id.
- *
  * @author Michael J. Simons
  */
-@Node("Thing")
-public class ThingWithAssignedId extends AbstractNamedThing {
+@Node
+public class ThingWithIdGeneratedByBean extends AbstractNamedThing {
 
-	@Id
-	private final String theId;
+	@Id @GeneratedValue(generatorRef = "aFancyIdGenerator")
+	private String theId;
 
-	public ThingWithAssignedId(String theId) {
-		this.theId = theId;
+	public ThingWithIdGeneratedByBean(String name) {
+		this.setName(name);
 	}
 
 	public String getTheId() {
