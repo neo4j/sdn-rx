@@ -25,13 +25,13 @@ import lombok.experimental.Wither;
 import java.time.LocalDateTime;
 
 import org.neo4j.springframework.data.core.schema.GeneratedValue;
-import org.neo4j.springframework.data.core.schema.Node;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.PersistenceConstructor;
+import org.springframework.data.annotation.Persistent;
 
 /**
  * @author Michael J. Simons
@@ -39,7 +39,7 @@ import org.springframework.data.annotation.PersistenceConstructor;
 @Value
 @Wither
 @AllArgsConstructor(onConstructor = @__(@PersistenceConstructor))
-@Node
+@Persistent
 public class ImmutableAuditableThing {
 
 	@Id @GeneratedValue Long id;

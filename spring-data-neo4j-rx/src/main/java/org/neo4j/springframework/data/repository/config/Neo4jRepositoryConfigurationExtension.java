@@ -111,7 +111,7 @@ public final class Neo4jRepositoryConfigurationExtension extends RepositoryConfi
 			source.getAttribute("neo4jMappingContextRef").orElse(DEFAULT_MAPPING_CONTEXT_BEAN_NAME));
 	}
 
-	/**
+	/*
 	 * (non-Javadoc)
 	 *
 	 * @see org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport#registerBeansForRoot(org.springframework.beans.factory.support.BeanDefinitionRegistry, org.springframework.data.repository.config.RepositoryConfigurationSource)

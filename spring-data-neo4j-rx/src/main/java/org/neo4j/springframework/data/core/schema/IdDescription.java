@@ -96,23 +96,23 @@ public final class IdDescription {
 	}
 
 	/**
-	 * @return True, if the database generated the ID.
+	 * @return True, if the ID is assigned to the entity before the entity hits the database, either manually or through a generator.
 	 */
-	public boolean idIsGeneratedInternally() {
-		return this.idGeneratorClass == GeneratedValue.InternalIdGenerator.class;
+	public boolean isAssignedId() {
+		return this.idGeneratorClass == null && this.idGeneratorRef == null;
 	}
 
 	/**
-	 * @return True, if the ID is assigned to the entity before the entity hits the database, either manually or through a generator.
+	 * @return True, if the database generated the ID.
 	 */
-	public boolean idIsAssigned() {
-		return this.idGeneratorClass == null && this.idGeneratorRef == null;
+	public boolean isInternallyGeneratedId() {
+		return this.idGeneratorClass == GeneratedValue.InternalIdGenerator.class;
 	}
 
 	/**
 	 * @return True, if the ID is externally generated.
 	 */
-	public boolean idIsGeneratedExternally() {
+	public boolean isExternallyGeneratedId() {
 		return (this.idGeneratorClass != null && this.idGeneratorClass != GeneratedValue.InternalIdGenerator.class)
 			|| this.idGeneratorRef != null;
 	}

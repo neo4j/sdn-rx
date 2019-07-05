@@ -128,7 +128,7 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 		Assert.notNull(this.getIdDescription(), "An entity is required to describe its id property.");
 	}
 
-	String computePrimaryLabel() {
+	private String computePrimaryLabel() {
 
 		Node nodeAnnotation = this.findAnnotation(Node.class);
 		if (nodeAnnotation == null || nodeAnnotation.labels().length != 1) {
@@ -138,7 +138,7 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 		}
 	}
 
-	IdDescription computeIdDescription() {
+	private IdDescription computeIdDescription() {
 
 		Neo4jPersistentProperty idProperty = this.getRequiredIdProperty();
 		GeneratedValue generatedValueAnnotation = idProperty.findAnnotation(GeneratedValue.class);
@@ -169,7 +169,7 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 				generatedValueAnnotation.generatorRef(), idProperty.getPropertyName());
 	}
 
-	Collection<GraphPropertyDescription> computeGraphProperties() {
+	private Collection<GraphPropertyDescription> computeGraphProperties() {
 
 		final List<GraphPropertyDescription> computedGraphProperties = new ArrayList<>();
 

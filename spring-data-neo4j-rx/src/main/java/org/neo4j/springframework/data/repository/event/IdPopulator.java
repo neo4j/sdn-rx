@@ -52,7 +52,7 @@ final class IdPopulator {
 		IdDescription idDescription = nodeDescription.getIdDescription();
 
 		// Filter in two steps to avoid unnecessary object creation.
-		if (!idDescription.idIsGeneratedExternally()) {
+		if (!idDescription.isExternallyGeneratedId()) {
 			return entity;
 		}
 

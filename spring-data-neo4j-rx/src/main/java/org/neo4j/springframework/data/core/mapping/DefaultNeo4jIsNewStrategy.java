@@ -57,14 +57,14 @@ class DefaultNeo4jIsNewStrategy implements IsNewStrategy {
 		IdDescription idDescription = entityMetaData.getIdDescription();
 		Class<?> valueType = entityMetaData.getRequiredIdProperty().getType();
 
-		if (idDescription.idIsGeneratedExternally() && valueType.isPrimitive()) {
+		if (idDescription.isExternallyGeneratedId() && valueType.isPrimitive()) {
 			throw new IllegalArgumentException(String.format("Cannot use %s with externally generated, primitive ids.",
 				DefaultNeo4jIsNewStrategy.class.getName()));
 		}
 
 		Function<Object, Object> valueLookup;
 		Neo4jPersistentProperty versionProperty = entityMetaData.getVersionProperty();
-		if (idDescription.idIsAssigned()) {
+		if (idDescription.isAssignedId()) {
 			if (versionProperty == null) {
 				log.warn("Instances of " + entityMetaData.getType()
 					+ " with an assigned id will always be treated as new without version property!");
@@ -102,7 +102,7 @@ class DefaultNeo4jIsNewStrategy implements IsNewStrategy {
 	public boolean isNew(Object entity) {
 
 		Object value = valueLookup.apply(entity);
-		if (idDescription.idIsGeneratedInternally()) {
+		if (idDescription.isInternallyGeneratedId()) {
 
 			boolean isNew = false;
 			if (value != null && valueType.isPrimitive() && Number.class.isInstance(value)) {
@@ -112,9 +112,9 @@ class DefaultNeo4jIsNewStrategy implements IsNewStrategy {
 			}
 
 			return isNew;
-		} else if (idDescription.idIsGeneratedExternally()) {
+		} else if (idDescription.isExternallyGeneratedId()) {
 			return value == null;
-		} else if (idDescription.idIsAssigned()) {
+		} else if (idDescription.isAssignedId()) {
 			if (valueType != null && !valueType.isPrimitive()) {
 				return value == null;
 			}

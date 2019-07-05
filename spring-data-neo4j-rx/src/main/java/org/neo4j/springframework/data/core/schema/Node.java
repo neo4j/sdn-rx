@@ -38,6 +38,7 @@ import org.springframework.core.annotation.AliasFor;
 @Target(ElementType.TYPE)
 @Documented
 @Inherited
+@org.springframework.data.annotation.Persistent
 @API(status = API.Status.STABLE, since = "1.0")
 public @interface Node {
 

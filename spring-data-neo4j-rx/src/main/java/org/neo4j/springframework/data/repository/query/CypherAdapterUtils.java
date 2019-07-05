@@ -139,7 +139,7 @@ public final class CypherAdapterUtils {
 
 			List<Expression> expressions = new ArrayList<>();
 			expressions.add(rootNode);
-			if (idDescription.idIsGeneratedInternally()) {
+			if (idDescription.isInternallyGeneratedId()) {
 				expressions.add(Functions.id(rootNode).as(NAME_OF_INTERNAL_ID));
 			}
 			return Cypher.match(rootNode).where(condition.orElse(Conditions.noCondition()))
@@ -158,7 +158,7 @@ public final class CypherAdapterUtils {
 			Node rootNode = node(nodeDescription.getPrimaryLabel()).named(NAME_OF_ROOT_NODE);
 			IdDescription idDescription = nodeDescription.getIdDescription();
 			Parameter idParameter = parameter(NAME_OF_ID_PARAM);
-			if (!idDescription.idIsGeneratedInternally()) {
+			if (!idDescription.isInternallyGeneratedId()) {
 				String nameOfIdProperty = idDescription.getOptionalGraphPropertyName()
 					.orElseThrow(() -> new MappingException("External id does not correspond to a graph property!"));
 
@@ -234,7 +234,7 @@ public final class CypherAdapterUtils {
 		final SymbolicName rootNode = Cypher.name(NAME_OF_ROOT_NODE);
 		final IdDescription idDescription = nodeDescription.getIdDescription();
 		Expression idExpression;
-		if (idDescription.idIsGeneratedInternally()) {
+		if (idDescription.isInternallyGeneratedId()) {
 			idExpression = Functions.id(rootNode);
 		} else {
 			idExpression = idDescription.getOptionalGraphPropertyName()

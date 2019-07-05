@@ -57,7 +57,7 @@ public class Neo4jMappingContextTest {
 			.hasValueSatisfying(description -> {
 				assertThat(description.getUnderlyingClass()).isEqualTo(UserNode.class);
 
-				assertThat(description.getIdDescription().idIsGeneratedInternally()).isTrue();
+				assertThat(description.getIdDescription().isInternallyGeneratedId()).isTrue();
 
 				assertThat(description.getGraphProperties())
 					.extracting(GraphPropertyDescription::getFieldName)
@@ -74,7 +74,7 @@ public class Neo4jMappingContextTest {
 			.hasValueSatisfying(description -> {
 				assertThat(description.getUnderlyingClass()).isEqualTo(BikeNode.class);
 
-				assertThat(description.getIdDescription().idIsAssigned()).isTrue();
+				assertThat(description.getIdDescription().isAssignedId()).isTrue();
 
 				Collection<String> expectedRelationships = Arrays
 					.asList("[:owner] -> (:User)", "[:renter] -> (:User)", "[:dynamicRelationships] -> (:User)");

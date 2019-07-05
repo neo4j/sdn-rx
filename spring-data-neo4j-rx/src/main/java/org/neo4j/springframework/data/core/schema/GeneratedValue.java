@@ -67,7 +67,7 @@ public @interface GeneratedValue {
 	/**
 	 * This {@link IdGenerator} does nothing. It is used for relying on the internal, database-side created id.
 	 */
-	class InternalIdGenerator implements IdGenerator<Void> {
+	final class InternalIdGenerator implements IdGenerator<Void> {
 
 		@Override
 		public Void generateId(String primaryLabel, Object entity) {

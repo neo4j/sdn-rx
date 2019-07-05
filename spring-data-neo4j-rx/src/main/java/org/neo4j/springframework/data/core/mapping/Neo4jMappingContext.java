@@ -264,7 +264,7 @@ public final class Neo4jMappingContext
 		// Register all the known id generators
 		this.getPersistentEntities().stream()
 			.map(Neo4jPersistentEntity::getIdDescription)
-			.filter(IdDescription::idIsGeneratedExternally).map(IdDescription::getIdGeneratorClass)
+			.filter(IdDescription::isExternallyGeneratedId).map(IdDescription::getIdGeneratorClass)
 			.filter(Optional::isPresent).map(Optional::get)
 			.distinct()
 			.map(generatorClass -> {
