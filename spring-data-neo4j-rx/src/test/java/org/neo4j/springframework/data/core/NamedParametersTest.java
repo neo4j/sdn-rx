@@ -18,11 +18,16 @@
  */
 package org.neo4j.springframework.data.core;
 
+import static java.util.Collections.*;
 import static org.assertj.core.api.Assertions.*;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -89,9 +94,71 @@ class NamedParametersTest {
 			"Duplicate parameter name: 'a' already in the list of named parameters with value '1'. New value would be 'null'");
 	}
 
-	@Test
-	void shouldDealWithEmptyParameterList() {
+	@Nested
+	class ToString {
 
-		assertThat(new NamedParameters().get()).isEmpty();
+		@Test
+		void shouldDealWithEmptyParameterList() {
+
+			assertThat(new NamedParameters().get()).isEmpty();
+		}
+
+		@Test
+		void shouldEscapeStrings() {
+
+			NamedParameters p = new NamedParameters();
+			p.add("aKey", "A fancy\\ value");
+
+			assertThat(p.toString()).isEqualTo(":params {aKey: 'A fancy\\\\ value'}");
+		}
+
+		@Test
+		void shouldDealWithNullValues() {
+
+			NamedParameters p = new NamedParameters();
+			p.add("aKey", null);
+
+			assertThat(p.toString()).isEqualTo(":params {aKey: null}");
+		}
+
+		@Test
+		void shouldDealWithMaps() {
+
+			Map<String, Object> outer = new TreeMap<>();
+			outer.put("oma", "Something");
+			outer.put("omb", singletonMap("ims", "Something else"));
+
+			NamedParameters p = new NamedParameters();
+			p.add("aKey", outer);
+
+			assertThat(p.toString()).isEqualTo(":params {aKey: {oma: 'Something', omb: {ims: 'Something else'}}}");
+		}
+
+		@Test
+		void shouldDealWithNestedMaps() {
+
+			Map<String, Object> outer = new TreeMap<>();
+			outer.put("oma", "Something");
+			outer.put("omb", singletonMap("ims", singletonMap("imi", "Embedded Thing")));
+			outer.put("omc", singletonMap("ims", "Something else"));
+
+			NamedParameters p = new NamedParameters();
+			p.add("aKey", outer);
+
+			assertThat(p.toString()).isEqualTo(":params {aKey: {oma: 'Something', omb: {ims: {imi: 'Embedded Thing'}}, omc: {ims: 'Something else'}}}");
+		}
+
+		@Test
+		void shouldDealWithLists() {
+
+			NamedParameters p = new NamedParameters();
+			p.add("a", Arrays.asList("Something", "Else"));
+			p.add("l", Arrays.asList(1L, 2L, 3L));
+			p.add("m",
+					Arrays.asList(singletonMap("a", "av"), singletonMap("b", Arrays.asList("A", "b"))));
+
+			assertThat(p.toString())
+					.isEqualTo(":params {a: ['Something', 'Else'], l: [1, 2, 3], m: [{a: 'av'}, {b: ['A', 'b']}]}");
+		}
 	}
 }
