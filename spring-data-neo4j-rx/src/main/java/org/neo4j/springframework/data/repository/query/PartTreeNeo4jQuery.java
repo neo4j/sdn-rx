@@ -40,6 +40,7 @@ import org.neo4j.springframework.data.repository.query.Neo4jQueryMethod.Neo4jPar
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ResultProcessor;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.repository.query.parser.PartTree.OrPart;
@@ -87,7 +88,10 @@ final class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
 
 	@Override
 	protected PreparedQuery<?> prepareQuery(Object[] parameters) {
-
+		boolean projecting = queryMethod.getResultProcessor().getReturnedType().isProjecting();
+		System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+		System.out.println(projecting);
+		System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
 		Neo4jParameters formalParameters = (Neo4jParameters) this.queryMethod.getParameters();
 		ParameterAccessor actualParameters = new ParametersParameterAccessor(formalParameters, parameters);
 		CypherQueryCreator queryCreator = new CypherQueryCreator(

@@ -1560,6 +1560,12 @@ class RepositoryIT {
 			.containsExactlyInAnyOrder("name20");
 	}
 
+	@Test
+	void mapsInterfaceProjection() {
+		System.out.println(repository.findByName(TEST_PERSON1_FIRST_NAME).getName());
+	}
+
+
 	@Configuration
 	@EnableNeo4jRepositories
 	@EnableTransactionManagement

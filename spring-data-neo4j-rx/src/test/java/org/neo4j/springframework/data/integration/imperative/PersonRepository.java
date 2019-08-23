@@ -24,6 +24,7 @@ import java.util.Optional;
 
 import org.neo4j.driver.types.Point;
 import org.neo4j.springframework.data.integration.shared.KotlinPerson;
+import org.neo4j.springframework.data.integration.shared.NameOnly;
 import org.neo4j.springframework.data.integration.shared.PersonWithAllConstructor;
 import org.neo4j.springframework.data.integration.shared.PersonWithNoConstructor;
 import org.neo4j.springframework.data.integration.shared.PersonWithWither;
@@ -194,4 +195,6 @@ public interface PersonRepository extends Neo4jRepository<PersonWithAllConstruct
 	// List<PersonWithAllConstructor> findAllByNameNotEmpty();
 	// List<PersonWithAllConstructor> findAllByPlaceNear(Point p);
 	// List<PersonWithAllConstructor> findAllByPlaceNear(Point p, String);
+
+	PersonWithAllConstructor findByName(String name);
 }
