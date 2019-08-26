@@ -196,5 +196,5 @@ public interface PersonRepository extends Neo4jRepository<PersonWithAllConstruct
 	// List<PersonWithAllConstructor> findAllByPlaceNear(Point p);
 	// List<PersonWithAllConstructor> findAllByPlaceNear(Point p, String);
 
-	PersonWithAllConstructor findByName(String name);
+	NameOnly findByName(String name);
 }
