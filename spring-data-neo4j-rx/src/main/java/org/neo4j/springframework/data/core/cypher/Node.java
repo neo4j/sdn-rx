@@ -130,6 +130,22 @@ public final class Node implements PatternElement, Named, Expression, ExposesRel
 		return properties(newProperties);
 	}
 
+	/**
+	 * Creates a map projection based on this node. The node needs a symbolic name for this to work.
+	 * <p>
+	 * Entries of type {@code String} in {@code entries} followed by an {@link Expression} will be treated as map keys
+	 * pointing to the expression in the projection, {@code String} entries alone will be treated as property lookups on the node.
+	 *
+	 * @param entries A list of entries for the projection
+	 * @return A map projection.
+	 */
+	public MapProjection project(Object... entries) {
+		return MapProjection.create(this.getSymbolicName().orElseThrow(() -> new IllegalStateException("Cannot project a node without a symbolic name.")), entries);
+	}
+
+	/**
+	 * @return The optional symbolic name of this node.
+	 */
 	public Optional<SymbolicName> getSymbolicName() {
 		return Optional.ofNullable(symbolicName);
 	}

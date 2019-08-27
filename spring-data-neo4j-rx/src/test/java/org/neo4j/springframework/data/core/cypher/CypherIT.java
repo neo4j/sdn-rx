@@ -484,7 +484,8 @@ class CypherIT {
 			Statement statement = firstStep.returning(Cypher.asterisk()).build();
 
 			assertThat(cypherRenderer.render(statement))
-				.isEqualTo("MATCH (b:`Bike`) WITH b OPTIONAL MATCH (u:`User`) OPTIONAL MATCH (:`Trip`) DELETE u RETURN *");
+				.isEqualTo(
+					"MATCH (b:`Bike`) WITH b OPTIONAL MATCH (u:`User`) OPTIONAL MATCH (:`Trip`) DELETE u RETURN *");
 		}
 
 		@Test
@@ -1860,6 +1861,144 @@ class CypherIT {
 			assertThatIllegalArgumentException().isThrownBy(() ->
 				Cypher.union(statement, statement3)).withMessage("Cannot mix union and union all!");
 
+		}
+	}
+
+	@Nested
+	class MapProjections {
+
+		@Nested
+		class OnNodes {
+
+			@Test
+			void simple() {
+
+				Statement statement;
+				Node n = anyNode("n");
+
+				statement = Cypher.match(n)
+					.returning(n.project("__internalNeo4jId__", Functions.id(n), "name"))
+					.build();
+				assertThat(cypherRenderer.render(statement))
+					.isEqualTo(
+						"MATCH (n) RETURN n{__internalNeo4jId__: id(n), .name}");
+
+				statement = Cypher.match(n)
+					.returning(n.project("name", "__internalNeo4jId__", Functions.id(n)))
+					.build();
+				assertThat(cypherRenderer.render(statement))
+					.isEqualTo(
+						"MATCH (n) RETURN n{.name, __internalNeo4jId__: id(n)}");
+			}
+
+			@Test
+			void nested() {
+
+				Statement statement;
+				Node n = Cypher.node("Person").named("p");
+				Node m = Cypher.node("Movie").named("m");
+
+				statement = Cypher.match(n.relationshipTo(m, "ACTED_IN"))
+					.returning(
+						n.project(
+							"__internalNeo4jId__", Functions.id(n), "name", "nested",
+							m.project("title", "__internalNeo4jId__", Functions.id(m))
+						))
+					.build();
+				assertThat(cypherRenderer.render(statement))
+					.isEqualTo(
+						"MATCH (p:`Person`)-[:`ACTED_IN`]->(m:`Movie`) RETURN p{__internalNeo4jId__: id(p), .name, nested: m{.title, __internalNeo4jId__: id(m)}}");
+			}
+
+			@Test
+			void requiresSymbolicName() {
+				assertThatIllegalStateException().isThrownBy(() -> {
+					Node n = Cypher.node("Person");
+					n.project("something");
+				}).withMessage("Cannot project a node without a symbolic name.");
+			}
+		}
+
+		@Nested
+		class OnRelationShips {
+
+			@Test
+			void simple() {
+
+				Statement statement;
+				Node n = Cypher.node("Person").named("p");
+				Node m = Cypher.node("Movie").named("m");
+				Relationship rel = n.relationshipTo(m, "ACTED_IN").named("r");
+
+				statement = Cypher.match(rel)
+					.returning(
+						rel.project(
+							"__internalNeo4jId__", Functions.id(rel), "roles"
+						))
+					.build();
+				assertThat(cypherRenderer.render(statement))
+					.isEqualTo(
+						"MATCH (p:`Person`)-[r:`ACTED_IN`]->(m:`Movie`) RETURN r{__internalNeo4jId__: id(r), .roles}");
+			}
+
+			@Test
+			void nested() {
+
+				Statement statement;
+				Node n = Cypher.node("Person").named("p");
+				Node m = Cypher.node("Movie").named("m");
+				Relationship rel = n.relationshipTo(m, "ACTED_IN").named("r");
+
+				statement = Cypher.match(rel)
+					.returning(
+						m.project("title", "roles",
+						rel.project(
+							"__internalNeo4jId__", Functions.id(rel), "roles"
+						)))
+					.build();
+				assertThat(cypherRenderer.render(statement))
+					.isEqualTo(
+						"MATCH (p:`Person`)-[r:`ACTED_IN`]->(m:`Movie`) RETURN m{.title, roles: r{__internalNeo4jId__: id(r), .roles}}");
+			}
+
+			@Test
+			void requiresSymbolicName() {
+				assertThatIllegalStateException().isThrownBy(() -> {
+					Node n = Cypher.node("Person").named("p");
+					Node m = Cypher.node("Movie").named("m");
+					Relationship rel = n.relationshipTo(m, "ACTED_IN");
+					rel.project("something");
+				}).withMessage("Cannot project a relationship without a symbolic name.");
+			}
+		}
+
+		@Test
+		void asterisk() {
+
+			Statement statement;
+			Node n = anyNode("n");
+
+			statement = Cypher.match(n)
+				.returning(n.project(Cypher.asterisk()))
+				.build();
+			assertThat(cypherRenderer.render(statement))
+				.isEqualTo(
+					"MATCH (n) RETURN n{.*}");
+		}
+
+		@Test
+		void invalid() {
+
+			String expectedMessage = "FunctionInvocation{functionName='id'} of type class org.neo4j.springframework.data.core.cypher.FunctionInvocation cannot be used with an implicit name as map entry.";
+			assertThatIllegalArgumentException().isThrownBy(() -> {
+				Node n = anyNode("n");
+				n.project(Functions.id(n));
+			}).withMessage(expectedMessage);
+
+			assertThatIllegalArgumentException().isThrownBy(() -> {
+				Node n = anyNode("n");
+				n.project("a", Cypher.mapOf("a", Cypher.literalOf("b")), Functions.id(n));
+			}).withMessage(expectedMessage);
 		}
 	}
 }

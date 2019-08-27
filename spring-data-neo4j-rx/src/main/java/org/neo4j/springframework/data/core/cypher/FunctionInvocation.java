@@ -52,4 +52,10 @@ public final class FunctionInvocation implements Expression {
 		this.arguments.accept(visitor);
 		visitor.leave(this);
 	}
+
+	@Override public String toString() {
+		return "FunctionInvocation{" +
+			"functionName='" + functionName + '\'' +
+			'}';
+	}
 }
