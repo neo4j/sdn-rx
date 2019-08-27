@@ -31,8 +31,11 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 
+import org.neo4j.driver.Record;
 import org.neo4j.driver.types.Point;
+import org.neo4j.driver.types.TypeSystem;
 import org.neo4j.springframework.data.core.Neo4jClient;
 import org.neo4j.springframework.data.core.PreparedQuery;
 import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
@@ -41,6 +44,7 @@ import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.data.repository.query.ResultProcessor;
+import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.repository.query.parser.PartTree.OrPart;
@@ -88,14 +92,22 @@ final class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
 
 	@Override
 	protected PreparedQuery<?> prepareQuery(Object[] parameters) {
-		boolean projecting = queryMethod.getResultProcessor().getReturnedType().isProjecting();
+		ReturnedType returnedType = queryMethod.getResultProcessor().getReturnedType();
+		boolean projecting = returnedType.isProjecting();
 		System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
 		System.out.println(projecting);
 		System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+		System.out.println(returnedType.getInputProperties());
+		System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+
+		Class<?> type = projecting
+			? returnedType.getDomainType()
+			: domainType;
+
 		Neo4jParameters formalParameters = (Neo4jParameters) this.queryMethod.getParameters();
 		ParameterAccessor actualParameters = new ParametersParameterAccessor(formalParameters, parameters);
 		CypherQueryCreator queryCreator = new CypherQueryCreator(
-			mappingContext, domainType, tree, formalParameters, actualParameters
+			mappingContext, type, tree, formalParameters, actualParameters
 		);
 
 		String cypherQuery = queryCreator.createQuery();
@@ -104,10 +116,18 @@ final class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
 			.collect(toMap(Neo4jQueryMethod.Neo4jParameter::getNameOrIndex,
 				formalParameter -> convertParameter(parameters[formalParameter.getIndex()])));
 
-		return PreparedQuery.queryFor(super.domainType).withCypherQuery(cypherQuery)
+		BiFunction<TypeSystem, Record, ?> mappingFunction = projecting
+			? getMappingFunction()
+			: mappingContext.getMappingFunctionFor(type);
+
+		return PreparedQuery.queryFor(type).withCypherQuery(cypherQuery)
 			.withParameters(boundedParameters)
-			.usingMappingFunction(mappingContext.getMappingFunctionFor(super.domainType))
+			.usingMappingFunction(mappingFunction)
 			.build();
+	}
+
+	private BiFunction<TypeSystem, Record, ?> getMappingFunction() {
+		return mappingContext.getMappingFunctionFor(domainType);
 	}
 
 	/**
