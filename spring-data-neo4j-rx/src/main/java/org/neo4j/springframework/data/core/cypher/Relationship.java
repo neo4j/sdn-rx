@@ -121,6 +121,7 @@ public final class Relationship implements
 		return new Relationship(this.left, this.details.named(newSymbolicName), this.right);
 	}
 
+	@Override
 	public Optional<SymbolicName> getSymbolicName() {
 		return details.getSymbolicName();
 	}

@@ -284,6 +284,13 @@ public final class Cypher {
 		return unionImpl(true, statement);
 	}
 
+	public static PatternComprehension.OngoingDefinition listBasedOn(Relationship pattern) {
+		return PatternComprehension.basedOn(pattern);
+	}
+
+	public static PatternComprehension.OngoingDefinition listBasedOn(RelationshipChain pattern) {
+		return PatternComprehension.basedOn(pattern);
+	}
 	/**
 	 * Escapes and quotes the {@code unquotedString} for safe usage in Neo4j-Browser and Shell.
 	 *

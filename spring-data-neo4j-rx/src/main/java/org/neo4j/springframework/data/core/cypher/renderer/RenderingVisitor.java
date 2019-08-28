@@ -403,6 +403,14 @@ class RenderingVisitor extends ReflectiveVisitor {
 		builder.append(" ");
 	}
 
+	void enter(PatternComprehension patternComprehension) {
+		builder.append("[");
+	}
+
+	void leave(PatternComprehension patternComprehension) {
+		builder.append("]");
+	}
+
 	public String getRenderedContent() {
 		return this.builder.toString();
 	}

@@ -2001,4 +2001,76 @@ class CypherIT {
 			}).withMessage(expectedMessage);
 		}
 	}
+
+	@Nested
+	class PatternComprehensions {
+
+		@Test
+		void simple() {
+
+			Statement statement;
+			Node a = Cypher.node("Person").properties("name", literalOf("Keanu Reeves")).named("a");
+			Node b = Cypher.anyNode("b");
+
+			statement = Cypher.match(a)
+				.returning(listBasedOn(a.relationshipBetween(b)).definedAs(b.property("released")).as("years"))
+				.build();
+			assertThat(cypherRenderer.render(statement))
+				.isEqualTo(
+					"MATCH (a:`Person` {name: 'Keanu Reeves'}) RETURN [(a)-[]-(b)|b.released] AS years");
+		}
+
+		@Test
+		void simpleWithWhere() {
+
+			Statement statement;
+			Node a = Cypher.node("Person").properties("name", literalOf("Keanu Reeves")).named("a");
+			Node b = Cypher.anyNode("b");
+
+			statement = Cypher.match(a)
+				.returning(
+					listBasedOn(a.relationshipBetween(b)).where(b.hasLabels("Movie")).definedAs(b.property("released"))
+						.as("years"))
+				.build();
+			assertThat(cypherRenderer.render(statement))
+				.isEqualTo(
+					"MATCH (a:`Person` {name: 'Keanu Reeves'}) RETURN [(a)-[]-(b) WHERE b:`Movie`|b.released] AS years");
+		}
+
+		@Test
+		void nested() {
+
+			Statement statement;
+
+			Node n = Cypher.node("Person").named("n");
+			Node o1 = Cypher.node("Organisation").named("o1");
+			Node l1 = Cypher.node("Location").named("l1");
+			Node p2 = Cypher.node("Person").named("p2");
+
+			Relationship r_f1 = n.relationshipTo(o1, "FOUNDED").named("r_f1");
+			Relationship r_e1 = n.relationshipTo(o1, "EMPLOYED_BY").named("r_e1");
+			Relationship r_l1 = n.relationshipTo(l1, "LIVES_AT").named("r_l1");
+			Relationship r_l2 = l1.relationshipFrom(p2, "LIVES_AT").named("r_l2");
+
+			statement = Cypher.match(n)
+				.returning(n,
+					listOf(
+						listBasedOn(r_f1).definedAs(r_f1, o1),
+						listBasedOn(r_e1).definedAs(r_e1, o1),
+						listBasedOn(r_l1).definedAs(
+							r_l1, l1,
+							// The building of the statement works with and without the outer list,
+							// I'm not sure if it would be necessary for the result, but as I took the query from
+							// Neo4j-OGM, I'd like to keep it
+							listOf(listBasedOn(r_l2).definedAs(r_l2, p2))
+						)
+					)
+				)
+				.build();
+
+			assertThat(cypherRenderer.render(statement))
+				.isEqualTo(
+					"MATCH (n:`Person`) RETURN n, [[(n)-[r_f1:`FOUNDED`]->(o1:`Organisation`)|[r_f1, o1]], [(n)-[r_e1:`EMPLOYED_BY`]->(o1)|[r_e1, o1]], [(n)-[r_l1:`LIVES_AT`]->(l1:`Location`)|[r_l1, l1, [[(l1)<-[r_l2:`LIVES_AT`]-(p2:`Person`)|[r_l2, p2]]]]]]");
+		}
+	}
 }
