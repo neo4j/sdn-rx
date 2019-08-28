@@ -18,32 +18,50 @@
  */
 package org.neo4j.springframework.data.core.cypher;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apiguardian.api.API;
 import org.neo4j.springframework.data.core.cypher.support.Visitor;
+import org.springframework.util.Assert;
 
 /**
- * A negated version of the condition passed during construction of this condition.
+ * A condition checking for the presence of labels on nodes.
  *
  * @author Michael J. Simons
  * @since 1.0
  */
 @API(status = API.Status.INTERNAL, since = "1.0")
-public final class NotCondition implements Condition {
+public final class HasLabelCondition implements Condition {
 
-	/**
-	 * The condition to which the visit is delegated to after entering this condition.
-	 */
-	private final Condition condition;
+	private final SymbolicName nodeName;
+	private final List<NodeLabel> nodeLabels;
 
-	NotCondition(Condition condition) {
-		this.condition = condition;
+	static HasLabelCondition create(SymbolicName nodeName, String... labels) {
+
+		Assert.notNull(nodeName, "A symbolic name for the node is required.");
+		Assert.notNull(labels, "Labels to query are required.");
+		Assert.notEmpty(labels, "At least one label to query is required.");
+
+		final List<NodeLabel> nodeLabels = new ArrayList<>(labels.length);
+		for (String label : labels) {
+			nodeLabels.add(new NodeLabel(label));
+		}
+
+		return new HasLabelCondition(nodeName, nodeLabels);
+	}
+
+	private HasLabelCondition(SymbolicName nodeName, List<NodeLabel> nodeLabels) {
+		this.nodeName = nodeName;
+		this.nodeLabels = nodeLabels;
 	}
 
 	@Override
 	public void accept(Visitor visitor) {
 
 		visitor.enter(this);
-		condition.accept(visitor);
+		nodeName.accept(visitor);
+		this.nodeLabels.forEach(label -> label.accept(visitor));
 		visitor.leave(this);
 	}
 }

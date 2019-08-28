@@ -183,6 +183,18 @@ public final class Node implements PatternElement, Named, Expression, ExposesRel
 		return Relationship.create(this, Direction.UNI, other, types);
 	}
 
+	/**
+	 * A condition that checks for the presence of labels on a node.
+	 *
+	 * @param labelsToQuery A list of labels to query
+	 * @return A condition that checks whether this node has all of the labels to query
+	 */
+	public Condition hasLabels(String... labelsToQuery) {
+		return HasLabelCondition.create(this.getSymbolicName()
+				.orElseThrow(() -> new IllegalStateException("Cannot query a node without a symbolic name.")),
+			labelsToQuery);
+	}
+
 	@Override
 	public void accept(Visitor visitor) {
 
