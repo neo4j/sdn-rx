@@ -99,7 +99,7 @@ public final class Node implements PatternElement, Named, Expression, ExposesRel
 	public Node named(String newSymbolicName) {
 
 		Assert.hasText(newSymbolicName, "Symbolic name is required.");
-		return new Node(new SymbolicName(newSymbolicName), properties, labels);
+		return new Node(SymbolicName.create(newSymbolicName), properties, labels);
 	}
 
 	/**
@@ -128,6 +128,17 @@ public final class Node implements PatternElement, Named, Expression, ExposesRel
 			newProperties = MapExpression.create(keysAndValues);
 		}
 		return properties(newProperties);
+	}
+
+	/**
+	 * A list will never be a valid entry for a map projection, so this convenient method prevents trying to create one
+	 * from a list of objects. It will delegate to {@link #project(Object...)} with the content of the list.
+	 *
+	 * @param entries A list of entries for the projection
+	 * @return A map projection.
+	 */
+	public MapProjection project(List<Object> entries) {
+		return project(entries.toArray());
 	}
 
 	/**

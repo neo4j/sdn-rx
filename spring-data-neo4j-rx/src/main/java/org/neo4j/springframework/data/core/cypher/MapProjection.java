@@ -37,6 +37,10 @@ public class MapProjection implements Expression {
 
 	private MapExpression<?> map;
 
+	static MapProjection create(SymbolicName name, List<Object> content) {
+		return create(name, content.toArray());
+	}
+
 	static MapProjection create(SymbolicName name, Object... content) {
 
 		final List<MapEntry> newContent = new ArrayList<>(content.length);
