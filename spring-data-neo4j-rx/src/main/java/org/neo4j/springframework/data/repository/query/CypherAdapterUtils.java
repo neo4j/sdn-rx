@@ -328,7 +328,7 @@ public final class CypherAdapterUtils {
 
 				generatedLists.add(relationshipTargetName);
 				generatedLists.add(listBasedOn(relationship)
-					.definedAs(projectPropertiesAndRelationships(endNodeDescription, propertyName)));
+					.returning(projectPropertiesAndRelationships(endNodeDescription, propertyName)));
 			}
 
 			return generatedLists;

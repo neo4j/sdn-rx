@@ -2013,7 +2013,7 @@ class CypherIT {
 			Node b = Cypher.anyNode("b");
 
 			statement = Cypher.match(a)
-				.returning(listBasedOn(a.relationshipBetween(b)).definedAs(b.property("released")).as("years"))
+				.returning(listBasedOn(a.relationshipBetween(b)).returning(b.property("released")).as("years"))
 				.build();
 			assertThat(cypherRenderer.render(statement))
 				.isEqualTo(
@@ -2029,7 +2029,7 @@ class CypherIT {
 
 			statement = Cypher.match(a)
 				.returning(
-					listBasedOn(a.relationshipBetween(b)).where(b.hasLabels("Movie")).definedAs(b.property("released"))
+					listBasedOn(a.relationshipBetween(b)).where(b.hasLabels("Movie")).returning(b.property("released"))
 						.as("years"))
 				.build();
 			assertThat(cypherRenderer.render(statement))
@@ -2055,14 +2055,14 @@ class CypherIT {
 			statement = Cypher.match(n)
 				.returning(n,
 					listOf(
-						listBasedOn(r_f1).definedAs(r_f1, o1),
-						listBasedOn(r_e1).definedAs(r_e1, o1),
-						listBasedOn(r_l1).definedAs(
+						listBasedOn(r_f1).returning(r_f1, o1),
+						listBasedOn(r_e1).returning(r_e1, o1),
+						listBasedOn(r_l1).returning(
 							r_l1, l1,
 							// The building of the statement works with and without the outer list,
 							// I'm not sure if it would be necessary for the result, but as I took the query from
 							// Neo4j-OGM, I'd like to keep it
-							listOf(listBasedOn(r_l2).definedAs(r_l2, p2))
+							listOf(listBasedOn(r_l2).returning(r_l2, p2))
 						)
 					)
 				)

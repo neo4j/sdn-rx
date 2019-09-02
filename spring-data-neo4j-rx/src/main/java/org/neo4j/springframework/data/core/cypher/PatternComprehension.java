@@ -60,7 +60,7 @@ public final class PatternComprehension implements Expression {
 		 * @param listDefinition Defines the elements to be returned from the pattern
 		 * @return The final definition of the pattern comprehension
 		 */
-		PatternComprehension definedAs(Expression... listDefinition);
+		PatternComprehension returning(Expression... listDefinition);
 	}
 
 	/**
@@ -80,7 +80,7 @@ public final class PatternComprehension implements Expression {
 		}
 
 		@Override
-		public PatternComprehension definedAs(Expression... expressions) {
+		public PatternComprehension returning(Expression... expressions) {
 
 			Assert.notNull(expressions, "Expressions are required.");
 			Assert.notEmpty(expressions, "At least one expression is required.");
