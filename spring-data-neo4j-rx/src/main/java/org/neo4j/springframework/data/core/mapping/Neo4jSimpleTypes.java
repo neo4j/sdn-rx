@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.springframework.data.core.schema;
+package org.neo4j.springframework.data.core.mapping;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -35,6 +35,7 @@ import org.neo4j.driver.types.IsoDuration;
 import org.neo4j.driver.types.Path;
 import org.neo4j.driver.types.Point;
 import org.neo4j.driver.types.Relationship;
+import org.neo4j.springframework.data.core.schema.Node;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 
 /**
@@ -81,9 +82,7 @@ public final class Neo4jSimpleTypes {
 	/**
 	 * The simple types we support plus all the simple types recognized by Spring.
 	 */
-	// TODO We need a conversion for some.
-	// TODO Add some special treatment for Period/Duration vs IsoDuration as well as the spatial types.
-	public static final SimpleTypeHolder SIMPLE_TYPE_HOLDER = new SimpleTypeHolder(NEO4J_NATIVE_TYPES, true);
+	public static final SimpleTypeHolder HOLDER = new SimpleTypeHolder(NEO4J_NATIVE_TYPES, true);
 
 	/**
 	 * Converts the given Neo4j driver value into the designated type.

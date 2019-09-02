@@ -36,9 +36,11 @@ import java.util.function.Supplier;
 import org.apiguardian.api.API;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.types.TypeSystem;
+import org.neo4j.springframework.data.core.convert.DefaultNeo4jConverter;
+import org.neo4j.springframework.data.core.convert.Neo4jConverter;
+import org.neo4j.springframework.data.core.convert.Neo4jCustomConversions;
 import org.neo4j.springframework.data.core.schema.IdDescription;
 import org.neo4j.springframework.data.core.schema.IdGenerator;
-import org.neo4j.springframework.data.core.schema.Neo4jSimpleTypes;
 import org.neo4j.springframework.data.core.schema.NodeDescription;
 import org.neo4j.springframework.data.core.schema.Relationship;
 import org.neo4j.springframework.data.core.schema.RelationshipDescription;
@@ -54,6 +56,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.context.AbstractMappingContext;
@@ -88,10 +91,22 @@ public final class Neo4jMappingContext
 	 */
 	private final Map<Class<? extends IdGenerator<?>>, IdGenerator<?>> fallbackIdGenerators = new ConcurrentHashMap<>();
 
+	/**
+	 * The converter used in this mapping context.
+	 */
+	private final Neo4jConverter converter;
+
 	private @Nullable ListableBeanFactory beanFactory;
 
 	public Neo4jMappingContext() {
-		super.setSimpleTypeHolder(Neo4jSimpleTypes.SIMPLE_TYPE_HOLDER);
+
+		this(new DefaultNeo4jConverter(new Neo4jCustomConversions(), new DefaultConversionService()));
+	}
+
+	public Neo4jMappingContext(Neo4jConverter converter) {
+
+		super.setSimpleTypeHolder(Neo4jSimpleTypes.HOLDER);
+		this.converter = converter;
 	}
 
 	/*
@@ -184,7 +199,7 @@ public final class Neo4jMappingContext
 	public <T> BiFunction<TypeSystem, Record, T> getMappingFunctionFor(Class<T> targetClass) {
 		if (this.hasPersistentEntityFor(targetClass)) {
 			Neo4jPersistentEntity neo4jPersistentEntity = this.getPersistentEntity(targetClass);
-			return new DefaultNeo4jMappingFunction<>(neo4jPersistentEntity, this);
+			return new DefaultNeo4jMappingFunction<>(neo4jPersistentEntity, this, this.converter);
 		}
 
 		return null;

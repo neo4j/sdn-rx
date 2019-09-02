@@ -39,6 +39,7 @@ import org.neo4j.driver.Value;
 import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Relationship;
 import org.neo4j.driver.types.TypeSystem;
+import org.neo4j.springframework.data.core.convert.Neo4jConverter;
 import org.neo4j.springframework.data.core.schema.RelationshipDescription;
 import org.neo4j.springframework.data.core.schema.SchemaUtils;
 import org.springframework.core.log.LogAccessor;
@@ -78,12 +79,15 @@ final class DefaultNeo4jMappingFunction<T> implements BiFunction<TypeSystem, Rec
 
 	private final Neo4jMappingContext mappingContext;
 
+	private final Neo4jConverter converter;
+
 	private static final Predicate<Map.Entry<String, Object>> IS_LIST = entry -> entry.getValue() instanceof List;
 
-	DefaultNeo4jMappingFunction(Neo4jPersistentEntity<T> rootNodeDescription, Neo4jMappingContext neo4jMappingContext) {
+	DefaultNeo4jMappingFunction(Neo4jPersistentEntity<T> rootNodeDescription, Neo4jMappingContext neo4jMappingContext, Neo4jConverter converter) {
 
 		this.rootNodeDescription = rootNodeDescription;
 		this.mappingContext = neo4jMappingContext;
+		this.converter = converter;
 	}
 
 	@Override
@@ -149,7 +153,8 @@ final class DefaultNeo4jMappingFunction<T> implements BiFunction<TypeSystem, Rec
 
 		ET instance = instantiate(nodeDescription, queryResult);
 
-		PersistentPropertyAccessor<ET> propertyAccessor = nodeDescription.getPropertyAccessor(instance);
+		PersistentPropertyAccessor<ET> propertyAccessor = converter
+			.decoratePropertyAccessor(nodeDescription.getPropertyAccessor(instance));
 		if (nodeDescription.requiresPropertyPopulation()) {
 
 			// Fill simple properties
@@ -168,17 +173,20 @@ final class DefaultNeo4jMappingFunction<T> implements BiFunction<TypeSystem, Rec
 		return instance;
 	}
 
-	private static <ET> ET instantiate(Neo4jPersistentEntity<ET> anotherNodeDescription, Map<String, Object> values) {
-		return INSTANTIATORS.getInstantiatorFor(anotherNodeDescription).createInstance(anotherNodeDescription,
-			new ParameterValueProvider<Neo4jPersistentProperty>() {
-				@Override
-				public Object getParameterValue(PreferredConstructor.Parameter parameter) {
+	private <ET> ET instantiate(Neo4jPersistentEntity<ET> anotherNodeDescription, Map<String, Object> values) {
 
-					Neo4jPersistentProperty matchingProperty = anotherNodeDescription
-						.getRequiredPersistentProperty(parameter.getName());
-					return extractValueOf(matchingProperty, values);
-				}
-			});
+		ParameterValueProvider<Neo4jPersistentProperty> parameterValueProvider = new ParameterValueProvider<Neo4jPersistentProperty>() {
+			@Override
+			public Object getParameterValue(PreferredConstructor.Parameter parameter) {
+
+				Neo4jPersistentProperty matchingProperty = anotherNodeDescription
+					.getRequiredPersistentProperty(parameter.getName());
+				return extractValueOf(matchingProperty, values);
+			}
+		};
+		parameterValueProvider = converter.decorateParameterValueProvider(parameterValueProvider);
+		return INSTANTIATORS.getInstantiatorFor(anotherNodeDescription)
+			.createInstance(anotherNodeDescription, parameterValueProvider);
 	}
 
 	private static PropertyHandler<Neo4jPersistentProperty> populateFrom(
@@ -309,13 +317,7 @@ final class DefaultNeo4jMappingFunction<T> implements BiFunction<TypeSystem, Rec
 			return propertyContainer.get(NAME_OF_INTERNAL_ID);
 		} else {
 			String graphPropertyName = property.getPropertyName();
-			return getValueFor(graphPropertyName, propertyContainer);
+			return propertyContainer.get(graphPropertyName);
 		}
-	}
-
-	private static Object getValueFor(String graphProperty, Map<String, Object> entity) {
-
-		// TODO conversion, Type system
-		return entity.get(graphProperty);
 	}
 }
