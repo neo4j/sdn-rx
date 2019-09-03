@@ -1561,8 +1561,13 @@ class RepositoryIT {
 	}
 
 	@Test
-	void mapsInterfaceProjection() {
+	void mapsInterfaceProjectionWithDerivedFinderMethod() {
 		assertThat(repository.findByName(TEST_PERSON1_NAME).getName()).isEqualTo(TEST_PERSON1_NAME);
+	}
+
+	@Test
+	void mapsInterfaceProjectionWithCustomQuery() {
+		assertThat(repository.findProjectionByName(TEST_PERSON1_NAME).getName()).isEqualTo(TEST_PERSON1_NAME);
 	}
 
 

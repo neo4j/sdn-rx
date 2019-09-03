@@ -197,4 +197,7 @@ public interface PersonRepository extends Neo4jRepository<PersonWithAllConstruct
 	// List<PersonWithAllConstructor> findAllByPlaceNear(Point p, String);
 
 	NameOnly findByName(String name);
+
+	@Query("MATCH (n:PersonWithAllConstructor) where n.name = $name return n{.name}")
+	NameOnly findProjectionByName(@Param("name") String name);
 }

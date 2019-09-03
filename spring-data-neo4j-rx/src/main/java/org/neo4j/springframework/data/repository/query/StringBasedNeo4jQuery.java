@@ -158,11 +158,14 @@ final class StringBasedNeo4jQuery extends AbstractNeo4jQuery {
 
 	@Override
 	protected PreparedQuery<?> prepareQuery(Object[] parameters) {
-
+		boolean projecting = getQueryMethod().getResultProcessor().getReturnedType().isProjecting();
 		return PreparedQuery.queryFor(super.domainType)
 			.withCypherQuery(cypherQuery)
 			.withParameters(bindParameters(parameters))
-			.usingMappingFunction(mappingContext.getMappingFunctionFor(super.domainType)) // Null is fine
+			.usingMappingFunction(
+				projecting
+				? mappingContext.getProjectionMappingFunctionFor(super.domainType)
+				: mappingContext.getMappingFunctionFor(super.domainType)) // Null is fine
 			.build();
 	}
 
