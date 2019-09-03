@@ -24,15 +24,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apiguardian.api.API;
-import org.neo4j.springframework.data.core.convert.DefaultNeo4jConverter;
-import org.neo4j.springframework.data.core.convert.Neo4jConverter;
-import org.neo4j.springframework.data.core.convert.Neo4jCustomConversions;
+import org.neo4j.springframework.data.core.convert.Neo4jConversions;
 import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
 import org.neo4j.springframework.data.core.schema.Node;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
@@ -50,13 +47,8 @@ import org.springframework.util.StringUtils;
 abstract class Neo4jConfigurationSupport {
 
 	@Bean
-	public Neo4jCustomConversions neo4jCustomConversions() {
-		return new Neo4jCustomConversions();
-	}
-
-	@Bean
-	public Neo4jConverter neo4jConverter(Neo4jCustomConversions neo4jCustomConversions) {
-		return new DefaultNeo4jConverter(neo4jCustomConversions, new DefaultConversionService());
+	public Neo4jConversions neo4jConversions() {
+		return new Neo4jConversions();
 	}
 
 	/**
@@ -67,9 +59,9 @@ abstract class Neo4jConfigurationSupport {
 	 * @see #getMappingBasePackages()
 	 */
 	@Bean
-	public Neo4jMappingContext neo4jMappingContext(Neo4jConverter converter) throws ClassNotFoundException {
+	public Neo4jMappingContext neo4jMappingContext(Neo4jConversions neo4JConversions) throws ClassNotFoundException {
 
-		Neo4jMappingContext mappingContext = new Neo4jMappingContext(converter);
+		Neo4jMappingContext mappingContext = new Neo4jMappingContext(neo4JConversions);
 		mappingContext.setInitialEntitySet(getInitialEntitySet());
 
 		return mappingContext;

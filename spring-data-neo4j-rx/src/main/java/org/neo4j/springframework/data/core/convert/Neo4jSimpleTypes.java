@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.springframework.data.core.mapping;
+package org.neo4j.springframework.data.core.convert;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

@@ -23,7 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import org.neo4j.springframework.data.core.mapping.Neo4jSimpleTypes;
+import org.apiguardian.api.API;
 import org.springframework.data.convert.CustomConversions;
 
 /**
@@ -31,7 +31,8 @@ import org.springframework.data.convert.CustomConversions;
  * @soundtrack The Kleptones - A Night At The Hip-Hopera
  * @since 1.0
  */
-public class Neo4jCustomConversions extends CustomConversions {
+@API(status = API.Status.STABLE, since = "1.0")
+public final class Neo4jConversions extends CustomConversions {
 
 	private static final StoreConversions STORE_CONVERSIONS;
 	private static final List<Object> STORE_CONVERTERS;
@@ -40,16 +41,18 @@ public class Neo4jCustomConversions extends CustomConversions {
 
 		List<Object> converters = new ArrayList<>();
 
-		converters.addAll(Neo4jConverters.getConvertersToRegister());
+		converters.addAll(CypherTypes.CONVERTERS);
+		converters.addAll(AdditionalTypes.CONVERTERS);
+		converters.addAll(SpatialTypes.CONVERTERS);
 
 		STORE_CONVERTERS = Collections.unmodifiableList(converters);
 		STORE_CONVERSIONS = StoreConversions.of(Neo4jSimpleTypes.HOLDER, STORE_CONVERTERS);
 	}
 
 	/**
-	 * Creates a {@link Neo4jCustomConversions} object without custom converters.
+	 * Creates a {@link Neo4jConversions} object without custom converters.
 	 */
-	public Neo4jCustomConversions() {
+	public Neo4jConversions() {
 		this(Collections.emptyList());
 	}
 
@@ -58,7 +61,7 @@ public class Neo4jCustomConversions extends CustomConversions {
 	 *
 	 * @param converters must not be {@literal null}.
 	 */
-	public Neo4jCustomConversions(Collection<?> converters) {
+	public Neo4jConversions(Collection<?> converters) {
 		super(STORE_CONVERSIONS, converters);
 	}
 }

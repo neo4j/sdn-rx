@@ -22,100 +22,60 @@ import static org.springframework.data.convert.ConverterBuilder.*;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetTime;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.neo4j.driver.exceptions.value.LossyCoercion;
-import org.neo4j.driver.types.IsoDuration;
-import org.neo4j.driver.types.Point;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 /**
- * Built-in converters for Neo4j.
+ * Additional types that are supported out of the box.
+ * Mostly all of {@link org.springframework.data.mapping.model.SimpleTypeHolder SimpleTypeHolder's} defaults.
  *
  * @author Michael J. Simons
  * @since 1.0
  */
-abstract class Neo4jConverters {
+final class AdditionalTypes {
 
-	/**
-	 * Converters for all the supported {@link org.neo4j.springframework.data.core.mapping.Neo4jSimpleTypes simple types}.
-	 *
-	 * @return the converters to be registered.
-	 */
-	static Collection<Object> getConvertersToRegister() {
+	static final List<?> CONVERTERS;
 
-		List<Object> converters = new ArrayList<>();
+	static {
 
-		converters.add(reading(Value.class, Boolean.class, Value::asBoolean).andWriting(Values::value));
-		converters.add(reading(Value.class, Byte.class, Neo4jConverters::asByte).andWriting(Neo4jConverters::value));
-		converters.add(
-			reading(Value.class, Character.class, Neo4jConverters::asCharacter).andWriting(Neo4jConverters::value));
-		converters.add(
-			reading(Value.class, Date.class, Neo4jConverters::asDate).andWriting(Neo4jConverters::value));
-		converters.add(reading(Value.class, Double.class, Value::asDouble).andWriting(Values::value));
-		converters.add(new EnumConververt());
-		converters.add(
-			reading(Value.class, Float.class, Neo4jConverters::asFloat).andWriting(Neo4jConverters::value));
-		converters.add(reading(Value.class, Integer.class, Value::asInt).andWriting(Values::value));
-		converters.add(reading(Value.class, IsoDuration.class, Value::asIsoDuration).andWriting(Values::value));
-		converters.add(reading(Value.class, LocalDate.class, Value::asLocalDate).andWriting(Values::value));
-		converters.add(reading(Value.class, LocalDateTime.class, Value::asLocalDateTime).andWriting(Values::value));
-		converters.add(reading(Value.class, LocalTime.class, Value::asLocalTime).andWriting(Values::value));
-		converters.add(
-			reading(Value.class, Locale.class, Neo4jConverters::asLocale).andWriting(Neo4jConverters::value));
-		converters.add(reading(Value.class, Long.class, Value::asLong).andWriting(Values::value));
-		converters.add(reading(Value.class, Map.class, Value::asMap).andWriting(Values::value));
-		converters.add(reading(Value.class, OffsetTime.class, Value::asOffsetTime).andWriting(Values::value));
-		converters.add(reading(Value.class, Point.class, Value::asPoint).andWriting(Values::value));
-		converters.add(
-			reading(Value.class, Short.class, Neo4jConverters::asShort).andWriting(Neo4jConverters::value));
-		converters.add(reading(Value.class, String.class, Value::asString).andWriting(Values::value));
-		converters.add(reading(Value.class, Void.class, v -> null).andWriting(v -> Values.NULL));
-		converters.add(reading(Value.class, ZonedDateTime.class, Value::asZonedDateTime).andWriting(Values::value));
-		converters.add(reading(Value.class, boolean.class, Value::asBoolean).andWriting(Values::value));
-		converters
-			.add(reading(Value.class, boolean[].class, Neo4jConverters::asBooleanArray).andWriting(Values::value));
-		converters.add(reading(Value.class, byte.class, Neo4jConverters::asByte).andWriting(Neo4jConverters::value));
-		converters.add(reading(Value.class, byte[].class, Value::asByteArray).andWriting(Values::value));
-		converters.add(
-			reading(Value.class, char.class, Neo4jConverters::asCharacter).andWriting(Neo4jConverters::value));
-		converters.add(
-			reading(Value.class, char[].class, Neo4jConverters::asCharArray).andWriting(Neo4jConverters::value));
-		converters.add(reading(Value.class, double.class, Value::asDouble).andWriting(Values::value));
-		converters.add(reading(Value.class, double[].class, Neo4jConverters::asDoubleArray).andWriting(Values::value));
-		converters.add(
-			reading(Value.class, float.class, Neo4jConverters::asFloat).andWriting(Neo4jConverters::value));
-		converters.add(
-			reading(Value.class, float[].class, Neo4jConverters::asFloatArray).andWriting(Neo4jConverters::value));
-		converters.add(reading(Value.class, int.class, Value::asInt).andWriting(Values::value));
-		converters.add(reading(Value.class, int[].class, Neo4jConverters::asIntArray).andWriting(Values::value));
-		converters.add(reading(Value.class, long.class, Value::asLong).andWriting(Values::value));
-		converters.add(reading(Value.class, long[].class, Neo4jConverters::asLongArray).andWriting(Values::value));
-		converters.add(
-			reading(Value.class, short.class, Neo4jConverters::asShort).andWriting(Neo4jConverters::value));
-		converters.add(
-			reading(Value.class, short[].class, Neo4jConverters::asShortArray).andWriting(Neo4jConverters::value));
+		List<Object> hlp = new ArrayList<>();
+		hlp.add(reading(Value.class, boolean[].class, AdditionalTypes::asBooleanArray).andWriting(Values::value));
+		hlp.add(reading(Value.class, Byte.class, AdditionalTypes::asByte).andWriting(AdditionalTypes::value));
+		hlp.add(reading(Value.class, byte.class, AdditionalTypes::asByte).andWriting(AdditionalTypes::value));
+		hlp.add(reading(Value.class, Character.class, AdditionalTypes::asCharacter).andWriting(Values::value));
+		hlp.add(reading(Value.class, char.class, AdditionalTypes::asCharacter).andWriting(Values::value));
+		hlp.add(reading(Value.class, char[].class, AdditionalTypes::asCharArray).andWriting(Values::value));
+		hlp.add(reading(Value.class, Date.class, AdditionalTypes::asDate).andWriting(AdditionalTypes::value));
+		hlp.add(reading(Value.class, double[].class, AdditionalTypes::asDoubleArray).andWriting(Values::value));
+		hlp.add(new EnumConverter());
+		hlp.add(reading(Value.class, Float.class, AdditionalTypes::asFloat).andWriting(AdditionalTypes::value));
+		hlp.add(reading(Value.class, float.class, AdditionalTypes::asFloat).andWriting(AdditionalTypes::value));
+		hlp.add(reading(Value.class, float[].class, AdditionalTypes::asFloatArray).andWriting(AdditionalTypes::value));
+		hlp.add(reading(Value.class, Integer.class, Value::asInt).andWriting(Values::value));
+		hlp.add(reading(Value.class, int.class, Value::asInt).andWriting(Values::value));
+		hlp.add(reading(Value.class, int[].class, AdditionalTypes::asIntArray).andWriting(Values::value));
+		hlp.add(reading(Value.class, Locale.class, AdditionalTypes::asLocale).andWriting(AdditionalTypes::value));
+		hlp.add(reading(Value.class, long[].class, AdditionalTypes::asLongArray).andWriting(Values::value));
+		hlp.add(reading(Value.class, Short.class, AdditionalTypes::asShort).andWriting(AdditionalTypes::value));
+		hlp.add(reading(Value.class, short.class, AdditionalTypes::asShort).andWriting(AdditionalTypes::value));
+		hlp.add(reading(Value.class, short[].class, AdditionalTypes::asShortArray).andWriting(AdditionalTypes::value));
 
-		return converters;
+		CONVERTERS = Collections.unmodifiableList(hlp);
 	}
 
 	private static Byte asByte(Value value) {
@@ -129,21 +89,13 @@ abstract class Neo4jConverters {
 			return Values.NULL;
 		}
 
-		return Values.value(aByte);
+		return Values.value(new Byte[] { aByte });
 	}
 
 	private static Character asCharacter(Value value) {
 		char[] chars = value.asString().toCharArray();
 		Assert.isTrue(chars.length == 1, "Expected a char array with exactly 1 element.");
 		return chars[0];
-	}
-
-	private static Value value(Character aChar) {
-		if (aChar == null) {
-			return Values.NULL;
-		}
-
-		return Values.value(String.valueOf(aChar));
 	}
 
 	private static final String ISO_8601_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
@@ -166,11 +118,11 @@ abstract class Neo4jConverters {
 
 	@ReadingConverter
 	@WritingConverter
-	static class EnumConververt implements GenericConverter {
+	static class EnumConverter implements GenericConverter {
 
 		private final Set<ConvertiblePair> convertiblePairs;
 
-		EnumConververt() {
+		EnumConverter() {
 			Set<ConvertiblePair> hlp = new HashSet<>();
 			hlp.add(new ConvertiblePair(Enum.class, Value.class));
 			hlp.add(new ConvertiblePair(Value.class, Enum.class));
@@ -192,9 +144,8 @@ abstract class Neo4jConverters {
 			if (sourceType.getType() == Value.class) {
 				return Enum.valueOf((Class<Enum>) concreteTargetType, ((Value) source).asString());
 			} else {
-				return ((Enum) source).name();
+				return Values.value(((Enum) source).name());
 			}
-
 		}
 	}
 
@@ -211,7 +162,8 @@ abstract class Neo4jConverters {
 	}
 
 	private static Locale asLocale(Value value) {
-		return new Locale(value.asString());
+
+		return StringUtils.parseLocale(value.asString());
 	}
 
 	private static Value value(Locale locale) {
@@ -250,23 +202,10 @@ abstract class Neo4jConverters {
 	private static char[] asCharArray(Value value) {
 		char[] array = new char[value.size()];
 		int i = 0;
-		for (Character v : value.values(Neo4jConverters::asCharacter)) {
+		for (Character v : value.values(AdditionalTypes::asCharacter)) {
 			array[i++] = v;
 		}
 		return array;
-	}
-
-	private static Value value(char[] aCharArray) {
-		if (aCharArray == null) {
-			return Values.NULL;
-		}
-
-		String[] values = new String[aCharArray.length];
-		int i = 0;
-		for (char v : aCharArray) {
-			values[i++] = String.valueOf(v);
-		}
-		return Values.value(values);
 	}
 
 	private static double[] asDoubleArray(Value value) {
@@ -281,7 +220,7 @@ abstract class Neo4jConverters {
 	private static float[] asFloatArray(Value value) {
 		float[] array = new float[value.size()];
 		int i = 0;
-		for (float v : value.values(Neo4jConverters::asFloat)) {
+		for (float v : value.values(AdditionalTypes::asFloat)) {
 			array[i++] = v;
 		}
 		return array;
@@ -312,7 +251,7 @@ abstract class Neo4jConverters {
 	private static long[] asLongArray(Value value) {
 		long[] array = new long[value.size()];
 		int i = 0;
-		for (int v : value.values(Value::asInt)) {
+		for (long v : value.values(Value::asLong)) {
 			array[i++] = v;
 		}
 		return array;
@@ -321,7 +260,7 @@ abstract class Neo4jConverters {
 	private static short[] asShortArray(Value value) {
 		short[] array = new short[value.size()];
 		int i = 0;
-		for (short v : value.values(Neo4jConverters::asShort)) {
+		for (short v : value.values(AdditionalTypes::asShort)) {
 			array[i++] = v;
 		}
 		return array;
@@ -340,6 +279,6 @@ abstract class Neo4jConverters {
 		return Values.value(values);
 	}
 
-	private Neo4jConverters() {
+	private AdditionalTypes() {
 	}
 }

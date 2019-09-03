@@ -36,9 +36,9 @@ import java.util.function.Supplier;
 import org.apiguardian.api.API;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.types.TypeSystem;
-import org.neo4j.springframework.data.core.convert.DefaultNeo4jConverter;
 import org.neo4j.springframework.data.core.convert.Neo4jConverter;
-import org.neo4j.springframework.data.core.convert.Neo4jCustomConversions;
+import org.neo4j.springframework.data.core.convert.Neo4jConversions;
+import org.neo4j.springframework.data.core.convert.Neo4jSimpleTypes;
 import org.neo4j.springframework.data.core.schema.IdDescription;
 import org.neo4j.springframework.data.core.schema.IdGenerator;
 import org.neo4j.springframework.data.core.schema.NodeDescription;
@@ -100,13 +100,13 @@ public final class Neo4jMappingContext
 
 	public Neo4jMappingContext() {
 
-		this(new DefaultNeo4jConverter(new Neo4jCustomConversions(), new DefaultConversionService()));
+		this(new Neo4jConversions());
 	}
 
-	public Neo4jMappingContext(Neo4jConverter converter) {
+	public Neo4jMappingContext(Neo4jConversions neo4jConversions) {
 
 		super.setSimpleTypeHolder(Neo4jSimpleTypes.HOLDER);
-		this.converter = converter;
+		this.converter = new DefaultNeo4jConverter(neo4jConversions, new DefaultConversionService());
 	}
 
 	/*

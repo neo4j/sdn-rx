@@ -23,7 +23,7 @@ import java.util.function.BiFunction;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.types.TypeSystem;
-import org.neo4j.springframework.data.core.mapping.Neo4jSimpleTypes;
+import org.neo4j.springframework.data.core.convert.Neo4jSimpleTypes;
 
 /**
  * Used to automatically map single valued records to a sensible Java type based on {@link Value#asObject()}.

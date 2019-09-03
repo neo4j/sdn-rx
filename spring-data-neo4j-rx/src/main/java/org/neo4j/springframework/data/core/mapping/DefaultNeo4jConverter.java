@@ -16,11 +16,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.springframework.data.core.convert;
+package org.neo4j.springframework.data.core.mapping;
 
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.neo4j.driver.types.TypeSystem;
+import org.neo4j.springframework.data.core.convert.Neo4jConverter;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentProperty;
 import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.data.convert.CustomConversions;
@@ -37,7 +38,7 @@ import org.springframework.util.Assert;
  * @soundtrack The Kleptones - A Night At The Hip-Hopera
  * @since 1.0
  */
-public class DefaultNeo4jConverter implements Neo4jConverter {
+final class DefaultNeo4jConverter implements Neo4jConverter {
 
 	private final CustomConversions customConversions;
 	private final ConfigurableConversionService conversionService;
