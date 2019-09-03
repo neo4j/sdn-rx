@@ -1441,6 +1441,8 @@ class RepositoryIT {
 	void findByNotIn() {
 		List<PersonWithAllConstructor> persons = repository
 			.findAllByFirstNameNotIn(Arrays.asList("a", "b", TEST_PERSON2_FIRST_NAME, "c"));
+		System.out.println("-----");
+		System.out.println(persons.get(0).getThings().get(0).getClass());
 		assertThat(persons)
 			.hasSize(1)
 			.contains(person1);

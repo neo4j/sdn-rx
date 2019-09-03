@@ -18,6 +18,9 @@
  */
 package org.neo4j.springframework.data.core.convert;
 
+import org.neo4j.driver.Value;
+import org.neo4j.driver.Values;
+import org.neo4j.driver.types.TypeSystem;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentProperty;
 import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.data.convert.CustomConversions;
@@ -28,7 +31,6 @@ import org.springframework.data.mapping.model.ParameterValueProvider;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
 
 /**
  * @author Michael J. Simons
@@ -53,21 +55,23 @@ public class DefaultNeo4jConverter implements Neo4jConverter {
 
 	@Override
 	@Nullable
-	public Object readValue(@Nullable Object value, TypeInformation<?> type) {
+	public Object readValue(@Nullable Object value, TypeSystem typeSystem, TypeInformation<?> type) {
 
-		if (null == value) {
+		if (value == null || value == Values.NULL) {
 			return null;
 		}
 
-		if (customConversions.hasCustomReadTarget(value.getClass(), type.getType())) {
-			return conversionService.convert(value, type.getType());
+		TypeInformation<?> relevantType = type.getActualType() == null ? type : type.getActualType();
+
+		if (value instanceof Value && typeSystem.LIST().isTypeOf((Value) value)) {
+			return ((Value) value).asList(v -> readValue(v, typeSystem, relevantType));
 		}
 
-		return getPotentiallyConvertedSimpleRead(value, type.getType());
+		return conversionService.convert(value, relevantType.getType());
 	}
 
 	@Override
-	public <T> PersistentPropertyAccessor<T> decoratePropertyAccessor(
+	public <T> PersistentPropertyAccessor<T> decoratePropertyAccessor(TypeSystem typeSystem,
 		PersistentPropertyAccessor<T> targetPropertyAccessor) {
 
 		return new ConvertingPropertyAccessor<>(targetPropertyAccessor, conversionService);
@@ -75,6 +79,7 @@ public class DefaultNeo4jConverter implements Neo4jConverter {
 
 	@Override
 	public <T> ParameterValueProvider<Neo4jPersistentProperty> decorateParameterValueProvider(
+		TypeSystem typeSystem,
 		ParameterValueProvider<Neo4jPersistentProperty> targetParameterValueProvider) {
 
 		return new ParameterValueProvider<Neo4jPersistentProperty>() {
@@ -82,31 +87,10 @@ public class DefaultNeo4jConverter implements Neo4jConverter {
 			public Object getParameterValue(PreferredConstructor.Parameter parameter) {
 
 				Object originalValue = targetParameterValueProvider.getParameterValue(parameter);
-				return readValue(originalValue, parameter.getType());
+				return readValue(originalValue, typeSystem, parameter.getType());
 			}
 		};
 	}
 
-	/**
-	 * Checks whether we have a custom conversion for the given simple object. Converts the given value if so, applies
-	 * {@link Enum} handling or returns the value as is.
-	 *
-	 * @param value  to be converted. May be {@code null}..
-	 * @param target may be {@code null}..
-	 * @return the converted value if a conversion applies or the original value. Might return {@code null}.
-	 */
-	@Nullable
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private Object getPotentiallyConvertedSimpleRead(@Nullable Object value, @Nullable Class<?> target) {
 
-		if (value == null || target == null || ClassUtils.isAssignableValue(target, value)) {
-			return value;
-		}
-
-		if (Enum.class.isAssignableFrom(target)) {
-			return Enum.valueOf((Class<Enum>) target, value.toString());
-		}
-
-		return conversionService.convert(value, target);
-	}
 }

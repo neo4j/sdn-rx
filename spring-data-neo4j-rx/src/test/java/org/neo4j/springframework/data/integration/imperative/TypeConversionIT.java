@@ -56,16 +56,16 @@ class TypeConversionIT extends TypeConversionITBase {
 
 		ThingWithPropertiesRequiringConversion t =
 			thingsWithPropertiesRequiringConversion
-				.save(ThingWithPropertiesRequiringConversion.builder().aFloatValue(23.42F).build());
+				.save(ThingWithPropertiesRequiringConversion.builder().aFloatScalar(23.42F).build());
 
 		assertThat(t.getId()).isNotNull();
 
 		try (Session session = super.driver.session()) {
 			Value aFloatValue = session.run(
-				"MATCH (n:ThingWithPropertiesRequiringConversion) WHERE id(n) = $id RETURN n.aFloatValue as aFloatValue",
-				Values.parameters("id", t.getId())).single().get("aFloatValue");
+				"MATCH (n:ThingWithPropertiesRequiringConversion) WHERE id(n) = $id RETURN n.aFloatScalar as aFloatScalar",
+				Values.parameters("id", t.getId())).single().get("aFloatScalar");
 			assertThat(aFloatValue).isNotNull();
-			assertThat(aFloatValue.asFloat()).isEqualTo(t.getAFloatValue());
+			assertThat(aFloatValue.asObject()).isInstanceOf(String.class).isEqualTo("23.42");
 		}
 	}
 
@@ -75,14 +75,14 @@ class TypeConversionIT extends TypeConversionITBase {
 		Long id;
 		try (Session session = TypeConversionIT.this.driver.session()) {
 			id = session
-				.run("CREATE (n:ThingWithPropertiesRequiringConversion {aFloatValue: 23.420000076293945}) RETURN id(n) as ID")
+				.run("CREATE (n:ThingWithPropertiesRequiringConversion {aFloatScalar: '23.42'}) RETURN id(n) as ID")
 				.single().get("ID").asLong();
 		}
 
 		Optional<ThingWithPropertiesRequiringConversion> optionalThing = thingsWithPropertiesRequiringConversion
 			.findById(id);
 		assertThat(optionalThing)
-			.map(ThingWithPropertiesRequiringConversion::getAFloatValue)
+			.map(ThingWithPropertiesRequiringConversion::getAFloatScalar)
 			.isPresent()
 			.hasValue(23.42F);
 	}

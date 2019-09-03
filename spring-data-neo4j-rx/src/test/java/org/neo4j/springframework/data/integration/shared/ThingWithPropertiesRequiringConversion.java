@@ -43,5 +43,7 @@ public class ThingWithPropertiesRequiringConversion {
 	@Wither
 	private final Long id;
 
-	private final float aFloatValue;
+	private final Float aFloatObject;
+
+	private final float aFloatScalar;
 }

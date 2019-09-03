@@ -24,7 +24,9 @@ import java.time.LocalTime;
 import java.time.OffsetTime;
 import java.time.ZonedDateTime;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -32,10 +34,7 @@ import java.util.Set;
 import org.apiguardian.api.API;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.types.IsoDuration;
-import org.neo4j.driver.types.Path;
 import org.neo4j.driver.types.Point;
-import org.neo4j.driver.types.Relationship;
-import org.neo4j.springframework.data.core.schema.Node;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 
 /**
@@ -56,25 +55,19 @@ public final class Neo4jSimpleTypes {
 
 	static {
 		Set<Class<?>> neo4jNativeTypes = new HashSet<>();
-		neo4jNativeTypes.add(void.class);
-		neo4jNativeTypes.add(Void.class);
-		neo4jNativeTypes.add(Map.class);
-		neo4jNativeTypes.add(boolean.class);
-		neo4jNativeTypes.add(Boolean.class);
-		neo4jNativeTypes.add(long.class);
-		neo4jNativeTypes.add(Long.class);
-		neo4jNativeTypes.add(String.class);
-		neo4jNativeTypes.add(byte[].class);
-		neo4jNativeTypes.add(LocalDate.class);
-		neo4jNativeTypes.add(OffsetTime.class);
-		neo4jNativeTypes.add(LocalTime.class);
-		neo4jNativeTypes.add(ZonedDateTime.class);
-		neo4jNativeTypes.add(LocalDateTime.class);
+
 		neo4jNativeTypes.add(IsoDuration.class);
+		neo4jNativeTypes.add(LocalDate.class);
+		neo4jNativeTypes.add(LocalDateTime.class);
+		neo4jNativeTypes.add(LocalTime.class);
+		neo4jNativeTypes.add(Map.class);
+		neo4jNativeTypes.add(OffsetTime.class);
 		neo4jNativeTypes.add(Point.class);
-		neo4jNativeTypes.add(Node.class);
-		neo4jNativeTypes.add(Relationship.class);
-		neo4jNativeTypes.add(Path.class);
+		neo4jNativeTypes.add(Void.class);
+		neo4jNativeTypes.add(ZonedDateTime.class);
+		neo4jNativeTypes.add(void.class);
+
+		neo4jNativeTypes.add(Value.class);
 
 		NEO4J_NATIVE_TYPES = Collections.unmodifiableSet(neo4jNativeTypes);
 	}

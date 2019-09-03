@@ -18,6 +18,7 @@
  */
 package org.neo4j.springframework.data.core.convert;
 
+import org.neo4j.driver.types.TypeSystem;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentProperty;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.model.ParameterValueProvider;
@@ -34,7 +35,7 @@ import org.springframework.lang.Nullable;
 public interface Neo4jConverter {
 
 	@Nullable
-	Object readValue(@Nullable Object value, TypeInformation<?> type);
+	Object readValue(@Nullable Object value, TypeSystem typeSystem, TypeInformation<?> type);
 
 	/**
 	 * Returns a {@link PersistentPropertyAccessor} that delegates to {@code targetPropertyAccessor} and applies
@@ -44,7 +45,7 @@ public interface Neo4jConverter {
 	 * @param <T>                    The type of the entity to operate on.
 	 * @return A {@link PersistentPropertyAccessor} guaranteed to be not {@code null}.
 	 */
-	<T> PersistentPropertyAccessor<T> decoratePropertyAccessor(PersistentPropertyAccessor<T> targetPropertyAccessor);
+	<T> PersistentPropertyAccessor<T> decoratePropertyAccessor(TypeSystem typeSystem, PersistentPropertyAccessor<T> targetPropertyAccessor);
 
 	/**
 	 * Returns a {@link ParameterValueProvider} that delegates to {@code targetParameterValueProvider} and applies
@@ -55,5 +56,6 @@ public interface Neo4jConverter {
 	 * @return A {@link ParameterValueProvider} guaranteed to be not {@code null}.
 	 */
 	<T> ParameterValueProvider<Neo4jPersistentProperty> decorateParameterValueProvider(
+		TypeSystem typeSystem,
 		ParameterValueProvider<Neo4jPersistentProperty> targetParameterValueProvider);
 }
