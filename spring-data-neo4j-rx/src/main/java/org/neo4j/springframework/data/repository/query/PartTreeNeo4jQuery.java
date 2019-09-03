@@ -43,7 +43,6 @@ import org.neo4j.springframework.data.repository.query.Neo4jQueryMethod.Neo4jPar
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.RepositoryQuery;
-import org.springframework.data.repository.query.ResultProcessor;
 import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
@@ -94,20 +93,11 @@ final class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
 	protected PreparedQuery<?> prepareQuery(Object[] parameters) {
 		ReturnedType returnedType = queryMethod.getResultProcessor().getReturnedType();
 		boolean projecting = returnedType.isProjecting();
-		System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-		System.out.println(projecting);
-		System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-		System.out.println(returnedType.getInputProperties());
-		System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-
-		Class<?> type = projecting
-			? returnedType.getDomainType()
-			: domainType;
 
 		Neo4jParameters formalParameters = (Neo4jParameters) this.queryMethod.getParameters();
 		ParameterAccessor actualParameters = new ParametersParameterAccessor(formalParameters, parameters);
 		CypherQueryCreator queryCreator = new CypherQueryCreator(
-			mappingContext, type, tree, formalParameters, actualParameters
+			mappingContext, returnedType, tree, formalParameters, actualParameters
 		);
 
 		String cypherQuery = queryCreator.createQuery();
@@ -117,17 +107,13 @@ final class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
 				formalParameter -> convertParameter(parameters[formalParameter.getIndex()])));
 
 		BiFunction<TypeSystem, Record, ?> mappingFunction = projecting
-			? getMappingFunction()
-			: mappingContext.getMappingFunctionFor(type);
+			? mappingContext.getProjectionMappingFunctionFor(domainType)
+			: mappingContext.getMappingFunctionFor(domainType);
 
-		return PreparedQuery.queryFor(type).withCypherQuery(cypherQuery)
+		return PreparedQuery.queryFor(domainType).withCypherQuery(cypherQuery)
 			.withParameters(boundedParameters)
 			.usingMappingFunction(mappingFunction)
 			.build();
-	}
-
-	private BiFunction<TypeSystem, Record, ?> getMappingFunction() {
-		return mappingContext.getMappingFunctionFor(domainType);
 	}
 
 	/**

@@ -40,6 +40,7 @@ import org.neo4j.springframework.data.repository.query.Neo4jQueryMethod.Neo4jPar
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.repository.query.parser.PartTree.OrPart;
@@ -88,10 +89,11 @@ final class ReactivePartTreeNeo4jQuery extends AbstractReactiveNeo4jQuery {
 	@Override
 	protected PreparedQuery<?> prepareQuery(Object[] parameters) {
 
+		ReturnedType returnedType = this.queryMethod.getResultProcessor().getReturnedType();
 		Neo4jParameters formalParameters = (Neo4jParameters) this.queryMethod.getParameters();
 		ParameterAccessor actualParameters = new ParametersParameterAccessor(formalParameters, parameters);
 		CypherQueryCreator queryCreator = new CypherQueryCreator(
-			mappingContext, domainType, tree, formalParameters, actualParameters
+			mappingContext, returnedType, tree, formalParameters, actualParameters
 		);
 
 		String cypherQuery = queryCreator.createQuery();

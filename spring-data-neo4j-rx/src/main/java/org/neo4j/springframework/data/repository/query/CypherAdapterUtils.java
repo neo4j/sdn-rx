@@ -266,6 +266,10 @@ public final class CypherAdapterUtils {
 
 		}
 
+		Expression createReturnStatementForMatch(List<String> properties) {
+			return Cypher.anyNode(NAME_OF_ROOT_NODE).project(properties);
+		}
+
 		public Expression createReturnStatementForMatch(NodeDescription<?> nodeDescription) {
 
 			return projectPropertiesAndRelationships(nodeDescription, NAME_OF_ROOT_NODE);

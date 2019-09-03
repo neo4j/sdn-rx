@@ -209,6 +209,10 @@ public final class Neo4jMappingContext
 		return null;
 	}
 
+	public DefaultNeo4jProjectionMappingFunction getProjectionMappingFunctionFor(Class<?> type) {
+		return new DefaultNeo4jProjectionMappingFunction(type);
+	}
+
 	@Override
 	public <T> Function<T, Map<String, Object>> getRequiredBinderFunctionFor(Class<T> sourceClass) {
 

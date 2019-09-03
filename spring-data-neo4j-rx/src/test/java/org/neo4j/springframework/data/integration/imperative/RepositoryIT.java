@@ -1562,7 +1562,7 @@ class RepositoryIT {
 
 	@Test
 	void mapsInterfaceProjection() {
-		System.out.println(repository.findByName(TEST_PERSON1_FIRST_NAME).getName());
+		assertThat(repository.findByName(TEST_PERSON1_NAME).getName()).isEqualTo(TEST_PERSON1_NAME);
 	}
 
 
