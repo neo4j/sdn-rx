@@ -437,7 +437,7 @@ class AdditionalTypesIT {
 				assertThat(r).isEqualTo((short) 127);
 
 				Short rM = (Short) conversionService.convert(v, TypeDescriptor.valueOf(Short.class));
-				assertThat(rM).isEqualTo(Short.valueOf((short)127));
+				assertThat(rM).isEqualTo(Short.valueOf((short) 127));
 			}
 		}
 
@@ -446,7 +446,7 @@ class AdditionalTypesIT {
 			try (Session session = neo4jConnectionSupport.getDriver().session()) {
 				Map<String, Object> parameters = new HashMap<>();
 				parameters.put("v", conversionService.convert((short) 127, TYPE_DESCRIPTOR_OF_VALUE));
-				parameters.put("vM", conversionService.convert(Short.valueOf((short)127), TYPE_DESCRIPTOR_OF_VALUE));
+				parameters.put("vM", conversionService.convert(Short.valueOf((short) 127), TYPE_DESCRIPTOR_OF_VALUE));
 
 				long cnt = session
 					.run("MATCH (n:AdditionalTypes) WHERE n.aShort = $v and n.aShort = $vM RETURN COUNT(n) AS cnt",
@@ -465,7 +465,7 @@ class AdditionalTypesIT {
 			try (Session session = neo4jConnectionSupport.getDriver().session()) {
 				Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.shortArray as r").single().get("r");
 				short[] r = (short[]) conversionService.convert(v, TypeDescriptor.valueOf(short[].class));
-				assertThat(r).containsExactly((short)-10, (short)10);
+				assertThat(r).containsExactly((short) -10, (short) 10);
 			}
 		}
 

@@ -22,7 +22,6 @@ import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.neo4j.driver.types.TypeSystem;
 import org.neo4j.springframework.data.core.convert.Neo4jConverter;
-import org.neo4j.springframework.data.core.mapping.Neo4jPersistentProperty;
 import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
@@ -43,7 +42,7 @@ final class DefaultNeo4jConverter implements Neo4jConverter {
 	private final CustomConversions customConversions;
 	private final ConfigurableConversionService conversionService;
 
-	public DefaultNeo4jConverter(CustomConversions customConversions, ConfigurableConversionService conversionService) {
+	DefaultNeo4jConverter(CustomConversions customConversions, ConfigurableConversionService conversionService) {
 
 		Assert.notNull(customConversions, "CustomConversions must not be null!");
 		// conversionService will be asserted by customConversions.registerConvertersIn
