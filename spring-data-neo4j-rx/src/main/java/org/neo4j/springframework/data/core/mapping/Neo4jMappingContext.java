@@ -56,6 +56,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.MappingException;
@@ -106,7 +107,10 @@ public final class Neo4jMappingContext
 	public Neo4jMappingContext(Neo4jConversions neo4jConversions) {
 
 		super.setSimpleTypeHolder(Neo4jSimpleTypes.HOLDER);
-		this.converter = new DefaultNeo4jConverter(neo4jConversions, new DefaultConversionService());
+
+		final ConfigurableConversionService conversionService = new DefaultConversionService();
+		neo4jConversions.registerConvertersIn(conversionService);
+		this.converter = new DefaultNeo4jConverter(conversionService);
 	}
 
 	/*
@@ -213,7 +217,7 @@ public final class Neo4jMappingContext
 		}
 
 		Neo4jPersistentEntity neo4jPersistentEntity = this.getPersistentEntity(sourceClass);
-		return new DefaultNeo4jBinderFunction<T>(neo4jPersistentEntity);
+		return new DefaultNeo4jBinderFunction<T>(neo4jPersistentEntity, converter);
 	}
 
 	private Collection<RelationshipDescription> computeRelationshipsOf(String primaryLabel) {

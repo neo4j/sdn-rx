@@ -18,6 +18,7 @@
  */
 package org.neo4j.springframework.data.core.convert;
 
+import org.neo4j.driver.Value;
 import org.neo4j.driver.types.TypeSystem;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentProperty;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
@@ -35,7 +36,10 @@ import org.springframework.lang.Nullable;
 public interface Neo4jConverter {
 
 	@Nullable
-	Object readValue(@Nullable Object value, TypeSystem typeSystem, TypeInformation<?> type);
+	Object readValue(@Nullable Value value, TypeSystem typeSystem, TypeInformation<?> type);
+
+	@Nullable
+	Value writeValue(@Nullable Object value, TypeInformation<?> type);
 
 	/**
 	 * Returns a {@link PersistentPropertyAccessor} that delegates to {@code targetPropertyAccessor} and applies

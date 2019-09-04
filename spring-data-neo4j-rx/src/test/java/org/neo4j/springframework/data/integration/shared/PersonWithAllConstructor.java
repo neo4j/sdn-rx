@@ -65,7 +65,7 @@ public class PersonWithAllConstructor {
 
 	private String nullable;
 
-	private final List<String> things;
+	private List<String> things;
 
 	private final Point place;
 }

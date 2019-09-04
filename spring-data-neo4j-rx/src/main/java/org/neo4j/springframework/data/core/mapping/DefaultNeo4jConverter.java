@@ -18,12 +18,15 @@
  */
 package org.neo4j.springframework.data.core.mapping;
 
+import static java.util.stream.Collectors.*;
+
+import java.util.List;
+
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.neo4j.driver.types.TypeSystem;
 import org.neo4j.springframework.data.core.convert.Neo4jConverter;
-import org.springframework.core.convert.support.ConfigurableConversionService;
-import org.springframework.data.convert.CustomConversions;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.PreferredConstructor;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
@@ -39,23 +42,18 @@ import org.springframework.util.Assert;
  */
 final class DefaultNeo4jConverter implements Neo4jConverter {
 
-	private final CustomConversions customConversions;
-	private final ConfigurableConversionService conversionService;
+	private final ConversionService conversionService;
 
-	DefaultNeo4jConverter(CustomConversions customConversions, ConfigurableConversionService conversionService) {
+	DefaultNeo4jConverter(ConversionService conversionService) {
 
-		Assert.notNull(customConversions, "CustomConversions must not be null!");
-		// conversionService will be asserted by customConversions.registerConvertersIn
+		Assert.notNull(conversionService, "ConversionService must not be null!");
 
-		this.customConversions = customConversions;
 		this.conversionService = conversionService;
-
-		customConversions.registerConvertersIn(this.conversionService);
 	}
 
 	@Override
 	@Nullable
-	public Object readValue(@Nullable Object value, TypeSystem typeSystem, TypeInformation<?> type) {
+	public Object readValue(@Nullable Value value, TypeSystem typeSystem, TypeInformation<?> type) {
 
 		if (value == null || value == Values.NULL) {
 			return null;
@@ -63,11 +61,28 @@ final class DefaultNeo4jConverter implements Neo4jConverter {
 
 		TypeInformation<?> relevantType = type.getActualType() == null ? type : type.getActualType();
 
-		if (value instanceof Value && typeSystem.LIST().isTypeOf((Value) value)) {
-			return ((Value) value).asList(v -> readValue(v, typeSystem, relevantType));
+		if (typeSystem.LIST().isTypeOf(value)) {
+			return value.asList(v -> readValue(v, typeSystem, relevantType));
 		}
+		// TODO map?
 
 		return conversionService.convert(value, relevantType.getType());
+	}
+
+	@Override
+	public Value writeValue(@Nullable Object value, TypeInformation<?> type) {
+
+		if (value == null) {
+			return Values.NULL;
+		}
+
+		TypeInformation<?> relevantType = type.getActualType() == null ? type : type.getActualType();
+
+		if (value instanceof List) {
+			return Values.value(((List) value).stream().map(v -> writeValue(v, relevantType)).collect(toList()));
+		}
+
+		return conversionService.convert(value, Value.class);
 	}
 
 	@Override
@@ -87,7 +102,8 @@ final class DefaultNeo4jConverter implements Neo4jConverter {
 			public Object getParameterValue(PreferredConstructor.Parameter parameter) {
 
 				Object originalValue = targetParameterValueProvider.getParameterValue(parameter);
-				return readValue(originalValue, typeSystem, parameter.getType());
+				Assert.isInstanceOf(Value.class, originalValue, "Decorated parameters other than of type Value are not supported.");
+				return readValue((Value) originalValue, typeSystem, parameter.getType());
 			}
 		};
 	}
