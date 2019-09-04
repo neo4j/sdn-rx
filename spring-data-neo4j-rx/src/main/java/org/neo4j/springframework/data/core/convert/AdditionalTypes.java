@@ -78,13 +78,13 @@ final class AdditionalTypes {
 		CONVERTERS = Collections.unmodifiableList(hlp);
 	}
 
-	private static Byte asByte(Value value) {
+	static Byte asByte(Value value) {
 		byte[] bytes = value.asByteArray();
 		Assert.isTrue(bytes.length == 1, "Expected a byte array with exactly 1 element.");
 		return bytes[0];
 	}
 
-	private static Value value(Byte aByte) {
+	static Value value(Byte aByte) {
 		if (aByte == null) {
 			return Values.NULL;
 		}
@@ -92,7 +92,7 @@ final class AdditionalTypes {
 		return Values.value(new Byte[] { aByte });
 	}
 
-	private static Character asCharacter(Value value) {
+	static Character asCharacter(Value value) {
 		char[] chars = value.asString().toCharArray();
 		Assert.isTrue(chars.length == 1, "Expected a char array with exactly 1 element.");
 		return chars[0];
@@ -100,7 +100,7 @@ final class AdditionalTypes {
 
 	private static final String ISO_8601_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
 
-	private static Date asDate(Value value) {
+	static Date asDate(Value value) {
 		try {
 			return new SimpleDateFormat(ISO_8601_DATE_FORMAT).parse(value.asString());
 		} catch (ParseException e) {
@@ -108,7 +108,7 @@ final class AdditionalTypes {
 		}
 	}
 
-	private static Value value(Date date) {
+	static Value value(Date date) {
 		if (date == null) {
 			return Values.NULL;
 		}
@@ -149,11 +149,11 @@ final class AdditionalTypes {
 		}
 	}
 
-	private static Float asFloat(Value value) {
+	static Float asFloat(Value value) {
 		return Float.parseFloat(value.asString());
 	}
 
-	private static Value value(Float aFloat) {
+	static Value value(Float aFloat) {
 		if (aFloat == null) {
 			return Values.NULL;
 		}
@@ -161,12 +161,12 @@ final class AdditionalTypes {
 		return Values.value(aFloat.toString());
 	}
 
-	private static Locale asLocale(Value value) {
+	static Locale asLocale(Value value) {
 
 		return StringUtils.parseLocale(value.asString());
 	}
 
-	private static Value value(Locale locale) {
+	static Value value(Locale locale) {
 		if (locale == null) {
 			return Values.NULL;
 		}
@@ -174,7 +174,7 @@ final class AdditionalTypes {
 		return Values.value(locale.toString());
 	}
 
-	private static Short asShort(Value value) {
+	static Short asShort(Value value) {
 		long val = value.asLong();
 		if (val > Short.MAX_VALUE || val < Short.MIN_VALUE) {
 			throw new LossyCoercion(value.type().name(), "Java short");
@@ -182,7 +182,7 @@ final class AdditionalTypes {
 		return (short) val;
 	}
 
-	private static Value value(Short aShort) {
+	static Value value(Short aShort) {
 		if (aShort == null) {
 			return Values.NULL;
 		}
@@ -190,7 +190,7 @@ final class AdditionalTypes {
 		return Values.value(aShort.longValue());
 	}
 
-	private static boolean[] asBooleanArray(Value value) {
+	static boolean[] asBooleanArray(Value value) {
 		boolean[] array = new boolean[value.size()];
 		int i = 0;
 		for (Boolean v : value.values(Value::asBoolean)) {
@@ -199,7 +199,7 @@ final class AdditionalTypes {
 		return array;
 	}
 
-	private static char[] asCharArray(Value value) {
+	static char[] asCharArray(Value value) {
 		char[] array = new char[value.size()];
 		int i = 0;
 		for (Character v : value.values(AdditionalTypes::asCharacter)) {
@@ -208,7 +208,7 @@ final class AdditionalTypes {
 		return array;
 	}
 
-	private static double[] asDoubleArray(Value value) {
+	static double[] asDoubleArray(Value value) {
 		double[] array = new double[value.size()];
 		int i = 0;
 		for (double v : value.values(Value::asDouble)) {
@@ -217,7 +217,7 @@ final class AdditionalTypes {
 		return array;
 	}
 
-	private static float[] asFloatArray(Value value) {
+	static float[] asFloatArray(Value value) {
 		float[] array = new float[value.size()];
 		int i = 0;
 		for (float v : value.values(AdditionalTypes::asFloat)) {
@@ -226,7 +226,7 @@ final class AdditionalTypes {
 		return array;
 	}
 
-	private static Value value(float[] aFloatArray) {
+	static Value value(float[] aFloatArray) {
 		if (aFloatArray == null) {
 			return Values.NULL;
 		}
@@ -239,7 +239,7 @@ final class AdditionalTypes {
 		return Values.value(values);
 	}
 
-	private static int[] asIntArray(Value value) {
+	static int[] asIntArray(Value value) {
 		int[] array = new int[value.size()];
 		int i = 0;
 		for (int v : value.values(Value::asInt)) {
@@ -248,7 +248,7 @@ final class AdditionalTypes {
 		return array;
 	}
 
-	private static long[] asLongArray(Value value) {
+	static long[] asLongArray(Value value) {
 		long[] array = new long[value.size()];
 		int i = 0;
 		for (long v : value.values(Value::asLong)) {
@@ -257,7 +257,7 @@ final class AdditionalTypes {
 		return array;
 	}
 
-	private static short[] asShortArray(Value value) {
+	static short[] asShortArray(Value value) {
 		short[] array = new short[value.size()];
 		int i = 0;
 		for (short v : value.values(AdditionalTypes::asShort)) {
@@ -266,7 +266,7 @@ final class AdditionalTypes {
 		return array;
 	}
 
-	private static Value value(short[] aShortArray) {
+	static Value value(short[] aShortArray) {
 		if (aShortArray == null) {
 			return Values.NULL;
 		}

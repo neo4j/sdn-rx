@@ -20,6 +20,8 @@ package org.neo4j.springframework.data.core.convert;
 
 import static org.assertj.core.api.Assertions.*;
 
+import lombok.Builder;
+
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
@@ -37,11 +39,13 @@ import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.neo4j.springframework.data.test.Neo4jExtension;
 import org.neo4j.springframework.data.test.Neo4jExtension.Neo4jConnectionSupport;
+import org.neo4j.springframework.data.types.CartesianPoint2d;
+import org.neo4j.springframework.data.types.CartesianPoint3d;
+import org.neo4j.springframework.data.types.GeographicPoint2d;
+import org.neo4j.springframework.data.types.GeographicPoint3d;
 import org.springframework.core.convert.TypeDescriptor;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.core.convert.support.DefaultConversionService;
-import org.springframework.data.convert.ConverterBuilder;
+import org.springframework.data.geo.Point;
 
 /**
  * @author Michael J. Simons
@@ -53,27 +57,54 @@ class AdditionalTypesIT {
 	private static Neo4jConnectionSupport neo4jConnectionSupport;
 	private static DefaultConversionService conversionService;
 
+	@Builder
+	static class ParamHolder {
+		String name;
+		double latitude;
+		double longitude;
+
+		Map<String, Object> toParameterMap() {
+			Map<String, Object> parameters = new HashMap<>();
+			parameters.put("name", this.name);
+			parameters.put("latitude", this.latitude);
+			parameters.put("longitude", this.longitude);
+			return parameters;
+		}
+
+		Point asSpringPoint() {
+			return new Point(latitude, longitude);
+		}
+
+		GeographicPoint2d asGeo2d() {
+			return new GeographicPoint2d(latitude, longitude);
+		}
+
+		GeographicPoint3d asGeo3d(double height) {
+			return new GeographicPoint3d(latitude, longitude, height);
+		}
+	}
+
+	private static final ParamHolder NEO_HQ = ParamHolder.builder().latitude(55.612191).longitude(12.994823)
+		.name("Neo4j HQ").build();
+	private static final ParamHolder CLARION = ParamHolder.builder().latitude(55.607726).longitude(12.994243)
+		.name("Clarion").build();
+	private static final ParamHolder MINC = ParamHolder.builder().latitude(55.611496).longitude(12.994039).name("Minc")
+		.build();
+
 	@BeforeAll
 	static void createConversionService() {
 
 		conversionService = new DefaultConversionService();
-		for (Object o : AdditionalTypes.CONVERTERS) {
-			if (o instanceof Converter) {
-				conversionService.addConverter((Converter) o);
-			} else if (o instanceof GenericConverter) {
-				conversionService.addConverter((GenericConverter) o);
-			} else if (o instanceof ConverterBuilder.ConverterAware) {
-				((ConverterBuilder.ConverterAware) o).getConverters().forEach(conversionService::addConverter);
-			} else {
-				throw new IllegalArgumentException(o.getClass().getName());
-			}
-		}
+		new Neo4jConversions().registerConvertersIn(conversionService);
 
 		try (Session session = neo4jConnectionSupport.getDriver().session()) {
 			session.writeTransaction(w -> {
-				Map<String, Object> parameters = new HashMap<>();
-				parameters.put("aByte", Values.value(new byte[] { 6 }));
+				Map<String, Object> parameters;
+
 				w.run("MATCH (n) detach delete n");
+
+				parameters = new HashMap<>();
+				parameters.put("aByte", Values.value(new byte[] { 6 }));
 				w.run("CREATE (n:AdditionalTypes) SET "
 					+ " n.booleanArray = [true, true, false],"
 					+ " n.aByte = $aByte,"
@@ -90,6 +121,19 @@ class AdditionalTypesIT {
 					+ " n.aShort = 127,"
 					+ " n.shortArray = [-10, 10]"
 					+ " RETURN n", parameters);
+
+				parameters = new HashMap<>();
+				parameters.put("neo4j", NEO_HQ.toParameterMap());
+				parameters.put("minc", MINC.toParameterMap());
+				parameters.put("clarion", CLARION.toParameterMap());
+				parameters.put("aByte", Values.value(new byte[] { 6 }));
+				w.run("CREATE (n:SpatialTypes) SET "
+					+ " n.sdnPoint = point({latitude: $neo4j.latitude, longitude: $neo4j.longitude}),"
+					+ " n.geo2d = point({latitude: $minc.latitude, longitude: $minc.longitude}),"
+					+ " n.geo3d = point({latitude: $clarion.latitude, longitude: $clarion.longitude, height: 27}),"
+					+ " n.car2d = point({x: 10, y: 20}),"
+					+ " n.car3d = point({x: 30, y: 40, z: 50})"
+					+ " RETURN n", parameters);
 				w.success();
 				return null;
 			});
@@ -103,7 +147,7 @@ class AdditionalTypesIT {
 		void read() {
 			try (Session session = neo4jConnectionSupport.getDriver().session()) {
 				Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.booleanArray as r").single().get("r");
-				boolean[] r = (boolean[]) conversionService.convert(v, TypeDescriptor.valueOf(boolean[].class));
+				boolean[] r = conversionService.convert(v, boolean[].class);
 				assertThat(r).containsExactly(true, true, false);
 			}
 		}
@@ -129,10 +173,10 @@ class AdditionalTypesIT {
 			try (Session session = neo4jConnectionSupport.getDriver().session()) {
 				Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.aByte as r").single().get("r");
 
-				byte r = (byte) conversionService.convert(v, TypeDescriptor.valueOf(byte.class));
+				byte r = conversionService.convert(v, byte.class);
 				assertThat(r).isEqualTo((byte) 6);
 
-				Byte rM = (Byte) conversionService.convert(v, TypeDescriptor.valueOf(Byte.class));
+				Byte rM = conversionService.convert(v, Byte.class);
 				assertThat(rM).isEqualTo(Byte.valueOf("6"));
 			}
 		}
@@ -161,10 +205,10 @@ class AdditionalTypesIT {
 			try (Session session = neo4jConnectionSupport.getDriver().session()) {
 				Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.aChar as r").single().get("r");
 
-				char r = (char) conversionService.convert(v, TypeDescriptor.valueOf(char.class));
+				char r = conversionService.convert(v, char.class);
 				assertThat(r).isEqualTo('x');
 
-				Character rM = (Character) conversionService.convert(v, TypeDescriptor.valueOf(Character.class));
+				Character rM = conversionService.convert(v, Character.class);
 				assertThat(rM).isEqualTo(Character.valueOf('x'));
 			}
 		}
@@ -192,7 +236,7 @@ class AdditionalTypesIT {
 		void read() {
 			try (Session session = neo4jConnectionSupport.getDriver().session()) {
 				Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.charArray as r").single().get("r");
-				char[] r = (char[]) conversionService.convert(v, TypeDescriptor.valueOf(char[].class));
+				char[] r = conversionService.convert(v, char[].class);
 				assertThat(r).containsExactly('x', 'y', 'z');
 			}
 		}
@@ -217,7 +261,7 @@ class AdditionalTypesIT {
 		void read() {
 			try (Session session = neo4jConnectionSupport.getDriver().session()) {
 				Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.aDate as r").single().get("r");
-				Date r = (Date) conversionService.convert(v, TypeDescriptor.valueOf(Date.class));
+				Date r = conversionService.convert(v, Date.class);
 				assertThat(r).isEqualTo(Date.from(LocalDateTime.of(2019, 9, 21, 0, 0, 0).toInstant(ZoneOffset.UTC)));
 			}
 		}
@@ -243,7 +287,7 @@ class AdditionalTypesIT {
 		void read() {
 			try (Session session = neo4jConnectionSupport.getDriver().session()) {
 				Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.doubleArray as r").single().get("r");
-				double[] r = (double[]) conversionService.convert(v, TypeDescriptor.valueOf(double[].class));
+				double[] r = conversionService.convert(v, double[].class);
 				assertThat(r).containsExactly(1.1, 2.2, 3.3);
 			}
 		}
@@ -269,10 +313,10 @@ class AdditionalTypesIT {
 			try (Session session = neo4jConnectionSupport.getDriver().session()) {
 				Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.aFloat as r").single().get("r");
 
-				float r = (float) conversionService.convert(v, TypeDescriptor.valueOf(float.class));
+				float r = conversionService.convert(v, float.class);
 				assertThat(r).isEqualTo(23.42F);
 
-				Float rM = (Float) conversionService.convert(v, TypeDescriptor.valueOf(Float.class));
+				Float rM = conversionService.convert(v, Float.class);
 				assertThat(rM).isEqualTo(Float.valueOf(23.42F));
 			}
 		}
@@ -300,7 +344,7 @@ class AdditionalTypesIT {
 		void read() {
 			try (Session session = neo4jConnectionSupport.getDriver().session()) {
 				Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.floatArray as r").single().get("r");
-				float[] r = (float[]) conversionService.convert(v, TypeDescriptor.valueOf(float[].class));
+				float[] r = conversionService.convert(v, float[].class);
 				assertThat(r).containsExactly(4.4F, 5.5F);
 			}
 		}
@@ -326,10 +370,10 @@ class AdditionalTypesIT {
 			try (Session session = neo4jConnectionSupport.getDriver().session()) {
 				Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.anInt as r").single().get("r");
 
-				int r = (int) conversionService.convert(v, TypeDescriptor.valueOf(int.class));
+				int r = conversionService.convert(v, int.class);
 				assertThat(r).isEqualTo(42);
 
-				Integer rM = (Integer) conversionService.convert(v, TypeDescriptor.valueOf(Integer.class));
+				Integer rM = conversionService.convert(v, Integer.class);
 				assertThat(rM).isEqualTo(Integer.valueOf(42));
 			}
 		}
@@ -357,7 +401,7 @@ class AdditionalTypesIT {
 		void read() {
 			try (Session session = neo4jConnectionSupport.getDriver().session()) {
 				Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.intArray as r").single().get("r");
-				int[] r = (int[]) conversionService.convert(v, TypeDescriptor.valueOf(int[].class));
+				int[] r = conversionService.convert(v, int[].class);
 				assertThat(r).containsExactly(21, 9);
 			}
 		}
@@ -382,7 +426,7 @@ class AdditionalTypesIT {
 		void read() {
 			try (Session session = neo4jConnectionSupport.getDriver().session()) {
 				Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.aLocale as r").single().get("r");
-				Locale r = (Locale) conversionService.convert(v, TypeDescriptor.valueOf(Locale.class));
+				Locale r = conversionService.convert(v, Locale.class);
 				assertThat(r).isEqualTo(Locale.GERMANY);
 			}
 		}
@@ -407,7 +451,7 @@ class AdditionalTypesIT {
 		void read() {
 			try (Session session = neo4jConnectionSupport.getDriver().session()) {
 				Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.longArray as r").single().get("r");
-				long[] r = (long[]) conversionService.convert(v, TypeDescriptor.valueOf(long[].class));
+				long[] r = conversionService.convert(v, long[].class);
 				assertThat(r).containsExactly(Long.MIN_VALUE, Long.MAX_VALUE);
 			}
 		}
@@ -433,10 +477,10 @@ class AdditionalTypesIT {
 			try (Session session = neo4jConnectionSupport.getDriver().session()) {
 				Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.aShort as r").single().get("r");
 
-				short r = (short) conversionService.convert(v, TypeDescriptor.valueOf(short.class));
+				short r = conversionService.convert(v, short.class);
 				assertThat(r).isEqualTo((short) 127);
 
-				Short rM = (Short) conversionService.convert(v, TypeDescriptor.valueOf(Short.class));
+				Short rM = conversionService.convert(v, Short.class);
 				assertThat(rM).isEqualTo(Short.valueOf((short) 127));
 			}
 		}
@@ -464,7 +508,7 @@ class AdditionalTypesIT {
 		void read() {
 			try (Session session = neo4jConnectionSupport.getDriver().session()) {
 				Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.shortArray as r").single().get("r");
-				short[] r = (short[]) conversionService.convert(v, TypeDescriptor.valueOf(short[].class));
+				short[] r = conversionService.convert(v, short[].class);
 				assertThat(r).containsExactly((short) -10, (short) 10);
 			}
 		}
@@ -478,6 +522,80 @@ class AdditionalTypesIT {
 						.convert(new short[] { -10, 10 }, TYPE_DESCRIPTOR_OF_VALUE))).single()
 					.get("cnt").asLong();
 				assertThat(cnt).isEqualTo(1L);
+			}
+		}
+	}
+
+	@Nested
+	class SpatialTypes {
+
+		@Nested
+		class SpringPoint {
+
+			@Test
+			void read() {
+				try (Session session = neo4jConnectionSupport.getDriver().session()) {
+					Value v = session.run("MATCH (n:SpatialTypes) RETURN n.sdnPoint as r").single().get("r");
+
+					org.springframework.data.geo.Point r = (org.springframework.data.geo.Point) conversionService
+						.convert(v, TypeDescriptor.valueOf(org.springframework.data.geo.Point.class));
+					assertThat(r).isEqualTo(NEO_HQ.asSpringPoint());
+				}
+			}
+
+			@Test
+			void write() {
+				try (Session session = neo4jConnectionSupport.getDriver().session()) {
+
+					long cnt = session.run("MATCH (n:SpatialTypes) WHERE n.sdnPoint = $v RETURN COUNT(n) AS cnt",
+						Collections.singletonMap("v", conversionService
+							.convert(NEO_HQ.asSpringPoint(), TYPE_DESCRIPTOR_OF_VALUE))).single()
+						.get("cnt").asLong();
+					assertThat(cnt).isEqualTo(1L);
+				}
+			}
+		}
+
+		@Nested
+		class Neo4jPoints {
+			@Test
+			void read() {
+				try (Session session = neo4jConnectionSupport.getDriver().session()) {
+					Value n = session.run("MATCH (n:SpatialTypes) RETURN n").single().get("n");
+
+					GeographicPoint2d geo2d = conversionService.convert(n.get("geo2d"), GeographicPoint2d.class);
+					assertThat(geo2d).isEqualTo(MINC.asGeo2d());
+
+					GeographicPoint3d geo3d = conversionService.convert(n.get("geo3d"), GeographicPoint3d.class);
+					assertThat(geo3d).isEqualTo(CLARION.asGeo3d(27.0));
+
+					CartesianPoint2d car2d = conversionService.convert(n.get("car2d"), CartesianPoint2d.class);
+					assertThat(car2d).isEqualTo(new CartesianPoint2d(10, 20));
+
+					CartesianPoint3d car3d = conversionService.convert(n.get("car3d"), CartesianPoint3d.class);
+					assertThat(car3d).isEqualTo(new CartesianPoint3d(30, 40, 50));
+				}
+			}
+
+			@Test
+			void write() {
+				try (Session session = neo4jConnectionSupport.getDriver().session()) {
+
+					Map<String, Object> parameters = new HashMap<>();
+					parameters.put("geo2d", conversionService.convert(MINC.asGeo2d(), TYPE_DESCRIPTOR_OF_VALUE));
+					parameters.put("geo3d", conversionService.convert(CLARION.asGeo3d(27.0), TYPE_DESCRIPTOR_OF_VALUE));
+					parameters.put("car2d",
+						conversionService.convert(new CartesianPoint2d(10, 20), TYPE_DESCRIPTOR_OF_VALUE));
+					parameters.put("car3d",
+						conversionService.convert(new CartesianPoint3d(30, 40, 50), TYPE_DESCRIPTOR_OF_VALUE));
+
+					long cnt = session.run(
+						"MATCH (n:SpatialTypes) WHERE n.geo2d = $geo2d AND n.geo3d = $geo3d AND n.car2d = $car2d AND n.car3d = $car3d RETURN COUNT(n) AS cnt",
+						parameters
+					).single()
+						.get("cnt").asLong();
+					assertThat(cnt).isEqualTo(1L);
+				}
 			}
 		}
 	}
