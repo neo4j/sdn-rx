@@ -21,8 +21,9 @@ package org.neo4j.springframework.data.integration.shared;
 /**
  * @author Gerrit Meier
  */
-public interface NameOnly {
+public interface NamesOnly {
 
 	String getName();
-//	String getSameValue();
+
+	String getThingName();
 }

@@ -18,10 +18,15 @@
  */
 package org.neo4j.springframework.data.core.mapping;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 
 import org.neo4j.driver.Record;
+import org.neo4j.driver.Value;
 import org.neo4j.driver.types.TypeSystem;
+import org.neo4j.driver.util.Pair;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 
 /**
@@ -38,6 +43,20 @@ final class DefaultNeo4jProjectionMappingFunction<T> implements BiFunction<TypeS
 	@Override
 	public T apply(TypeSystem typeSystem, Record record) {
 		SpelAwareProxyProjectionFactory spelAwareProxyProjectionFactory = new SpelAwareProxyProjectionFactory();
-		return spelAwareProxyProjectionFactory.createProjection(domainType, record.asMap().get("n"));
+
+		Map sourceValues = new HashMap<>();
+
+		List<Pair<String, Value>> fields = record.fields();
+		for (Pair<String, Value> field : fields) {
+			if (field.value().hasType(typeSystem.NODE())) {
+				sourceValues = field.value().asNode().asMap();
+			} else if (field.value().hasType(typeSystem.MAP())) {
+				sourceValues = field.value().asMap();
+			} else {
+				sourceValues.put(field.key(), field.value().asString());
+			}
+		}
+
+		return spelAwareProxyProjectionFactory.createProjection(domainType, sourceValues);
 	}
 }

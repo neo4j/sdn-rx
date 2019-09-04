@@ -79,6 +79,7 @@ class RepositoryIT {
 	private static final LocalDate TEST_PERSON1_BORN_ON = LocalDate.of(2019, 1, 1);
 	private static final LocalDate TEST_PERSON2_BORN_ON = LocalDate.of(2019, 2, 1);
 	private static final String TEST_PERSON_SAMEVALUE = "SameValue";
+	private static final String THING_NAME = "Homer";
 	private static final Point NEO4J_HQ = Values.point(4326, 12.994823, 55.612191).asPoint();
 	private static final Point SFO = Values.point(4326, -122.38681, 37.61649).asPoint();
 	private static final Point CLARION = Values.point(4326, 12.994243, 55.607726).asPoint();
@@ -135,7 +136,7 @@ class RepositoryIT {
 			Values.parameters("name", TEST_PERSON1_NAME, "firstName", TEST_PERSON1_FIRST_NAME));
 		transaction.run("CREATE (n:PersonWithWither) SET n.name = '" + TEST_PERSON1_NAME + "'");
 		transaction.run("CREATE (n:KotlinPerson) SET n.name = '" + TEST_PERSON1_NAME + "'");
-		transaction.run("CREATE (a:Thing {theId: 'anId', name: 'Homer'})-[:Has]->(b:Thing2{theId: 4711, name: 'Bart'})");
+		transaction.run("CREATE (a:Thing {theId: 'anId', name: '" + THING_NAME + "'})-[:Has]->(b:Thing2{theId: 4711, name: 'Bart'})");
 
 		IntStream.rangeClosed(1, 20).forEach(i ->
 			transaction.run("CREATE (a:Thing {theId: 'id' + $i, name: 'name' + $i})", Values.parameters("i", String.format("%02d", i))));
@@ -744,7 +745,7 @@ class RepositoryIT {
 		Optional<ThingWithAssignedId> optionalThing = thingRepository.findById("anId");
 		assertThat(optionalThing).isPresent();
 		assertThat(optionalThing).map(ThingWithAssignedId::getTheId).contains("anId");
-		assertThat(optionalThing).map(ThingWithAssignedId::getName).contains("Homer");
+		assertThat(optionalThing).map(ThingWithAssignedId::getName).contains(THING_NAME);
 
 		AnotherThingWithAssignedId anotherThing = new AnotherThingWithAssignedId(4711L);
 		anotherThing.setName("Bart");
@@ -756,7 +757,7 @@ class RepositoryIT {
 	void loadWithAssignedIdViaQuery() {
 		ThingWithAssignedId thing = thingRepository.getViaQuery();
 		assertThat(thing.getTheId()).isEqualTo("anId");
-		assertThat(thing.getName()).isEqualTo("Homer");
+		assertThat(thing.getName()).isEqualTo(THING_NAME);
 
 		AnotherThingWithAssignedId anotherThing = new AnotherThingWithAssignedId(4711L);
 		anotherThing.setName("Bart");
@@ -1566,10 +1567,19 @@ class RepositoryIT {
 	}
 
 	@Test
-	void mapsInterfaceProjectionWithCustomQuery() {
-		assertThat(repository.findProjectionByName(TEST_PERSON1_NAME).getName()).isEqualTo(TEST_PERSON1_NAME);
+	void mapsInterfaceProjectionWithCustomQueryAndMapProjection() {
+		assertThat(repository.findByNameWithCustomQueryAndMapProjection(TEST_PERSON1_NAME).getName()).isEqualTo(TEST_PERSON1_NAME);
 	}
 
+	@Test
+	void mapsInterfaceProjectionWithCustomQueryAndNodeReturn() {
+		assertThat(repository.findByNameWithCustomQueryAndNodeReturn(TEST_PERSON1_NAME).getName()).isEqualTo(TEST_PERSON1_NAME);
+	}
+
+	@Test
+	void mapsInterfaceMixedProjectionWithCustomQuery() {
+		assertThat(repository.findMixedByNameWithCustomQuery(TEST_PERSON1_NAME, THING_NAME).getName()).isEqualTo(TEST_PERSON1_NAME);
+	}
 
 	@Configuration
 	@EnableNeo4jRepositories

@@ -24,7 +24,7 @@ import java.util.Optional;
 
 import org.neo4j.driver.types.Point;
 import org.neo4j.springframework.data.integration.shared.KotlinPerson;
-import org.neo4j.springframework.data.integration.shared.NameOnly;
+import org.neo4j.springframework.data.integration.shared.NamesOnly;
 import org.neo4j.springframework.data.integration.shared.PersonWithAllConstructor;
 import org.neo4j.springframework.data.integration.shared.PersonWithNoConstructor;
 import org.neo4j.springframework.data.integration.shared.PersonWithWither;
@@ -196,8 +196,14 @@ public interface PersonRepository extends Neo4jRepository<PersonWithAllConstruct
 	// List<PersonWithAllConstructor> findAllByPlaceNear(Point p);
 	// List<PersonWithAllConstructor> findAllByPlaceNear(Point p, String);
 
-	NameOnly findByName(String name);
+	NamesOnly findByName(String name);
 
 	@Query("MATCH (n:PersonWithAllConstructor) where n.name = $name return n{.name}")
-	NameOnly findProjectionByName(@Param("name") String name);
+	NamesOnly findByNameWithCustomQueryAndMapProjection(@Param("name") String name);
+
+	@Query("MATCH (n:PersonWithAllConstructor) where n.name = $name return n")
+	NamesOnly findByNameWithCustomQueryAndNodeReturn(@Param("name") String name);
+
+	@Query("MATCH (n:PersonWithAllConstructor) MATCH (m:Thing) where n.name = $name and m.name = $thingName return n.name as name, m.name as thingName")
+	NamesOnly findMixedByNameWithCustomQuery(@Param("name") String name, @Param("thingName") String thingName);
 }
