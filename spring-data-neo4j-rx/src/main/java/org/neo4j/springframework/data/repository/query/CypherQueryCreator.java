@@ -408,10 +408,6 @@ final class CypherQueryCreator extends AbstractQueryCreator<String, Condition> {
 		}
 	}
 
-	String createQueryForProjection(List<String> inputProperties) {
-		return "MATCH (n:PersonWithAllConstructor) WHERE n.name = 'Test' return n{.name}";
-	}
-
 	static class Parameter {
 
 		final String nameOrIndex;
