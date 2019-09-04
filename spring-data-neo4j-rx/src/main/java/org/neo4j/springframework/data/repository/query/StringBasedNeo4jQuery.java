@@ -30,6 +30,7 @@ import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.data.repository.query.SpelEvaluator;
 import org.springframework.data.repository.query.SpelQueryContext;
 import org.springframework.data.repository.query.SpelQueryContext.SpelExtractor;
@@ -158,7 +159,10 @@ final class StringBasedNeo4jQuery extends AbstractNeo4jQuery {
 
 	@Override
 	protected PreparedQuery<?> prepareQuery(Object[] parameters) {
-		boolean projecting = getQueryMethod().getResultProcessor().getReturnedType().isProjecting();
+		ReturnedType returnedType = getQueryMethod().getResultProcessor().getReturnedType();
+		boolean projecting = returnedType.isProjecting()
+			&& !mappingContext.hasPersistentEntityFor(returnedType.getReturnedType());
+
 		return PreparedQuery.queryFor(super.domainType)
 			.withCypherQuery(cypherQuery)
 			.withParameters(bindParameters(parameters))

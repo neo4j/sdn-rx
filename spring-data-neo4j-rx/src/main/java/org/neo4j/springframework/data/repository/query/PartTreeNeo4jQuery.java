@@ -92,7 +92,8 @@ final class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
 	@Override
 	protected PreparedQuery<?> prepareQuery(Object[] parameters) {
 		ReturnedType returnedType = queryMethod.getResultProcessor().getReturnedType();
-		boolean projecting = returnedType.isProjecting();
+		boolean projecting = returnedType.isProjecting()
+			&& !mappingContext.hasPersistentEntityFor(returnedType.getReturnedType());
 
 		Neo4jParameters formalParameters = (Neo4jParameters) this.queryMethod.getParameters();
 		ParameterAccessor actualParameters = new ParametersParameterAccessor(formalParameters, parameters);

@@ -53,7 +53,7 @@ final class DefaultNeo4jProjectionMappingFunction<T> implements BiFunction<TypeS
 			} else if (field.value().hasType(typeSystem.MAP())) {
 				sourceValues = field.value().asMap();
 			} else {
-				sourceValues.put(field.key(), field.value().asString());
+				sourceValues = record.asMap();
 			}
 		}
 
