@@ -21,9 +21,11 @@ package org.neo4j.springframework.data.integration.shared;
 /**
  * @author Gerrit Meier
  */
-public interface NamesOnly {
+public interface PersonProjection {
 
 	String getName();
+
+	String getSameValue();
 
 	String getThingName();
 }

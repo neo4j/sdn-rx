@@ -1567,13 +1567,27 @@ class RepositoryIT {
 	}
 
 	@Test
+	void mapsInterfaceProjectionWithDerivedFinderMethodWithMultipleResults() {
+		assertThat(repository.findBySameValue(TEST_PERSON_SAMEVALUE)).hasSize(2);
+	}
+
+	@Test
 	void mapsInterfaceProjectionWithCustomQueryAndMapProjection() {
 		assertThat(repository.findByNameWithCustomQueryAndMapProjection(TEST_PERSON1_NAME).getName()).isEqualTo(TEST_PERSON1_NAME);
 	}
 
 	@Test
+	void mapsInterfaceProjectionWithCustomQueryAndMapProjectionWithMultipleResults() {
+		assertThat(repository.loadAllProjectionsWithMapProjection()).hasSize(2);
+	}
+
+	@Test
 	void mapsInterfaceProjectionWithCustomQueryAndNodeReturn() {
 		assertThat(repository.findByNameWithCustomQueryAndNodeReturn(TEST_PERSON1_NAME).getName()).isEqualTo(TEST_PERSON1_NAME);
+	}
+	@Test
+	void mapsInterfaceProjectionWithCustomQueryAndNodeReturnWithMultipleResults() {
+		assertThat(repository.loadAllProjectionsWithNodeReturn()).hasSize(2);
 	}
 
 	@Test

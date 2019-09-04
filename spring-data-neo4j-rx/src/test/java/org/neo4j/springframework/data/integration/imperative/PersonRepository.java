@@ -24,7 +24,7 @@ import java.util.Optional;
 
 import org.neo4j.driver.types.Point;
 import org.neo4j.springframework.data.integration.shared.KotlinPerson;
-import org.neo4j.springframework.data.integration.shared.NamesOnly;
+import org.neo4j.springframework.data.integration.shared.PersonProjection;
 import org.neo4j.springframework.data.integration.shared.PersonWithAllConstructor;
 import org.neo4j.springframework.data.integration.shared.PersonWithNoConstructor;
 import org.neo4j.springframework.data.integration.shared.PersonWithWither;
@@ -196,14 +196,22 @@ public interface PersonRepository extends Neo4jRepository<PersonWithAllConstruct
 	// List<PersonWithAllConstructor> findAllByPlaceNear(Point p);
 	// List<PersonWithAllConstructor> findAllByPlaceNear(Point p, String);
 
-	NamesOnly findByName(String name);
+	PersonProjection findByName(String name);
+
+	List<PersonProjection> findBySameValue(String sameValue);
 
 	@Query("MATCH (n:PersonWithAllConstructor) where n.name = $name return n{.name}")
-	NamesOnly findByNameWithCustomQueryAndMapProjection(@Param("name") String name);
+	PersonProjection findByNameWithCustomQueryAndMapProjection(@Param("name") String name);
+
+	@Query("MATCH (n:PersonWithAllConstructor) return n{.name}")
+	List<PersonProjection> loadAllProjectionsWithMapProjection();
 
 	@Query("MATCH (n:PersonWithAllConstructor) where n.name = $name return n")
-	NamesOnly findByNameWithCustomQueryAndNodeReturn(@Param("name") String name);
+	PersonProjection findByNameWithCustomQueryAndNodeReturn(@Param("name") String name);
+
+	@Query("MATCH (n:PersonWithAllConstructor) return n")
+	List<PersonProjection> loadAllProjectionsWithNodeReturn();
 
 	@Query("MATCH (n:PersonWithAllConstructor) MATCH (m:Thing) where n.name = $name and m.name = $thingName return n.name as name, m.name as thingName")
-	NamesOnly findMixedByNameWithCustomQuery(@Param("name") String name, @Param("thingName") String thingName);
+	PersonProjection findMixedByNameWithCustomQuery(@Param("name") String name, @Param("thingName") String thingName);
 }
