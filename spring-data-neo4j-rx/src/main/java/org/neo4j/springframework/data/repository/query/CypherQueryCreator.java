@@ -152,32 +152,7 @@ final class CypherQueryCreator extends AbstractQueryCreator<String, Condition> {
 		GraphPropertyDescription persistentProperty = null;
 
 		if (isProjectingType) {
-			persistentProperty = new GraphPropertyDescription() {
-				@Override
-				public String getFieldName() {
-					return null;
-				}
-
-				@Override public String getPropertyName() {
-					return part.getProperty().getLeafProperty().getSegment();
-				}
-
-				@Override public boolean isIdProperty() {
-					return false;
-				}
-
-				@Override public boolean isInternalIdProperty() {
-					return false;
-				}
-
-				@Override public Class<?> getActualType() {
-					return null;
-				}
-
-				@Override public boolean isRelationship() {
-					return false;
-				}
-			};
+			persistentProperty = new OnlyNameGraphPropertyDescription(part.getProperty().getLeafProperty().getSegment());
 		} else {
 			PersistentPropertyPath<Neo4jPersistentProperty> path = mappingContext
 				.getPersistentPropertyPath(part.getProperty());
@@ -458,6 +433,46 @@ final class CypherQueryCreator extends AbstractQueryCreator<String, Condition> {
 				"nameOrIndex='" + nameOrIndex + '\'' +
 				", value=" + value +
 				'}';
+		}
+	}
+
+	private static class OnlyNameGraphPropertyDescription implements GraphPropertyDescription {
+
+		private final String propertyName;
+
+		private OnlyNameGraphPropertyDescription(String propertyName) {
+			this.propertyName = propertyName;
+		}
+
+		@Override
+		public String getPropertyName() {
+			return propertyName;
+		}
+
+		// the following implementation is just to satisfy the contract
+		@Override
+		public String getFieldName() {
+			return null;
+		}
+
+		@Override
+		public boolean isIdProperty() {
+			return false;
+		}
+
+		@Override
+		public boolean isInternalIdProperty() {
+			return false;
+		}
+
+		@Override
+		public Class<?> getActualType() {
+			return null;
+		}
+
+		@Override
+		public boolean isRelationship() {
+			return false;
 		}
 	}
 }

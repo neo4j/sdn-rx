@@ -48,12 +48,13 @@ final class DefaultNeo4jProjectionMappingFunction<T> implements BiFunction<TypeS
 
 		List<Pair<String, Value>> fields = record.fields();
 		for (Pair<String, Value> field : fields) {
-			if (field.value().hasType(typeSystem.NODE())) {
+			// either it is the result of
+			if (field.value().hasType(typeSystem.NODE())) { // a node as in `RETURN n`
 				sourceValues = field.value().asNode().asMap();
-			} else if (field.value().hasType(typeSystem.MAP())) {
+			} else if (field.value().hasType(typeSystem.MAP())) { // a map like `RETURN n{ .name}`
 				sourceValues = field.value().asMap();
 			} else {
-				sourceValues = record.asMap();
+				sourceValues = record.asMap(); // or the whole result is a map like `RETURN n.name as name, x.y as z`
 			}
 		}
 
