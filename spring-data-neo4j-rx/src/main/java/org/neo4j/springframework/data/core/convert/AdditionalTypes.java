@@ -20,8 +20,13 @@ package org.neo4j.springframework.data.core.convert;
 
 import static org.springframework.data.convert.ConverterBuilder.*;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.Period;
+import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -74,8 +79,52 @@ final class AdditionalTypes {
 		hlp.add(reading(Value.class, Short.class, AdditionalTypes::asShort).andWriting(AdditionalTypes::value));
 		hlp.add(reading(Value.class, short.class, AdditionalTypes::asShort).andWriting(AdditionalTypes::value));
 		hlp.add(reading(Value.class, short[].class, AdditionalTypes::asShortArray).andWriting(AdditionalTypes::value));
+		hlp.add(
+			reading(Value.class, BigDecimal.class, AdditionalTypes::asBigDecimal).andWriting(AdditionalTypes::value));
+		hlp.add(
+			reading(Value.class, BigInteger.class, AdditionalTypes::asBigInteger).andWriting(AdditionalTypes::value));
+		hlp.add(
+			reading(Value.class, TemporalAmount.class, AdditionalTypes::asTemporalAmount).andWriting(AdditionalTypes::value));
 
 		CONVERTERS = Collections.unmodifiableList(hlp);
+	}
+
+	public static void main(String...a) {
+		System.out.println(Period.of(23, 4, 7).toString());
+		System.out.println(Duration.ofHours(25).plusMinutes(63).plusSeconds(65));
+		System.out.println(Duration.ofHours(3));
+	}
+
+	static TemporalAmount asTemporalAmount(Value value) {
+		return new TemporalAmountAdapter().apply(value.asIsoDuration());
+	}
+
+	static Value value(TemporalAmount temporalAmount) {
+		return Values.value(temporalAmount);
+	}
+
+	static BigDecimal asBigDecimal(Value value) {
+		return new BigDecimal(value.asString());
+	}
+
+	static Value value(BigDecimal bigDecimal) {
+		if (bigDecimal == null) {
+			return Values.NULL;
+		}
+
+		return Values.value(bigDecimal.toString());
+	}
+
+	static BigInteger asBigInteger(Value value) {
+		return new BigInteger(value.asString());
+	}
+
+	static Value value(BigInteger bigInteger) {
+		if (bigInteger == null) {
+			return Values.NULL;
+		}
+
+		return Values.value(bigInteger.toString());
 	}
 
 	static Byte asByte(Value value) {

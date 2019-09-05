@@ -64,7 +64,6 @@ final class DefaultNeo4jConverter implements Neo4jConverter {
 		if (typeSystem.LIST().isTypeOf(value)) {
 			return value.asList(v -> readValue(v, typeSystem, relevantType));
 		}
-		// TODO map?
 
 		return conversionService.convert(value, relevantType.getType());
 	}

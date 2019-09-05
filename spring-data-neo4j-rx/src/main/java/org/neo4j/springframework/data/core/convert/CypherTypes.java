@@ -28,7 +28,6 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
@@ -51,8 +50,6 @@ final class CypherTypes {
 		List<ConverterAware> hlp = new ArrayList<>();
 		hlp.add(reading(Value.class, Void.class, v -> null).andWriting(v -> Values.NULL));
 		hlp.add(reading(Value.class, void.class, v -> null).andWriting(v -> Values.NULL));
-		// List will be unwrapped by {@code Neo4jConverter}
-		hlp.add(reading(Value.class, Map.class, Value::asMap).andWriting(Values::value));
 		hlp.add(reading(Value.class, Boolean.class, Value::asBoolean).andWriting(Values::value));
 		hlp.add(reading(Value.class, boolean.class, Value::asBoolean).andWriting(Values::value));
 		hlp.add(reading(Value.class, Long.class, Value::asLong).andWriting(Values::value));
