@@ -33,7 +33,6 @@ import java.time.OffsetTime;
 import java.time.Period;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -237,802 +236,175 @@ class Neo4jConversionsIt {
 		}
 	}
 
-
 	@Nested
+	@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 	class CypherTypes {
-		@Nested
-		class ABoolean {
 
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:CypherTypes) RETURN n.aBoolean as r").single().get("r");
+		@Test
+		void primitivesShouldBeRead() {
+			boolean b = DEFAULT_CONVERSION_SERVICE.convert(Values.value(true), boolean.class);
+			assertThat(b).isEqualTo(true);
 
-					boolean r = DEFAULT_CONVERSION_SERVICE.convert(v, boolean.class);
-					assertThat(r).isEqualTo(true);
+			long l = DEFAULT_CONVERSION_SERVICE.convert(Values.value(Long.MAX_VALUE), long.class);
+			assertThat(l).isEqualTo(Long.MAX_VALUE);
 
-					Boolean rM = DEFAULT_CONVERSION_SERVICE.convert(v, Boolean.class);
-					assertThat(rM).isEqualTo(Boolean.TRUE);
-				}
-			}
+			double d = DEFAULT_CONVERSION_SERVICE.convert(Values.value(1.7976931348), double.class);
+			assertThat(d).isEqualTo(1.7976931348);
+		}
 
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Map<String, Object> parameters = new HashMap<>();
-					parameters.put("v", DEFAULT_CONVERSION_SERVICE.convert(true, TYPE_DESCRIPTOR_OF_VALUE));
-					parameters.put("vM", DEFAULT_CONVERSION_SERVICE.convert(Boolean.TRUE, TYPE_DESCRIPTOR_OF_VALUE));
+		Stream<Arguments> cypherTypes() {
+			return Stream.of(
+				arguments("aBoolean", true),
+				arguments("aLong", Long.MAX_VALUE),
+				arguments("aDouble", 1.7976931348),
+				arguments("aString", "Hallo, Cypher"),
+				arguments("aByteArray", "A thing".getBytes()),
+				arguments("aPoint", Values.point(7203, 47, 11).asPoint()),
+				arguments("aLocalDate", LocalDate.of(2015, 7, 21)),
+				arguments("anOffsetTime", OffsetTime.of(12, 31, 0, 0, ZoneOffset.ofHours(1))),
+				arguments("aLocalTime", LocalTime.of(12, 31, 14)),
+				arguments("aZoneDateTime", ZonedDateTime
+					.of(2015, 7, 21, 21, 40, 32, 0, TimeZone.getTimeZone("America/New_York").toZoneId())),
+				arguments("aLocalDateTime", LocalDateTime.of(2015, 7, 21, 21, 0)),
+				arguments("anIsoDuration", Values.isoDuration(0, 14, 58320, 0).asObject())
+			);
+		}
 
-					long cnt = session
-						.run("MATCH (n:CypherTypes) WHERE n.aBoolean = $v and n.aBoolean = $vM RETURN COUNT(n) AS cnt",
-							parameters)
-						.single().get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
+		@ParameterizedTest
+		@MethodSource("cypherTypes")
+		void read(String name, Object t) {
+			try (Session session = neo4jConnectionSupport.getDriver().session()) {
+				Value v = session.run("MATCH (n:CypherTypes) RETURN n." + name + " as r").single().get("r");
+
+				Object converted = DEFAULT_CONVERSION_SERVICE.convert(v, t.getClass());
+				assertThat(converted).isEqualTo(t);
 			}
 		}
 
-		@Nested
-		class ALong {
+		@ParameterizedTest
+		@MethodSource("cypherTypes")
+		void write(String name, Object t) {
+			try (Session session = neo4jConnectionSupport.getDriver().session()) {
+				Map<String, Object> parameters = new HashMap<>();
+				parameters.put("v", DEFAULT_CONVERSION_SERVICE.convert(t, TYPE_DESCRIPTOR_OF_VALUE));
 
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:CypherTypes) RETURN n.aLong as r").single().get("r");
-
-					long r = DEFAULT_CONVERSION_SERVICE.convert(v, long.class);
-					assertThat(r).isEqualTo(Long.MAX_VALUE);
-
-					Long rM = DEFAULT_CONVERSION_SERVICE.convert(v, Long.class);
-					assertThat(rM).isEqualTo(Long.valueOf(Long.MAX_VALUE));
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Map<String, Object> parameters = new HashMap<>();
-					parameters.put("v", DEFAULT_CONVERSION_SERVICE.convert(Long.MAX_VALUE, TYPE_DESCRIPTOR_OF_VALUE));
-					parameters
-						.put("vM",
-							DEFAULT_CONVERSION_SERVICE.convert(Long.valueOf(Long.MAX_VALUE), TYPE_DESCRIPTOR_OF_VALUE));
-
-					long cnt = session
-						.run("MATCH (n:CypherTypes) WHERE n.aLong = $v and n.aLong = $vM RETURN COUNT(n) AS cnt",
-							parameters)
-						.single().get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		class ADouble {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:CypherTypes) RETURN n.aDouble as r").single().get("r");
-
-					double r = DEFAULT_CONVERSION_SERVICE.convert(v, double.class);
-					assertThat(r).isEqualTo(1.7976931348);
-
-					Double rM = DEFAULT_CONVERSION_SERVICE.convert(v, double.class);
-					assertThat(rM).isEqualTo(Double.valueOf(1.7976931348));
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Map<String, Object> parameters = new HashMap<>();
-					parameters.put("v", DEFAULT_CONVERSION_SERVICE.convert(1.7976931348, TYPE_DESCRIPTOR_OF_VALUE));
-					parameters
-						.put("vM",
-							DEFAULT_CONVERSION_SERVICE.convert(Double.valueOf(1.7976931348), TYPE_DESCRIPTOR_OF_VALUE));
-
-					long cnt = session
-						.run("MATCH (n:CypherTypes) WHERE n.aDouble = $v and n.aDouble = $vM RETURN COUNT(n) AS cnt",
-							parameters)
-						.single().get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		class AString {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:CypherTypes) RETURN n.aString as r").single().get("r");
-
-					String convert = DEFAULT_CONVERSION_SERVICE.convert(v, String.class);
-					assertThat(convert).isEqualTo("Hallo, Cypher");
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Map<String, Object> parameters = new HashMap<>();
-					parameters.put("v", DEFAULT_CONVERSION_SERVICE.convert("Hallo, Cypher", TYPE_DESCRIPTOR_OF_VALUE));
-
-					long cnt = session
-						.run("MATCH (n:CypherTypes) WHERE n.aString = $v RETURN COUNT(n) AS cnt",
-							parameters)
-						.single().get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		class AByteArray {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:CypherTypes) RETURN n.aByteArray as r").single().get("r");
-
-					byte[] convert = DEFAULT_CONVERSION_SERVICE.convert(v, byte[].class);
-					assertThat(convert).isEqualTo("A thing".getBytes());
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Map<String, Object> parameters = new HashMap<>();
-					parameters
-						.put("v", DEFAULT_CONVERSION_SERVICE.convert("A thing".getBytes(), TYPE_DESCRIPTOR_OF_VALUE));
-
-					long cnt = session
-						.run("MATCH (n:CypherTypes) WHERE n.aByteArray = $v RETURN COUNT(n) AS cnt",
-							parameters)
-						.single().get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-		class Temporals {
-
-			@ParameterizedTest
-			@MethodSource("cypherTemporals")
-			void read(String name, Object t) {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:CypherTypes) RETURN n." + name + " as r").single().get("r");
-
-					Object converted = DEFAULT_CONVERSION_SERVICE.convert(v, t.getClass());
-					assertThat(converted).isEqualTo(t);
-				}
-			}
-
-			@ParameterizedTest
-			@MethodSource("cypherTemporals")
-			void write(String name, Object t) {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Map<String, Object> parameters = new HashMap<>();
-					parameters.put("v", DEFAULT_CONVERSION_SERVICE.convert(t, TYPE_DESCRIPTOR_OF_VALUE));
-
-					long cnt = session
-						.run("MATCH (n:CypherTypes) WHERE n." + name + " = $v RETURN COUNT(n) AS cnt",
-							parameters)
-						.single().get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-
-			Stream<Arguments> cypherTemporals() {
-				return Stream.of(
-					arguments("aLocalDate", LocalDate.of(2015, 7, 21)),
-					arguments("anOffsetTime", OffsetTime.of(12, 31, 0, 0, ZoneOffset.ofHours(1))),
-					arguments("aLocalTime", LocalTime.of(12, 31, 14)),
-					arguments("aZoneDateTime", ZonedDateTime
-						.of(2015, 7, 21, 21, 40, 32, 0, TimeZone.getTimeZone("America/New_York").toZoneId())),
-					arguments("aLocalDateTime", LocalDateTime.of(2015, 7, 21, 21, 0)),
-					arguments("anIsoDuration", Values.isoDuration(0, 14, 58320, 0).asObject())
-				);
-			}
-		}
-
-		@Nested
-		class APoint {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:CypherTypes) RETURN n.aPoint as r").single().get("r");
-
-					org.neo4j.driver.types.Point convert = DEFAULT_CONVERSION_SERVICE
-						.convert(v, org.neo4j.driver.types.Point.class);
-					assertThat(convert).isEqualTo(Values.point(7203, 47, 11).asPoint());
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Map<String, Object> parameters = new HashMap<>();
-					parameters.put("v",
-						DEFAULT_CONVERSION_SERVICE
-							.convert(Values.point(7203, 47, 11).asPoint(), TYPE_DESCRIPTOR_OF_VALUE));
-
-					long cnt = session
-						.run("MATCH (n:CypherTypes) WHERE n.aPoint = $v RETURN COUNT(n) AS cnt",
-							parameters)
-						.single().get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
+				long cnt = session
+					.run("MATCH (n:CypherTypes) WHERE n." + name + " = $v RETURN COUNT(n) AS cnt",
+						parameters)
+					.single().get("cnt").asLong();
+				assertThat(cnt).isEqualTo(1L);
 			}
 		}
 	}
 
 	@Nested
+	@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 	class AdditionalTypes {
+		@Test
+		void primitivesShouldBeRead() {
 
-		@Nested
-		@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-		class Temporals {
+			byte b = DEFAULT_CONVERSION_SERVICE.convert(Values.value(new byte[] { 6 }), byte.class);
+			assertThat(b).isEqualTo((byte) 6);
 
-			@ParameterizedTest
-			@MethodSource("additionalTemporals")
-			void read(String name, Object t) {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:AdditionalTypes) RETURN n." + name + " as r").single().get("r");
+			char c = DEFAULT_CONVERSION_SERVICE.convert(Values.value("x"), char.class);
+			assertThat(c).isEqualTo('x');
 
-					Object converted = DEFAULT_CONVERSION_SERVICE.convert(v, t.getClass());
-					assertThat(converted).isEqualTo(t);
-				}
-			}
+			float f = DEFAULT_CONVERSION_SERVICE.convert(Values.value("23.42"), float.class);
+			assertThat(f).isEqualTo(23.42F);
 
-			@ParameterizedTest
-			@MethodSource("additionalTemporals")
-			void write(String name, Object t) {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Map<String, Object> parameters = new HashMap<>();
-					parameters.put("v", DEFAULT_CONVERSION_SERVICE.convert(t, TYPE_DESCRIPTOR_OF_VALUE));
+			int i = DEFAULT_CONVERSION_SERVICE.convert(Values.value(42), int.class);
+			assertThat(i).isEqualTo(42);
 
-					long cnt = session
-						.run("MATCH (n:AdditionalTypes) WHERE n." + name + " = $v RETURN COUNT(n) AS cnt",
-							parameters)
-						.single().get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
+			short s = DEFAULT_CONVERSION_SERVICE.convert(Values.value((short) 127), short.class);
+			assertThat(s).isEqualTo((short) 127);
+		}
 
-			Stream<Arguments> additionalTemporals() {
-				return Stream.of(
-					arguments("aPeriod", Period.of(23, 4, 7)),
-					arguments("aDuration", Duration.ofHours(25).plusMinutes(63).plusSeconds(65))
-				);
+		Stream<Arguments> additionalTypes() {
+			return Stream.of(
+				arguments("booleanArray", new boolean[] { true, true, false }),
+				arguments("aByte", (byte) 6),
+				arguments("aChar", 'x'),
+				arguments("charArray", new char[] { 'x', 'y', 'z' }),
+				arguments("aDate", Date.from(LocalDateTime.of(2019, 9, 21, 0, 0, 0).toInstant(ZoneOffset.UTC))),
+				arguments("aBigDecimal", BigDecimal.valueOf(Double.MAX_VALUE).multiply(BigDecimal.TEN)),
+				arguments("aBigInteger", BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.TEN)),
+				arguments("doubleArray", new double[] { 1.1, 2.2, 3.3 }),
+				arguments("aFloat", 23.42F),
+				arguments("floatArray", new float[] { 4.4F, 5.5F }),
+				arguments("anInt", 42),
+				arguments("intArray", new int[] { 21, 9 }),
+				arguments("aLocale", Locale.GERMANY),
+				arguments("longArray", new long[] { Long.MIN_VALUE, Long.MAX_VALUE }),
+				arguments("aShort", (short) 127),
+				arguments("shortArray", new short[] { -10, 10 }),
+				arguments("aPeriod", Period.of(23, 4, 7)),
+				arguments("aDuration", Duration.ofHours(25).plusMinutes(63).plusSeconds(65))
+			);
+		}
+
+		@ParameterizedTest
+		@MethodSource("additionalTypes")
+		void read(String name, Object t) {
+			try (Session session = neo4jConnectionSupport.getDriver().session()) {
+				Value v = session.run("MATCH (n:AdditionalTypes) RETURN n." + name + " as r").single().get("r");
+
+				Object converted = DEFAULT_CONVERSION_SERVICE.convert(v, t.getClass());
+				assertThat(converted).isEqualTo(t);
 			}
 		}
 
-		@Nested
-		class BooleanArray {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.booleanArray as r").single().get("r");
-					boolean[] r = DEFAULT_CONVERSION_SERVICE.convert(v, boolean[].class);
-					assertThat(r).containsExactly(true, true, false);
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-
-					long cnt = session.run("MATCH (n:AdditionalTypes) WHERE n.booleanArray = $v RETURN COUNT(n) AS cnt",
-						Collections.singletonMap("v", DEFAULT_CONVERSION_SERVICE
-							.convert(new boolean[] { true, true, false }, TYPE_DESCRIPTOR_OF_VALUE))).single()
-						.get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		class AByte {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.aByte as r").single().get("r");
-
-					byte r = DEFAULT_CONVERSION_SERVICE.convert(v, byte.class);
-					assertThat(r).isEqualTo((byte) 6);
-
-					Byte rM = DEFAULT_CONVERSION_SERVICE.convert(v, Byte.class);
-					assertThat(rM).isEqualTo(Byte.valueOf("6"));
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Map<String, Object> parameters = new HashMap<>();
-					parameters.put("v", DEFAULT_CONVERSION_SERVICE.convert((byte) 6, TYPE_DESCRIPTOR_OF_VALUE));
-					parameters
-						.put("vM", DEFAULT_CONVERSION_SERVICE.convert(Byte.valueOf("6"), TYPE_DESCRIPTOR_OF_VALUE));
-
-					long cnt = session
-						.run("MATCH (n:AdditionalTypes) WHERE n.aByte = $v and n.aByte = $vM RETURN COUNT(n) AS cnt",
-							parameters)
-						.single().get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		class AChar {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.aChar as r").single().get("r");
-
-					char r = DEFAULT_CONVERSION_SERVICE.convert(v, char.class);
-					assertThat(r).isEqualTo('x');
-
-					Character rM = DEFAULT_CONVERSION_SERVICE.convert(v, Character.class);
-					assertThat(rM).isEqualTo(Character.valueOf('x'));
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Map<String, Object> parameters = new HashMap<>();
-					parameters.put("v", DEFAULT_CONVERSION_SERVICE.convert('x', TYPE_DESCRIPTOR_OF_VALUE));
-					parameters.put("vM",
-						DEFAULT_CONVERSION_SERVICE.convert(Character.valueOf('x'), TYPE_DESCRIPTOR_OF_VALUE));
-
-					long cnt = session
-						.run("MATCH (n:AdditionalTypes) WHERE n.aChar = $v and n.aChar = $vM RETURN COUNT(n) AS cnt",
-							parameters)
-						.single().get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		class CharArray {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.charArray as r").single().get("r");
-					char[] r = DEFAULT_CONVERSION_SERVICE.convert(v, char[].class);
-					assertThat(r).containsExactly('x', 'y', 'z');
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-
-					long cnt = session.run("MATCH (n:AdditionalTypes) WHERE n.charArray = $v RETURN COUNT(n) AS cnt",
-						Collections.singletonMap("v", DEFAULT_CONVERSION_SERVICE
-							.convert(new char[] { 'x', 'y', 'z' }, TYPE_DESCRIPTOR_OF_VALUE))).single()
-						.get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		class ADate {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.aDate as r").single().get("r");
-					Date r = DEFAULT_CONVERSION_SERVICE.convert(v, Date.class);
-					assertThat(r)
-						.isEqualTo(Date.from(LocalDateTime.of(2019, 9, 21, 0, 0, 0).toInstant(ZoneOffset.UTC)));
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-
-					long cnt = session.run("MATCH (n:AdditionalTypes) WHERE n.aDate = $v RETURN COUNT(n) AS cnt",
-						Collections.singletonMap("v", DEFAULT_CONVERSION_SERVICE
-							.convert(Date.from(LocalDateTime.of(2019, 9, 21, 0, 0, 0).toInstant(ZoneOffset.UTC)),
-								TYPE_DESCRIPTOR_OF_VALUE))).single()
-						.get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		class ABigDecimal {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.aBigDecimal as r").single().get("r");
-					BigDecimal r = DEFAULT_CONVERSION_SERVICE.convert(v, BigDecimal.class);
-					assertThat(r).isEqualTo(BigDecimal.valueOf(Double.MAX_VALUE).multiply(BigDecimal.TEN));
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-
-					long cnt = session.run("MATCH (n:AdditionalTypes) WHERE n.aBigDecimal = $v RETURN COUNT(n) AS cnt",
-						Collections.singletonMap("v", DEFAULT_CONVERSION_SERVICE
-							.convert(BigDecimal.valueOf(Double.MAX_VALUE).multiply(BigDecimal.TEN),
-								TYPE_DESCRIPTOR_OF_VALUE))).single()
-						.get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		class ABigInteger {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.aBigInteger as r").single().get("r");
-					BigInteger r = DEFAULT_CONVERSION_SERVICE.convert(v, BigInteger.class);
-					assertThat(r).isEqualTo(BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.TEN));
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-
-					long cnt = session.run("MATCH (n:AdditionalTypes) WHERE n.aBigInteger = $v RETURN COUNT(n) AS cnt",
-						Collections.singletonMap("v", DEFAULT_CONVERSION_SERVICE
-							.convert(BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.TEN),
-								TYPE_DESCRIPTOR_OF_VALUE))).single()
-						.get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		class DoubleArray {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.doubleArray as r").single().get("r");
-					double[] r = DEFAULT_CONVERSION_SERVICE.convert(v, double[].class);
-					assertThat(r).containsExactly(1.1, 2.2, 3.3);
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-
-					long cnt = session.run("MATCH (n:AdditionalTypes) WHERE n.doubleArray = $v RETURN COUNT(n) AS cnt",
-						Collections.singletonMap("v", DEFAULT_CONVERSION_SERVICE
-							.convert(new double[] { 1.1, 2.2, 3.3 }, TYPE_DESCRIPTOR_OF_VALUE))).single()
-						.get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		class AFloat {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.aFloat as r").single().get("r");
-
-					float r = DEFAULT_CONVERSION_SERVICE.convert(v, float.class);
-					assertThat(r).isEqualTo(23.42F);
-
-					Float rM = DEFAULT_CONVERSION_SERVICE.convert(v, Float.class);
-					assertThat(rM).isEqualTo(Float.valueOf(23.42F));
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Map<String, Object> parameters = new HashMap<>();
-					parameters.put("v", DEFAULT_CONVERSION_SERVICE.convert(23.42F, TYPE_DESCRIPTOR_OF_VALUE));
-					parameters
-						.put("vM", DEFAULT_CONVERSION_SERVICE.convert(Float.valueOf(23.42F), TYPE_DESCRIPTOR_OF_VALUE));
-
-					long cnt = session
-						.run("MATCH (n:AdditionalTypes) WHERE n.aFloat = $v and n.aFloat = $vM RETURN COUNT(n) AS cnt",
-							parameters)
-						.single().get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		class FloatArray {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.floatArray as r").single().get("r");
-					float[] r = DEFAULT_CONVERSION_SERVICE.convert(v, float[].class);
-					assertThat(r).containsExactly(4.4F, 5.5F);
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-
-					long cnt = session.run("MATCH (n:AdditionalTypes) WHERE n.floatArray = $v RETURN COUNT(n) AS cnt",
-						Collections.singletonMap("v", DEFAULT_CONVERSION_SERVICE
-							.convert(new float[] { 4.4F, 5.5F }, TYPE_DESCRIPTOR_OF_VALUE))).single()
-						.get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		class AnInt {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.anInt as r").single().get("r");
-
-					int r = DEFAULT_CONVERSION_SERVICE.convert(v, int.class);
-					assertThat(r).isEqualTo(42);
-
-					Integer rM = DEFAULT_CONVERSION_SERVICE.convert(v, Integer.class);
-					assertThat(rM).isEqualTo(Integer.valueOf(42));
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Map<String, Object> parameters = new HashMap<>();
-					parameters.put("v", DEFAULT_CONVERSION_SERVICE.convert(42, TYPE_DESCRIPTOR_OF_VALUE));
-					parameters
-						.put("vM", DEFAULT_CONVERSION_SERVICE.convert(Integer.valueOf(42), TYPE_DESCRIPTOR_OF_VALUE));
-
-					long cnt = session
-						.run("MATCH (n:AdditionalTypes) WHERE n.anInt = $v and n.anInt = $vM RETURN COUNT(n) AS cnt",
-							parameters)
-						.single().get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		class IntArray {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.intArray as r").single().get("r");
-					int[] r = DEFAULT_CONVERSION_SERVICE.convert(v, int[].class);
-					assertThat(r).containsExactly(21, 9);
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-
-					long cnt = session.run("MATCH (n:AdditionalTypes) WHERE n.intArray = $v RETURN COUNT(n) AS cnt",
-						Collections.singletonMap("v", DEFAULT_CONVERSION_SERVICE
-							.convert(new int[] { 21, 9 }, TYPE_DESCRIPTOR_OF_VALUE))).single()
-						.get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		class ALocale {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.aLocale as r").single().get("r");
-					Locale r = DEFAULT_CONVERSION_SERVICE.convert(v, Locale.class);
-					assertThat(r).isEqualTo(Locale.GERMANY);
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-
-					long cnt = session.run("MATCH (n:AdditionalTypes) WHERE n.aLocale = $v RETURN COUNT(n) AS cnt",
-						Collections.singletonMap("v", DEFAULT_CONVERSION_SERVICE
-							.convert(Locale.GERMANY, TYPE_DESCRIPTOR_OF_VALUE))).single()
-						.get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		class LongArray {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.longArray as r").single().get("r");
-					long[] r = DEFAULT_CONVERSION_SERVICE.convert(v, long[].class);
-					assertThat(r).containsExactly(Long.MIN_VALUE, Long.MAX_VALUE);
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-
-					long cnt = session.run("MATCH (n:AdditionalTypes) WHERE n.longArray = $v RETURN COUNT(n) AS cnt",
-						Collections.singletonMap("v", DEFAULT_CONVERSION_SERVICE
-							.convert(new long[] { Long.MIN_VALUE, Long.MAX_VALUE }, TYPE_DESCRIPTOR_OF_VALUE))).single()
-						.get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		class AShort {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.aShort as r").single().get("r");
-
-					short r = DEFAULT_CONVERSION_SERVICE.convert(v, short.class);
-					assertThat(r).isEqualTo((short) 127);
-
-					Short rM = DEFAULT_CONVERSION_SERVICE.convert(v, Short.class);
-					assertThat(rM).isEqualTo(Short.valueOf((short) 127));
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Map<String, Object> parameters = new HashMap<>();
-					parameters.put("v", DEFAULT_CONVERSION_SERVICE.convert((short) 127, TYPE_DESCRIPTOR_OF_VALUE));
-					parameters
-						.put("vM",
-							DEFAULT_CONVERSION_SERVICE.convert(Short.valueOf((short) 127), TYPE_DESCRIPTOR_OF_VALUE));
-
-					long cnt = session
-						.run("MATCH (n:AdditionalTypes) WHERE n.aShort = $v and n.aShort = $vM RETURN COUNT(n) AS cnt",
-							parameters)
-						.single().get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
-			}
-		}
-
-		@Nested
-		class ShortArray {
-
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:AdditionalTypes) RETURN n.shortArray as r").single().get("r");
-					short[] r = DEFAULT_CONVERSION_SERVICE.convert(v, short[].class);
-					assertThat(r).containsExactly((short) -10, (short) 10);
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-
-					long cnt = session.run("MATCH (n:AdditionalTypes) WHERE n.shortArray = $v RETURN COUNT(n) AS cnt",
-						Collections.singletonMap("v", DEFAULT_CONVERSION_SERVICE
-							.convert(new short[] { -10, 10 }, TYPE_DESCRIPTOR_OF_VALUE))).single()
-						.get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
+		@ParameterizedTest
+		@MethodSource("additionalTypes")
+		void write(String name, Object t) {
+			try (Session session = neo4jConnectionSupport.getDriver().session()) {
+				Map<String, Object> parameters = new HashMap<>();
+				parameters.put("v", DEFAULT_CONVERSION_SERVICE.convert(t, TYPE_DESCRIPTOR_OF_VALUE));
+
+				long cnt = session
+					.run("MATCH (n:AdditionalTypes) WHERE n." + name + " = $v RETURN COUNT(n) AS cnt",
+						parameters)
+					.single().get("cnt").asLong();
+				assertThat(cnt).isEqualTo(1L);
 			}
 		}
 	}
 
 	@Nested
+	@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 	class SpatialTypes {
 
-		@Nested
-		class SpringPoint {
+		Stream<Arguments> spatialTypes() {
+			return Stream.of(
+				arguments("sdnPoint", NEO_HQ.asSpringPoint()),
+				arguments("geo2d", MINC.asGeo2d()),
+				arguments("car2d", new CartesianPoint2d(10, 20)),
+				arguments("car3d", new CartesianPoint3d(30, 40, 50))
+			);
+		}
 
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value v = session.run("MATCH (n:SpatialTypes) RETURN n.sdnPoint as r").single().get("r");
+		@ParameterizedTest
+		@MethodSource("spatialTypes")
+		void read(String name, Object t) {
+			try (Session session = neo4jConnectionSupport.getDriver().session()) {
+				Value v = session.run("MATCH (n:SpatialTypes) RETURN n." + name + " as r").single().get("r");
 
-					org.springframework.data.geo.Point r = (org.springframework.data.geo.Point) DEFAULT_CONVERSION_SERVICE
-						.convert(v, TypeDescriptor.valueOf(org.springframework.data.geo.Point.class));
-					assertThat(r).isEqualTo(NEO_HQ.asSpringPoint());
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-
-					long cnt = session.run("MATCH (n:SpatialTypes) WHERE n.sdnPoint = $v RETURN COUNT(n) AS cnt",
-						Collections.singletonMap("v", DEFAULT_CONVERSION_SERVICE
-							.convert(NEO_HQ.asSpringPoint(), TYPE_DESCRIPTOR_OF_VALUE))).single()
-						.get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
+				Object converted = DEFAULT_CONVERSION_SERVICE.convert(v, t.getClass());
+				assertThat(converted).isEqualTo(t);
 			}
 		}
 
-		@Nested
-		class Neo4jPoints {
-			@Test
-			void read() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-					Value n = session.run("MATCH (n:SpatialTypes) RETURN n").single().get("n");
+		@ParameterizedTest
+		@MethodSource("spatialTypes")
+		void write(String name, Object t) {
+			try (Session session = neo4jConnectionSupport.getDriver().session()) {
+				Map<String, Object> parameters = new HashMap<>();
+				parameters.put("v", DEFAULT_CONVERSION_SERVICE.convert(t, TYPE_DESCRIPTOR_OF_VALUE));
 
-					GeographicPoint2d geo2d = DEFAULT_CONVERSION_SERVICE
-						.convert(n.get("geo2d"), GeographicPoint2d.class);
-					assertThat(geo2d).isEqualTo(MINC.asGeo2d());
-
-					GeographicPoint3d geo3d = DEFAULT_CONVERSION_SERVICE
-						.convert(n.get("geo3d"), GeographicPoint3d.class);
-					assertThat(geo3d).isEqualTo(CLARION.asGeo3d(27.0));
-
-					CartesianPoint2d car2d = DEFAULT_CONVERSION_SERVICE.convert(n.get("car2d"), CartesianPoint2d.class);
-					assertThat(car2d).isEqualTo(new CartesianPoint2d(10, 20));
-
-					CartesianPoint3d car3d = DEFAULT_CONVERSION_SERVICE.convert(n.get("car3d"), CartesianPoint3d.class);
-					assertThat(car3d).isEqualTo(new CartesianPoint3d(30, 40, 50));
-				}
-			}
-
-			@Test
-			void write() {
-				try (Session session = neo4jConnectionSupport.getDriver().session()) {
-
-					Map<String, Object> parameters = new HashMap<>();
-					parameters
-						.put("geo2d", DEFAULT_CONVERSION_SERVICE.convert(MINC.asGeo2d(), TYPE_DESCRIPTOR_OF_VALUE));
-					parameters.put("geo3d",
-						DEFAULT_CONVERSION_SERVICE.convert(CLARION.asGeo3d(27.0), TYPE_DESCRIPTOR_OF_VALUE));
-					parameters.put("car2d",
-						DEFAULT_CONVERSION_SERVICE.convert(new CartesianPoint2d(10, 20), TYPE_DESCRIPTOR_OF_VALUE));
-					parameters.put("car3d",
-						DEFAULT_CONVERSION_SERVICE.convert(new CartesianPoint3d(30, 40, 50), TYPE_DESCRIPTOR_OF_VALUE));
-
-					long cnt = session.run(
-						"MATCH (n:SpatialTypes) WHERE n.geo2d = $geo2d AND n.geo3d = $geo3d AND n.car2d = $car2d AND n.car3d = $car3d RETURN COUNT(n) AS cnt",
-						parameters
-					).single()
-						.get("cnt").asLong();
-					assertThat(cnt).isEqualTo(1L);
-				}
+				long cnt = session
+					.run("MATCH (n:SpatialTypes) WHERE n." + name + " = $v RETURN COUNT(n) AS cnt",
+						parameters)
+					.single().get("cnt").asLong();
+				assertThat(cnt).isEqualTo(1L);
 			}
 		}
 	}
