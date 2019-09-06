@@ -19,7 +19,7 @@
 package org.neo4j.springframework.data.integration;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.params.provider.Arguments.*;
+import static org.junit.jupiter.api.DynamicTest.*;
 
 import lombok.Builder;
 
@@ -33,27 +33,32 @@ import java.time.OffsetTime;
 import java.time.Period;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.DynamicContainer;
+import org.junit.jupiter.api.DynamicNode;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.neo4j.springframework.data.core.convert.Neo4jConversions;
 import org.neo4j.springframework.data.test.Neo4jExtension;
 import org.neo4j.springframework.data.test.Neo4jExtension.Neo4jConnectionSupport;
+import org.neo4j.springframework.data.test.Tuples;
+import org.neo4j.springframework.data.test.Tuples.Tuple2;
 import org.neo4j.springframework.data.types.CartesianPoint2d;
 import org.neo4j.springframework.data.types.CartesianPoint3d;
 import org.neo4j.springframework.data.types.GeographicPoint2d;
@@ -179,69 +184,118 @@ class Neo4jConversionsIt {
 		}
 	}
 
-	@Nested
-	@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-	class CustomConversions {
+	private static final List<Tuple2<String, Object>> CYPHER_TYPES = Arrays.asList(
+		Tuples.of("aBoolean", true),
+		Tuples.of("aLong", Long.MAX_VALUE),
+		Tuples.of("aDouble", 1.7976931348),
+		Tuples.of("aString", "Hallo, Cypher"),
+		Tuples.of("aByteArray", "A thing".getBytes()),
+		Tuples.of("aPoint", Values.point(7203, 47, 11).asPoint()),
+		Tuples.of("aLocalDate", LocalDate.of(2015, 7, 21)),
+		Tuples.of("anOffsetTime", OffsetTime.of(12, 31, 0, 0, ZoneOffset.ofHours(1))),
+		Tuples.of("aLocalTime", LocalTime.of(12, 31, 14)),
+		Tuples.of("aZoneDateTime", ZonedDateTime
+			.of(2015, 7, 21, 21, 40, 32, 0, TimeZone.getTimeZone("America/New_York").toZoneId())),
+		Tuples.of("aLocalDateTime", LocalDateTime.of(2015, 7, 21, 21, 0)),
+		Tuples.of("anIsoDuration", Values.isoDuration(0, 14, 58320, 0).asObject())
+	);
 
-		private final DefaultConversionService customConversionService = new DefaultConversionService();
+	private static final List<Tuple2<String, Object>> ADDITIONAL_TYPES = Arrays.asList(
+		Tuples.of("booleanArray", new boolean[] { true, true, false }),
+		Tuples.of("aByte", (byte) 6),
+		Tuples.of("aChar", 'x'),
+		Tuples.of("charArray", new char[] { 'x', 'y', 'z' }),
+		Tuples.of("aDate", Date.from(LocalDateTime.of(2019, 9, 21, 0, 0, 0).toInstant(ZoneOffset.UTC))),
+		Tuples.of("aBigDecimal", BigDecimal.valueOf(Double.MAX_VALUE).multiply(BigDecimal.TEN)),
+		Tuples.of("aBigInteger", BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.TEN)),
+		Tuples.of("doubleArray", new double[] { 1.1, 2.2, 3.3 }),
+		Tuples.of("aFloat", 23.42F),
+		Tuples.of("floatArray", new float[] { 4.4F, 5.5F }),
+		Tuples.of("anInt", 42),
+		Tuples.of("intArray", new int[] { 21, 9 }),
+		Tuples.of("aLocale", Locale.GERMANY),
+		Tuples.of("longArray", new long[] { Long.MIN_VALUE, Long.MAX_VALUE }),
+		Tuples.of("aShort", (short) 127),
+		Tuples.of("shortArray", new short[] { -10, 10 }),
+		Tuples.of("aPeriod", Period.of(23, 4, 7)),
+		Tuples.of("aDuration", Duration.ofHours(25).plusMinutes(63).plusSeconds(65))
+	);
 
-		@BeforeAll
-		void prepareDefaultConversionService() {
-			ConverterBuilder.ConverterAware converterAware = ConverterBuilder
-				.reading(Value.class, LocalDate.class, v -> {
-					String s = v.asString();
-					switch (s) {
-						case "gestern":
-							return LocalDate.now().minusDays(1);
-						case "heute":
-							return LocalDate.now();
-						case "morgen":
-							return LocalDate.now().plusDays(1);
-						default:
-							throw new IllegalArgumentException();
-					}
-				}).andWriting(d -> {
-					if (d.isBefore(LocalDate.now())) {
-						return Values.value("gestern");
-					} else if (d.isAfter(LocalDate.now())) {
-						return Values.value("morgen");
-					} else {
-						return Values.value("heute");
-					}
-				});
-			new Neo4jConversions(converterAware.getConverters()).registerConvertersIn(customConversionService);
-		}
+	private static final List<Tuple2<String, Object>> SPATIAL_TYPES = Arrays.asList(
+		Tuples.of("sdnPoint", NEO_HQ.asSpringPoint()),
+		Tuples.of("geo2d", MINC.asGeo2d()),
+		Tuples.of("car2d", new CartesianPoint2d(10, 20)),
+		Tuples.of("car3d", new CartesianPoint3d(30, 40, 50))
+	);
 
-		@ParameterizedTest
-		@MethodSource("parameters")
-		void read(String value, LocalDate expected) {
+	@TestFactory
+	@DisplayName("Objects")
+	Stream<DynamicNode> objects() {
+		Map<String, List<Tuple2<String, Object>>> parameterSources = new HashMap<>();
+		parameterSources.put("CypherTypes", CYPHER_TYPES);
+		parameterSources.put("AdditionalTypes", ADDITIONAL_TYPES);
+		parameterSources.put("SpatialTypes", SPATIAL_TYPES);
 
-			assertThat(customConversionService.convert(Values.value(value), LocalDate.class)).isEqualTo(expected);
-		}
+		return parameterSources.entrySet().stream()
+			.map(entry -> {
 
-		@ParameterizedTest
-		@MethodSource("parameters")
-		void write(String expected, LocalDate value) {
+				DynamicContainer reads = DynamicContainer.dynamicContainer("read", entry.getValue().stream()
+					.map(a -> dynamicTest(a.getV1(),
+						() -> Neo4jConversionsIt.read(entry.getKey(), a.getV1(), a.getV2()))));
 
-			assertThat(customConversionService.convert(value, TYPE_DESCRIPTOR_OF_VALUE))
-				.isEqualTo(Values.value(expected));
-		}
+				DynamicContainer writes = DynamicContainer.dynamicContainer("write", entry.getValue().stream()
+					.map(a -> dynamicTest(a.getV1(),
+						() -> Neo4jConversionsIt.write(entry.getKey(), a.getV1(), a.getV2()))));
 
-		Stream<Arguments> parameters() {
-			return Stream.of(
-				arguments("gestern", LocalDate.now().minusDays(1)),
-				arguments("heute", LocalDate.now()),
-				arguments("morgen", LocalDate.now().plusDays(1))
-			);
-		}
+				return DynamicContainer.dynamicContainer(entry.getKey(), Arrays.asList(reads, writes));
+
+			});
+	}
+
+	@TestFactory
+	@DisplayName("Custom conversions")
+	Stream<DynamicTest> customConversions() {
+		final DefaultConversionService customConversionService = new DefaultConversionService();
+
+		ConverterBuilder.ConverterAware converterAware = ConverterBuilder
+			.reading(Value.class, LocalDate.class, v -> {
+				String s = v.asString();
+				switch (s) {
+					case "gestern":
+						return LocalDate.now().minusDays(1);
+					case "heute":
+						return LocalDate.now();
+					case "morgen":
+						return LocalDate.now().plusDays(1);
+					default:
+						throw new IllegalArgumentException();
+				}
+			}).andWriting(d -> {
+				if (d.isBefore(LocalDate.now())) {
+					return Values.value("gestern");
+				} else if (d.isAfter(LocalDate.now())) {
+					return Values.value("morgen");
+				} else {
+					return Values.value("heute");
+				}
+			});
+		new Neo4jConversions(converterAware.getConverters()).registerConvertersIn(customConversionService);
+
+		return Stream.of(
+			dynamicTest("read",
+				() -> assertThat(customConversionService.convert(Values.value("gestern"), LocalDate.class))
+					.isEqualTo(LocalDate.now().minusDays(1))),
+			dynamicTest("write",
+				() -> assertThat(customConversionService.convert(LocalDate.now().plusDays(1), TYPE_DESCRIPTOR_OF_VALUE))
+					.isEqualTo(Values.value("morgen")))
+		);
 	}
 
 	@Nested
-	@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-	class CypherTypes {
+	class Primitives {
 
 		@Test
-		void primitivesShouldBeRead() {
+		void cypherTypes() {
 			boolean b = DEFAULT_CONVERSION_SERVICE.convert(Values.value(true), boolean.class);
 			assertThat(b).isEqualTo(true);
 
@@ -252,56 +306,8 @@ class Neo4jConversionsIt {
 			assertThat(d).isEqualTo(1.7976931348);
 		}
 
-		Stream<Arguments> cypherTypes() {
-			return Stream.of(
-				arguments("aBoolean", true),
-				arguments("aLong", Long.MAX_VALUE),
-				arguments("aDouble", 1.7976931348),
-				arguments("aString", "Hallo, Cypher"),
-				arguments("aByteArray", "A thing".getBytes()),
-				arguments("aPoint", Values.point(7203, 47, 11).asPoint()),
-				arguments("aLocalDate", LocalDate.of(2015, 7, 21)),
-				arguments("anOffsetTime", OffsetTime.of(12, 31, 0, 0, ZoneOffset.ofHours(1))),
-				arguments("aLocalTime", LocalTime.of(12, 31, 14)),
-				arguments("aZoneDateTime", ZonedDateTime
-					.of(2015, 7, 21, 21, 40, 32, 0, TimeZone.getTimeZone("America/New_York").toZoneId())),
-				arguments("aLocalDateTime", LocalDateTime.of(2015, 7, 21, 21, 0)),
-				arguments("anIsoDuration", Values.isoDuration(0, 14, 58320, 0).asObject())
-			);
-		}
-
-		@ParameterizedTest
-		@MethodSource("cypherTypes")
-		void read(String name, Object t) {
-			try (Session session = neo4jConnectionSupport.getDriver().session()) {
-				Value v = session.run("MATCH (n:CypherTypes) RETURN n." + name + " as r").single().get("r");
-
-				Object converted = DEFAULT_CONVERSION_SERVICE.convert(v, t.getClass());
-				assertThat(converted).isEqualTo(t);
-			}
-		}
-
-		@ParameterizedTest
-		@MethodSource("cypherTypes")
-		void write(String name, Object t) {
-			try (Session session = neo4jConnectionSupport.getDriver().session()) {
-				Map<String, Object> parameters = new HashMap<>();
-				parameters.put("v", DEFAULT_CONVERSION_SERVICE.convert(t, TYPE_DESCRIPTOR_OF_VALUE));
-
-				long cnt = session
-					.run("MATCH (n:CypherTypes) WHERE n." + name + " = $v RETURN COUNT(n) AS cnt",
-						parameters)
-					.single().get("cnt").asLong();
-				assertThat(cnt).isEqualTo(1L);
-			}
-		}
-	}
-
-	@Nested
-	@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-	class AdditionalTypes {
 		@Test
-		void primitivesShouldBeRead() {
+		void additionalTypes() {
 
 			byte b = DEFAULT_CONVERSION_SERVICE.convert(Values.value(new byte[] { 6 }), byte.class);
 			assertThat(b).isEqualTo((byte) 6);
@@ -318,94 +324,30 @@ class Neo4jConversionsIt {
 			short s = DEFAULT_CONVERSION_SERVICE.convert(Values.value((short) 127), short.class);
 			assertThat(s).isEqualTo((short) 127);
 		}
+	}
 
-		Stream<Arguments> additionalTypes() {
-			return Stream.of(
-				arguments("booleanArray", new boolean[] { true, true, false }),
-				arguments("aByte", (byte) 6),
-				arguments("aChar", 'x'),
-				arguments("charArray", new char[] { 'x', 'y', 'z' }),
-				arguments("aDate", Date.from(LocalDateTime.of(2019, 9, 21, 0, 0, 0).toInstant(ZoneOffset.UTC))),
-				arguments("aBigDecimal", BigDecimal.valueOf(Double.MAX_VALUE).multiply(BigDecimal.TEN)),
-				arguments("aBigInteger", BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.TEN)),
-				arguments("doubleArray", new double[] { 1.1, 2.2, 3.3 }),
-				arguments("aFloat", 23.42F),
-				arguments("floatArray", new float[] { 4.4F, 5.5F }),
-				arguments("anInt", 42),
-				arguments("intArray", new int[] { 21, 9 }),
-				arguments("aLocale", Locale.GERMANY),
-				arguments("longArray", new long[] { Long.MIN_VALUE, Long.MAX_VALUE }),
-				arguments("aShort", (short) 127),
-				arguments("shortArray", new short[] { -10, 10 }),
-				arguments("aPeriod", Period.of(23, 4, 7)),
-				arguments("aDuration", Duration.ofHours(25).plusMinutes(63).plusSeconds(65))
-			);
-		}
+	static void read(String label, String attribute, Object t) {
+		try (Session session = neo4jConnectionSupport.getDriver().session()) {
+			Value v = session.run("MATCH (n) WHERE labels(n) = [$label] RETURN n[$attribute] as r",
+				Values.parameters("label", label, "attribute", attribute)).single().get("r");
 
-		@ParameterizedTest
-		@MethodSource("additionalTypes")
-		void read(String name, Object t) {
-			try (Session session = neo4jConnectionSupport.getDriver().session()) {
-				Value v = session.run("MATCH (n:AdditionalTypes) RETURN n." + name + " as r").single().get("r");
-
-				Object converted = DEFAULT_CONVERSION_SERVICE.convert(v, t.getClass());
-				assertThat(converted).isEqualTo(t);
-			}
-		}
-
-		@ParameterizedTest
-		@MethodSource("additionalTypes")
-		void write(String name, Object t) {
-			try (Session session = neo4jConnectionSupport.getDriver().session()) {
-				Map<String, Object> parameters = new HashMap<>();
-				parameters.put("v", DEFAULT_CONVERSION_SERVICE.convert(t, TYPE_DESCRIPTOR_OF_VALUE));
-
-				long cnt = session
-					.run("MATCH (n:AdditionalTypes) WHERE n." + name + " = $v RETURN COUNT(n) AS cnt",
-						parameters)
-					.single().get("cnt").asLong();
-				assertThat(cnt).isEqualTo(1L);
-			}
+			Object converted = DEFAULT_CONVERSION_SERVICE.convert(v, t.getClass());
+			assertThat(converted).isEqualTo(t);
 		}
 	}
 
-	@Nested
-	@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-	class SpatialTypes {
+	static void write(String label, String attribute, Object t) {
+		try (Session session = neo4jConnectionSupport.getDriver().session()) {
+			Map<String, Object> parameters = new HashMap<>();
+			parameters.put("label", label);
+			parameters.put("attribute", attribute);
+			parameters.put("v", DEFAULT_CONVERSION_SERVICE.convert(t, TYPE_DESCRIPTOR_OF_VALUE));
 
-		Stream<Arguments> spatialTypes() {
-			return Stream.of(
-				arguments("sdnPoint", NEO_HQ.asSpringPoint()),
-				arguments("geo2d", MINC.asGeo2d()),
-				arguments("car2d", new CartesianPoint2d(10, 20)),
-				arguments("car3d", new CartesianPoint3d(30, 40, 50))
-			);
-		}
-
-		@ParameterizedTest
-		@MethodSource("spatialTypes")
-		void read(String name, Object t) {
-			try (Session session = neo4jConnectionSupport.getDriver().session()) {
-				Value v = session.run("MATCH (n:SpatialTypes) RETURN n." + name + " as r").single().get("r");
-
-				Object converted = DEFAULT_CONVERSION_SERVICE.convert(v, t.getClass());
-				assertThat(converted).isEqualTo(t);
-			}
-		}
-
-		@ParameterizedTest
-		@MethodSource("spatialTypes")
-		void write(String name, Object t) {
-			try (Session session = neo4jConnectionSupport.getDriver().session()) {
-				Map<String, Object> parameters = new HashMap<>();
-				parameters.put("v", DEFAULT_CONVERSION_SERVICE.convert(t, TYPE_DESCRIPTOR_OF_VALUE));
-
-				long cnt = session
-					.run("MATCH (n:SpatialTypes) WHERE n." + name + " = $v RETURN COUNT(n) AS cnt",
-						parameters)
-					.single().get("cnt").asLong();
-				assertThat(cnt).isEqualTo(1L);
-			}
+			long cnt = session
+				.run("MATCH (n) WHERE labels(n) = [$label]  AND n[$attribute] = $v RETURN COUNT(n) AS cnt",
+					parameters)
+				.single().get("cnt").asLong();
+			assertThat(cnt).isEqualTo(1L);
 		}
 	}
 }
