@@ -24,26 +24,54 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.Wither;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetTime;
+import java.time.ZonedDateTime;
+
+import org.neo4j.driver.types.IsoDuration;
+import org.neo4j.driver.types.Point;
 import org.neo4j.springframework.data.core.schema.GeneratedValue;
 import org.neo4j.springframework.data.core.schema.Id;
 import org.neo4j.springframework.data.core.schema.Node;
 
 /**
- * Contains a bunch of properties that all require conversions going to and coming back from the database.
+ * Contains properties of all cypher types.
  *
  * @author Michael J. Simons
  */
-@Node
+@Node("CypherTypes")
 @Data
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-public class ThingWithPropertiesRequiringConversion {
+public class ThingWithAllCypherTypes {
 
 	@Id @GeneratedValue
 	@Wither
-	private final Long id;
+	public final Long id;
 
-	private final Float aFloatObject;
+	private boolean aBoolean;
 
-	private final float aFloatScalar;
+	private long aLong;
+
+	private double aDouble;
+
+	private String aString;
+
+	private byte[] aByteArray;
+
+	private LocalDate aLocalDate;
+
+	private OffsetTime anOffsetTime;
+
+	private LocalTime aLocalTime;
+
+	private ZonedDateTime aZoneDateTime;
+
+	private LocalDateTime aLocalDateTime;
+
+	private IsoDuration anIsoDuration;
+
+	private Point aPoint;
 }

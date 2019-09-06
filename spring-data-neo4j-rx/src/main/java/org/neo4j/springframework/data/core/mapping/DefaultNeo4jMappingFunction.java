@@ -160,7 +160,7 @@ final class DefaultNeo4jMappingFunction<T> implements BiFunction<TypeSystem, Rec
 		Neo4jPersistentEntity<ET> nodeDescription,
 		Map<Object, Object> knownObjects) {
 
-		ET instance = instantiate(typeSystem, nodeDescription, queryResult);
+		ET instance = instantiate(nodeDescription, queryResult);
 
 		PersistentPropertyAccessor<ET> propertyAccessor = converter
 			.decoratePropertyAccessor(typeSystem, nodeDescription.getPropertyAccessor(instance));
@@ -183,7 +183,7 @@ final class DefaultNeo4jMappingFunction<T> implements BiFunction<TypeSystem, Rec
 		return instance;
 	}
 
-	private <ET> ET instantiate(TypeSystem typeSystem, Neo4jPersistentEntity<ET> anotherNodeDescription,
+	private <ET> ET instantiate(Neo4jPersistentEntity<ET> anotherNodeDescription,
 		MapAccessor values) {
 
 		ParameterValueProvider<Neo4jPersistentProperty> parameterValueProvider = new ParameterValueProvider<Neo4jPersistentProperty>() {
@@ -195,7 +195,7 @@ final class DefaultNeo4jMappingFunction<T> implements BiFunction<TypeSystem, Rec
 				return extractValueOf(matchingProperty, values);
 			}
 		};
-		parameterValueProvider = converter.decorateParameterValueProvider(typeSystem, parameterValueProvider);
+		parameterValueProvider = converter.decorateParameterValueProvider(parameterValueProvider);
 		return INSTANTIATORS.getInstantiatorFor(anotherNodeDescription)
 			.createInstance(anotherNodeDescription, parameterValueProvider);
 	}

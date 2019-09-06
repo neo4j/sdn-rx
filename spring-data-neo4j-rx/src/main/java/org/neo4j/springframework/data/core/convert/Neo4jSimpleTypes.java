@@ -18,6 +18,8 @@
  */
 package org.neo4j.springframework.data.core.convert;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -26,13 +28,16 @@ import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import org.apiguardian.api.API;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.types.IsoDuration;
 import org.neo4j.driver.types.Point;
+import org.neo4j.springframework.data.types.CartesianPoint2d;
+import org.neo4j.springframework.data.types.CartesianPoint3d;
+import org.neo4j.springframework.data.types.GeographicPoint2d;
+import org.neo4j.springframework.data.types.GeographicPoint3d;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 
 /**
@@ -65,6 +70,15 @@ public final class Neo4jSimpleTypes {
 		neo4jNativeTypes.add(ZonedDateTime.class);
 		neo4jNativeTypes.add(void.class);
 
+		neo4jNativeTypes.add(BigDecimal.class);
+		neo4jNativeTypes.add(BigInteger.class);
+
+		neo4jNativeTypes.add(org.springframework.data.geo.Point.class);
+		neo4jNativeTypes.add(GeographicPoint2d.class);
+		neo4jNativeTypes.add(GeographicPoint3d.class);
+		neo4jNativeTypes.add(CartesianPoint2d.class);
+		neo4jNativeTypes.add(CartesianPoint3d.class);
+
 		neo4jNativeTypes.add(Value.class);
 
 		NEO4J_NATIVE_TYPES = Collections.unmodifiableSet(neo4jNativeTypes);
@@ -74,28 +88,6 @@ public final class Neo4jSimpleTypes {
 	 * The simple types we support plus all the simple types recognized by Spring.
 	 */
 	public static final SimpleTypeHolder HOLDER = new SimpleTypeHolder(NEO4J_NATIVE_TYPES, true);
-
-	/**
-	 * Converts the given Neo4j driver value into the designated type.
-	 *
-	 * @param value       The value to convert.
-	 * @param targetClass The target class to convert into
-	 * @param <T>         The type of the target class
-	 * @return The converted value or {@literal null} when the values has been {@literal null}
-	 * @throws IllegalArgumentException when the value cannot be converted into an object of the given target class
-	 */
-	public static <T> T asObject(Value value, Class<T> targetClass) {
-
-		Optional<Object> o = Optional.ofNullable(value).map(Value::asObject);
-		if (!o.isPresent()) {
-			return null;
-		}
-
-		return o.filter(v -> targetClass.isAssignableFrom(v.getClass()))
-			.map(targetClass::cast)
-			.orElseThrow(() -> new IllegalArgumentException(
-				String.format("%s is not assignable from %s", targetClass.getName(), o.get().getClass().getName())));
-	}
 
 	private Neo4jSimpleTypes() {
 	}

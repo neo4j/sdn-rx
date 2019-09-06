@@ -24,8 +24,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Duration;
-import java.time.Period;
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -79,6 +77,7 @@ final class AdditionalTypes {
 		hlp.add(reading(Value.class, Short.class, AdditionalTypes::asShort).andWriting(AdditionalTypes::value));
 		hlp.add(reading(Value.class, short.class, AdditionalTypes::asShort).andWriting(AdditionalTypes::value));
 		hlp.add(reading(Value.class, short[].class, AdditionalTypes::asShortArray).andWriting(AdditionalTypes::value));
+		hlp.add(reading(Value.class, String[].class, AdditionalTypes::asStringArray).andWriting(Values::value));
 		hlp.add(
 			reading(Value.class, BigDecimal.class, AdditionalTypes::asBigDecimal).andWriting(AdditionalTypes::value));
 		hlp.add(
@@ -87,12 +86,6 @@ final class AdditionalTypes {
 			reading(Value.class, TemporalAmount.class, AdditionalTypes::asTemporalAmount).andWriting(AdditionalTypes::value));
 
 		CONVERTERS = Collections.unmodifiableList(hlp);
-	}
-
-	public static void main(String...a) {
-		System.out.println(Period.of(23, 4, 7).toString());
-		System.out.println(Duration.ofHours(25).plusMinutes(63).plusSeconds(65));
-		System.out.println(Duration.ofHours(3));
 	}
 
 	static TemporalAmount asTemporalAmount(Value value) {
@@ -255,6 +248,11 @@ final class AdditionalTypes {
 			array[i++] = v;
 		}
 		return array;
+	}
+
+	static String[] asStringArray(Value value) {
+		String[] array = new String[value.size()];
+		return value.asList(Value::asString).toArray(array);
 	}
 
 	static double[] asDoubleArray(Value value) {

@@ -18,15 +18,12 @@
  */
 package org.neo4j.springframework.data.core.mapping;
 
-import static java.util.stream.Collectors.*;
-
-import java.util.List;
-
 import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.neo4j.driver.types.TypeSystem;
 import org.neo4j.springframework.data.core.convert.Neo4jConverter;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.data.mapping.PersistentProperty;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.PreferredConstructor;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
@@ -51,21 +48,14 @@ final class DefaultNeo4jConverter implements Neo4jConverter {
 		this.conversionService = conversionService;
 	}
 
-	@Override
 	@Nullable
-	public Object readValue(@Nullable Value value, TypeSystem typeSystem, TypeInformation<?> type) {
+	public Object readValue(@Nullable Value value, TypeInformation<?> type) {
 
 		if (value == null || value == Values.NULL) {
 			return null;
 		}
 
-		TypeInformation<?> relevantType = type.getActualType() == null ? type : type.getActualType();
-
-		if (typeSystem.LIST().isTypeOf(value)) {
-			return value.asList(v -> readValue(v, typeSystem, relevantType));
-		}
-
-		return conversionService.convert(value, relevantType.getType());
+		return conversionService.convert(value, type.getType());
 	}
 
 	@Override
@@ -73,12 +63,6 @@ final class DefaultNeo4jConverter implements Neo4jConverter {
 
 		if (value == null) {
 			return Values.NULL;
-		}
-
-		TypeInformation<?> relevantType = type.getActualType() == null ? type : type.getActualType();
-
-		if (value instanceof List) {
-			return Values.value(((List) value).stream().map(v -> writeValue(v, relevantType)).collect(toList()));
 		}
 
 		return conversionService.convert(value, Value.class);
@@ -92,20 +76,17 @@ final class DefaultNeo4jConverter implements Neo4jConverter {
 	}
 
 	@Override
-	public <T> ParameterValueProvider<Neo4jPersistentProperty> decorateParameterValueProvider(
-		TypeSystem typeSystem,
-		ParameterValueProvider<Neo4jPersistentProperty> targetParameterValueProvider) {
+	public <T extends PersistentProperty<T>> ParameterValueProvider<T> decorateParameterValueProvider(
+		ParameterValueProvider<T> targetParameterValueProvider) {
 
-		return new ParameterValueProvider<Neo4jPersistentProperty>() {
+		return new ParameterValueProvider<T>() {
 			@Override
 			public Object getParameterValue(PreferredConstructor.Parameter parameter) {
 
 				Object originalValue = targetParameterValueProvider.getParameterValue(parameter);
 				Assert.isInstanceOf(Value.class, originalValue, "Decorated parameters other than of type Value are not supported.");
-				return readValue((Value) originalValue, typeSystem, parameter.getType());
+				return readValue((Value) originalValue, parameter.getType());
 			}
 		};
 	}
-
-
 }
