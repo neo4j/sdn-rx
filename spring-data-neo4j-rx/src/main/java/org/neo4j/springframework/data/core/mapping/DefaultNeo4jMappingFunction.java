@@ -183,8 +183,7 @@ final class DefaultNeo4jMappingFunction<T> implements BiFunction<TypeSystem, Rec
 		return instance;
 	}
 
-	private <ET> ET instantiate(Neo4jPersistentEntity<ET> anotherNodeDescription,
-		MapAccessor values) {
+	private <ET> ET instantiate(Neo4jPersistentEntity<ET> anotherNodeDescription, MapAccessor values) {
 
 		ParameterValueProvider<Neo4jPersistentProperty> parameterValueProvider = new ParameterValueProvider<Neo4jPersistentProperty>() {
 			@Override
@@ -307,7 +306,7 @@ final class DefaultNeo4jMappingFunction<T> implements BiFunction<TypeSystem, Rec
 		};
 	}
 
-	private static Object extractValueOf(Neo4jPersistentProperty property, MapAccessor propertyContainer) {
+	private static Value extractValueOf(Neo4jPersistentProperty property, MapAccessor propertyContainer) {
 		if (property.isInternalIdProperty()) {
 			return propertyContainer instanceof Node ?
 				Values.value(((Node) propertyContainer).id()) :
