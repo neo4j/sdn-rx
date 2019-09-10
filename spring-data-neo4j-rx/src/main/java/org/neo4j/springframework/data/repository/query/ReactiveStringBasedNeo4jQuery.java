@@ -30,6 +30,7 @@ import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.data.repository.query.SpelEvaluator;
 import org.springframework.data.repository.query.SpelQueryContext;
 import org.springframework.data.repository.query.SpelQueryContext.SpelExtractor;
@@ -159,10 +160,18 @@ final class ReactiveStringBasedNeo4jQuery extends AbstractReactiveNeo4jQuery {
 	@Override
 	protected PreparedQuery<?> prepareQuery(Object[] parameters) {
 
+		ReturnedType returnedType = getQueryMethod().getResultProcessor().getReturnedType();
+		boolean projecting = returnedType.isProjecting()
+			&& !mappingContext.hasPersistentEntityFor(returnedType.getReturnedType());
+
 		return PreparedQuery.queryFor(super.domainType)
 			.withCypherQuery(cypherQuery)
 			.withParameters(bindParameters(parameters))
-			.usingMappingFunction(mappingContext.getMappingFunctionFor(super.domainType)) // Null is fine
+			.usingMappingFunction(
+				projecting
+					? mappingContext.getProjectionMappingFunctionFor(super.domainType)
+					: mappingContext.getMappingFunctionFor(super.domainType)
+			) // Null is fine
 			.build();
 	}
 

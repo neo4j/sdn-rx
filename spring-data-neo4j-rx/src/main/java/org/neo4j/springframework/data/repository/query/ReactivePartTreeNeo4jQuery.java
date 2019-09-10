@@ -31,8 +31,11 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 
+import org.neo4j.driver.Record;
 import org.neo4j.driver.types.Point;
+import org.neo4j.driver.types.TypeSystem;
 import org.neo4j.springframework.data.core.PreparedQuery;
 import org.neo4j.springframework.data.core.ReactiveNeo4jClient;
 import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
@@ -90,6 +93,9 @@ final class ReactivePartTreeNeo4jQuery extends AbstractReactiveNeo4jQuery {
 	protected PreparedQuery<?> prepareQuery(Object[] parameters) {
 
 		ReturnedType returnedType = this.queryMethod.getResultProcessor().getReturnedType();
+		boolean projecting = returnedType.isProjecting()
+			&& !mappingContext.hasPersistentEntityFor(returnedType.getReturnedType());
+
 		Neo4jParameters formalParameters = (Neo4jParameters) this.queryMethod.getParameters();
 		ParameterAccessor actualParameters = new ParametersParameterAccessor(formalParameters, parameters);
 		CypherQueryCreator queryCreator = new CypherQueryCreator(
@@ -102,9 +108,13 @@ final class ReactivePartTreeNeo4jQuery extends AbstractReactiveNeo4jQuery {
 			.collect(toMap(Neo4jQueryMethod.Neo4jParameter::getNameOrIndex,
 				formalParameter -> convertParameter(parameters[formalParameter.getIndex()])));
 
+		BiFunction<TypeSystem, Record, ?> mappingFunction = projecting
+			? mappingContext.getProjectionMappingFunctionFor(domainType)
+			: mappingContext.getMappingFunctionFor(domainType);
+
 		return PreparedQuery.queryFor(super.domainType).withCypherQuery(cypherQuery)
 			.withParameters(boundedParameters)
-			.usingMappingFunction(mappingContext.getMappingFunctionFor(super.domainType))
+			.usingMappingFunction(mappingFunction)
 			.build();
 	}
 

@@ -87,6 +87,7 @@ class ReactiveRepositoryIT {
 	private static final LocalDate TEST_PERSON1_BORN_ON = LocalDate.of(2019, 1, 1);
 	private static final LocalDate TEST_PERSON2_BORN_ON = LocalDate.of(2019, 2, 1);
 	private static final String TEST_PERSON_SAMEVALUE = "SameValue";
+	private static final String THING_NAME = "Homer";
 	private static final Point NEO4J_HQ = Values.point(4326, 12.994823, 55.612191).asPoint();
 	private static final Point SFO = Values.point(4326, -122.38681, 37.61649).asPoint();
 	private static final Point CLARION = Values.point(4326, 12.994243, 55.607726).asPoint();
@@ -128,7 +129,7 @@ class ReactiveRepositoryIT {
 						TEST_PERSON2_FIRST_NAME, "cool", false, "personNumber", 2, "bornOn", TEST_PERSON2_BORN_ON, "place", SFO))
 				.next().get(0).asLong();
 
-		transaction.run("CREATE (a:Thing {theId: 'anId', name: 'Homer'})-[:Has]->(b:Thing2{theId: 4711, name: 'Bart'})");
+		transaction.run("CREATE (a:Thing {theId: 'anId', name: '" + THING_NAME + "'})-[:Has]->(b:Thing2{theId: 4711, name: 'Bart'})");
 		IntStream.rangeClosed(1, 20).forEach(i ->
 			transaction.run("CREATE (a:Thing {theId: 'id' + $i, name: 'name' + $i})",
 				parameters("i", String.format("%02d", i))));
@@ -1028,7 +1029,7 @@ class ReactiveRepositoryIT {
 			.assertNext(thing -> {
 
 				assertThat(thing.getTheId()).isEqualTo("anId");
-				assertThat(thing.getName()).isEqualTo("Homer");
+				assertThat(thing.getName()).isEqualTo(THING_NAME);
 
 				AnotherThingWithAssignedId anotherThing = new AnotherThingWithAssignedId(4711L);
 				anotherThing.setName("Bart");
@@ -1042,7 +1043,7 @@ class ReactiveRepositoryIT {
 		StepVerifier.create(thingRepository.getViaQuery())
 			.assertNext(thing -> {
 				assertThat(thing.getTheId()).isEqualTo("anId");
-				assertThat(thing.getName()).isEqualTo("Homer");
+				assertThat(thing.getName()).isEqualTo(THING_NAME);
 
 				AnotherThingWithAssignedId anotherThing = new AnotherThingWithAssignedId(4711L);
 				anotherThing.setName("Bart");
@@ -1212,6 +1213,62 @@ class ReactiveRepositoryIT {
 			.verifyComplete();
 
 		thingRepository.count().as(StepVerifier::create).expectNext(21L).verifyComplete();
+	}
+
+	@Test
+	void mapsInterfaceProjectionWithDerivedFinderMethod() {
+		StepVerifier.create(repository.findByName(TEST_PERSON1_NAME))
+			.assertNext(person -> {
+				assertThat(person.getName()).isEqualTo(TEST_PERSON1_NAME);
+			})
+			.verifyComplete();
+	}
+
+	@Test
+	void mapsInterfaceProjectionWithDerivedFinderMethodWithMultipleResults() {
+		StepVerifier.create(repository.findBySameValue(TEST_PERSON_SAMEVALUE))
+			.expectNextCount(2)
+			.verifyComplete();
+	}
+
+	@Test
+	void mapsInterfaceProjectionWithCustomQueryAndMapProjection() {
+		StepVerifier.create(repository.findByNameWithCustomQueryAndMapProjection(TEST_PERSON1_NAME))
+			.assertNext(person -> {
+				assertThat(person.getName()).isEqualTo(TEST_PERSON1_NAME);
+			})
+			.verifyComplete();
+	}
+
+	@Test
+	void mapsInterfaceProjectionWithCustomQueryAndMapProjectionWithMultipleResults() {
+		StepVerifier.create(repository.loadAllProjectionsWithMapProjection())
+			.expectNextCount(2)
+			.verifyComplete();
+	}
+
+	@Test
+	void mapsInterfaceProjectionWithCustomQueryAndNodeReturn() {
+		StepVerifier.create(repository.findByNameWithCustomQueryAndNodeReturn(TEST_PERSON1_NAME))
+			.assertNext(person -> {
+				assertThat(person.getName()).isEqualTo(TEST_PERSON1_NAME);
+			})
+			.verifyComplete();
+	}
+	@Test
+	void mapsInterfaceProjectionWithCustomQueryAndNodeReturnWithMultipleResults() {
+		StepVerifier.create(repository.loadAllProjectionsWithNodeReturn())
+			.expectNextCount(2)
+			.verifyComplete();
+	}
+
+	@Test
+	void mapsInterfaceMixedProjectionWithCustomQuery() {
+		StepVerifier.create(repository.findMixedByNameWithCustomQuery(TEST_PERSON1_NAME, THING_NAME))
+			.assertNext(person -> {
+				assertThat(person.getName()).isEqualTo(TEST_PERSON1_NAME);
+			})
+			.verifyComplete();
 	}
 
 	@Configuration
