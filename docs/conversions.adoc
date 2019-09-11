@@ -78,16 +78,12 @@ Primitive types of wrapper types are equally supported.
 |Integer
 |
 
-|`java.lang.Integer`
-|Integer
+|`int[]`
+|List of Integer
 |
 
 |`java.util.Locale`
 |String formatted as BCP 47 language tag
-|
-
-|`int[]`
-|List of Integer
 |
 
 |`java.lang.Short`
@@ -158,7 +154,7 @@ Primitive types of wrapper types are equally supported.
 |Point with CRS 9157
 |
 
-|`org.springframework.data.geo.Point` 
+|`org.springframework.data.geo.Point`
 |Point with CRS 4326 and x/y corresponding to lat/long
 |
 
