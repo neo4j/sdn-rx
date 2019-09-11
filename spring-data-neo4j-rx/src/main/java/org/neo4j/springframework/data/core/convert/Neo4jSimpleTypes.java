@@ -54,7 +54,7 @@ import org.springframework.data.mapping.model.SimpleTypeHolder;
 @API(status = API.Status.INTERNAL, since = "1.0")
 public final class Neo4jSimpleTypes {
 
-	public static final Set<Class<?>> NEO4J_NATIVE_TYPES;
+	private static final Set<Class<?>> NEO4J_NATIVE_TYPES;
 
 	static {
 		Set<Class<?>> neo4jNativeTypes = new HashSet<>();

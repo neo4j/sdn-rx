@@ -187,7 +187,7 @@ final class DefaultNeo4jMappingFunction<T> implements BiFunction<TypeSystem, Rec
 
 		ParameterValueProvider<Neo4jPersistentProperty> parameterValueProvider = new ParameterValueProvider<Neo4jPersistentProperty>() {
 			@Override
-			public Object getParameterValue(PreferredConstructor.Parameter parameter) {
+			public Value getParameterValue(PreferredConstructor.Parameter parameter) {
 
 				Neo4jPersistentProperty matchingProperty = anotherNodeDescription
 					.getRequiredPersistentProperty(parameter.getName());
@@ -209,7 +209,7 @@ final class DefaultNeo4jMappingFunction<T> implements BiFunction<TypeSystem, Rec
 				return;
 			}
 
-			Object value = extractValueOf(property, queryResult);
+			Value value = extractValueOf(property, queryResult);
 			propertyAccessor.setProperty(property, value);
 		};
 	}
