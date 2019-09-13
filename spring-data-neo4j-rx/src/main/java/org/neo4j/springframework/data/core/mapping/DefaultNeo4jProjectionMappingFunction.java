@@ -27,6 +27,7 @@ import org.neo4j.driver.Record;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.types.TypeSystem;
 import org.neo4j.driver.util.Pair;
+import org.neo4j.springframework.data.core.convert.Neo4jConverter;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 
 /**
@@ -35,9 +36,11 @@ import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 final class DefaultNeo4jProjectionMappingFunction<T> implements BiFunction<TypeSystem, Record, T> {
 
 	private final Class<T> domainType;
+	private final Neo4jConverter converter;
 
-	DefaultNeo4jProjectionMappingFunction(Class<T> domainType) {
+	DefaultNeo4jProjectionMappingFunction(Class<T> domainType, Neo4jConverter converter) {
 		this.domainType = domainType;
+		this.converter = converter;
 	}
 
 	@Override

@@ -210,7 +210,7 @@ public final class Neo4jMappingContext
 	}
 
 	public DefaultNeo4jProjectionMappingFunction getProjectionMappingFunctionFor(Class<?> type) {
-		return new DefaultNeo4jProjectionMappingFunction<>(type);
+		return new DefaultNeo4jProjectionMappingFunction<>(type, this.converter);
 	}
 
 	@Override
