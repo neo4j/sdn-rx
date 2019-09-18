@@ -212,6 +212,6 @@ public interface PersonRepository extends Neo4jRepository<PersonWithAllConstruct
 	@Query("MATCH (n:PersonWithAllConstructor) return n")
 	List<PersonProjection> loadAllProjectionsWithNodeReturn();
 
-	@Query("MATCH (n:PersonWithAllConstructor) MATCH (m:Thing) where n.name = $name and m.name = $thingName return n.name as name, m.name as thingName")
-	PersonProjection findMixedByNameWithCustomQuery(@Param("name") String name, @Param("thingName") String thingName);
+	@Query("MATCH (n:PersonWithAllConstructor) where n.name = $name return n.name as name, '2019-09-21T00:00:00.000Z' as date")
+	PersonProjection findByNameWithConversion(@Param("name") String name);
 }

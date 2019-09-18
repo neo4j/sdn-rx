@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import org.neo4j.springframework.data.core.mapping.TypeSystemAndRecord;
 import org.springframework.data.mapping.MappingException;
 import org.neo4j.springframework.data.core.Neo4jClient;
 import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
@@ -159,17 +160,10 @@ final class StringBasedNeo4jQuery extends AbstractNeo4jQuery {
 
 	@Override
 	protected PreparedQuery<?> prepareQuery(Object[] parameters) {
-		ReturnedType returnedType = getQueryMethod().getResultProcessor().getReturnedType();
-		boolean projecting = returnedType.isProjecting()
-			&& !mappingContext.hasPersistentEntityFor(returnedType.getReturnedType());
-
 		return PreparedQuery.queryFor(super.domainType)
 			.withCypherQuery(cypherQuery)
 			.withParameters(bindParameters(parameters))
-			.usingMappingFunction(
-				projecting
-				? mappingContext.getProjectionMappingFunctionFor(super.domainType)
-				: mappingContext.getMappingFunctionFor(super.domainType)) // Null is fine
+			.usingMappingFunction(TypeSystemAndRecord::new)
 			.build();
 	}
 

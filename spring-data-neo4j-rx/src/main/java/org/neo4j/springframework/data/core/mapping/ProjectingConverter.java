@@ -21,33 +21,35 @@ package org.neo4j.springframework.data.core.mapping;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import org.neo4j.driver.Driver;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Value;
+import org.neo4j.driver.internal.types.InternalTypeSystem;
 import org.neo4j.driver.types.TypeSystem;
 import org.neo4j.driver.util.Pair;
 import org.neo4j.springframework.data.core.convert.Neo4jConverter;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.util.ClassTypeInformation;
 
-/**
- * @author Gerrit Meier
- */
-final class DefaultNeo4jProjectionMappingFunction implements BiFunction<TypeSystem, Record, Map<String, Object>> {
-
+public class ProjectingConverter implements Converter<Object, Object> {
 
 	private final Class domainType;
 	private final Neo4jConverter converter;
 
-	DefaultNeo4jProjectionMappingFunction(Class domainType, Neo4jConverter converter) {
+	ProjectingConverter(Class domainType, Neo4jConverter converter) {
 		this.domainType = domainType;
 		this.converter = converter;
 	}
 
+
 	@Override
-	public Map<String, Object> apply(TypeSystem typeSystem, Record record) {
+	public Object convert(Object source) {
+		Record record = (Record) source;
+		TypeSystem typeSystem = InternalTypeSystem.TYPE_SYSTEM;
+
 		SpelAwareProxyProjectionFactory spelAwareProxyProjectionFactory = new SpelAwareProxyProjectionFactory();
 
 		Map<String, Value> recordValues = new HashMap<>();
@@ -76,6 +78,5 @@ final class DefaultNeo4jProjectionMappingFunction implements BiFunction<TypeSyst
 
 		return sourceValues;
 
-		//return spelAwareProxyProjectionFactory.createProjection(domainType, sourceValues);
 	}
 }

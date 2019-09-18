@@ -51,7 +51,7 @@ interface Neo4jQueryExecution {
 			if (asCollectionQuery) {
 				return executableQuery.getResults();
 			} else {
-				return executableQuery.getSingleResult();
+				return executableQuery.getRequiredSingleResult();
 			}
 		}
 	}

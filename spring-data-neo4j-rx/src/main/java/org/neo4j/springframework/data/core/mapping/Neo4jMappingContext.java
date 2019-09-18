@@ -56,6 +56,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.data.mapping.Association;
@@ -63,6 +64,7 @@ import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.context.AbstractMappingContext;
 import org.springframework.data.mapping.model.Property;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
+import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.lang.Nullable;
 
@@ -198,19 +200,12 @@ public final class Neo4jMappingContext
 		return this.relationshipsByPrimaryLabel.computeIfAbsent(primaryLabel, this::computeRelationshipsOf);
 	}
 
-	@Override
-	@Nullable
-	public <T> BiFunction<TypeSystem, Record, T> getMappingFunctionFor(Class<T> targetClass) {
-		if (this.hasPersistentEntityFor(targetClass)) {
-			Neo4jPersistentEntity neo4jPersistentEntity = this.getPersistentEntity(targetClass);
-			return new DefaultNeo4jMappingFunction<>(neo4jPersistentEntity, this, this.converter);
-		}
+	public Converter getConverterFor(ReturnedType returnedType) {
+		Class<?> targetType = returnedType.getReturnedType();
+		boolean projecting = returnedType.isProjecting() && !this.hasPersistentEntityFor(targetType);
 
-		return null;
-	}
-
-	public DefaultNeo4jProjectionMappingFunction getProjectionMappingFunctionFor(Class<?> type) {
-		return new DefaultNeo4jProjectionMappingFunction<>(type, this.converter);
+		return projecting ? new ProjectingConverter(targetType, this.converter) :
+			new MappingConverter(this.getPersistentEntity(targetType), this, this.converter);
 	}
 
 	@Override

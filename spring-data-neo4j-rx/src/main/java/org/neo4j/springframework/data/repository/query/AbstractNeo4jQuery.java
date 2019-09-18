@@ -19,10 +19,11 @@
 package org.neo4j.springframework.data.repository.query;
 
 import org.neo4j.springframework.data.core.Neo4jClient;
-import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
 import org.neo4j.springframework.data.core.PreparedQuery;
+import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ResultProcessor;
 import org.springframework.util.Assert;
 
 /**
@@ -59,8 +60,12 @@ abstract class AbstractNeo4jQuery extends Neo4jQuerySupport implements Repositor
 
 	@Override
 	public final Object execute(Object[] parameters) {
-		return new Neo4jQueryExecution.DefaultQueryExecution(neo4jClient)
-			.execute(prepareQuery(parameters), queryMethod.isCollectionQuery());
+
+		ResultProcessor resultProcessor = queryMethod.getResultProcessor();
+		return resultProcessor.processResult(
+			new Neo4jQueryExecution.DefaultQueryExecution(neo4jClient)
+				.execute(prepareQuery(parameters), queryMethod.isCollectionQuery()), mappingContext.getConverterFor(
+				resultProcessor.getReturnedType()));
 	}
 
 	protected abstract PreparedQuery prepareQuery(Object[] parameters);

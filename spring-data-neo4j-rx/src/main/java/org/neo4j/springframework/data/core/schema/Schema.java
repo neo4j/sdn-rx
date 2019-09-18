@@ -83,31 +83,6 @@ public interface Schema {
 	 */
 	Collection<RelationshipDescription> getRelationshipsOf(String primaryLabel);
 
-	/**
-	 * Retrieves a schema based mapping function for the {@code targetClass}. The mapping function will expect a
-	 * record containing all the nodes and relationships necessary to fully populate an instance of the given class.
-	 * It will not try to fetch data from any other records or queries. The mapping function is free to throw a {@link RuntimeException},
-	 * most likely a {@code org.springframework.data.mapping.MappingException} or {@link IllegalStateException} when
-	 * mapping is not possible.
-	 * <p>
-	 * In case the mapping function returns a {@literal null}, the Neo4j client will throw an exception and prevent further
-	 * processing.
-	 *
-	 * @param targetClass The target class to which to map to.
-	 * @param <T>         Type of the target class
-	 * @return The default, stateless and reusable mapping function for the given target class
-	 * @throws UnknownEntityException When {@code targetClass} is not a managed class
-	 */
-	default <T> BiFunction<TypeSystem, Record, T> getRequiredMappingFunctionFor(Class<T> targetClass) {
-		BiFunction<TypeSystem, Record, T> mappingFunction = getMappingFunctionFor(targetClass);
-		if (mappingFunction == null) {
-			throw new UnknownEntityException(targetClass);
-		}
-		return mappingFunction;
-	}
-
-	@Nullable <T> BiFunction<TypeSystem, Record, T> getMappingFunctionFor(Class<T> targetClass);
-
 	<T> Function<T, Map<String, Object>> getRequiredBinderFunctionFor(Class<T> sourceClass);
 
 	/**

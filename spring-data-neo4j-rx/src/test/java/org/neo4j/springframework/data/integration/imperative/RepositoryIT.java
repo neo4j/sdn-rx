@@ -24,8 +24,11 @@ import static org.assertj.core.api.Assertions.*;
 import static org.springframework.data.domain.Range.Bound.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -173,6 +176,14 @@ class RepositoryIT {
 		Optional<PersonWithAllConstructor> person = repository.findById(id1);
 		assertThat(person).isPresent();
 		assertThat(person.get().getName()).isEqualTo(TEST_PERSON1_NAME);
+	}
+
+	@Test
+	void dontFindById() {
+		// Optional<PersonWithAllConstructor> person = repository.findById(-4711L);
+		Optional<PersonWithAllConstructor> person =  repository.findOneByNameAndFirstName("foo", "bar");
+		//repository.f
+		assertThat(person).isNotPresent();
 	}
 
 	@Test
@@ -1585,14 +1596,18 @@ class RepositoryIT {
 	void mapsInterfaceProjectionWithCustomQueryAndNodeReturn() {
 		assertThat(repository.findByNameWithCustomQueryAndNodeReturn(TEST_PERSON1_NAME).getName()).isEqualTo(TEST_PERSON1_NAME);
 	}
+
 	@Test
 	void mapsInterfaceProjectionWithCustomQueryAndNodeReturnWithMultipleResults() {
 		assertThat(repository.loadAllProjectionsWithNodeReturn()).hasSize(2);
 	}
 
 	@Test
-	void mapsInterfaceMixedProjectionWithCustomQuery() {
-		assertThat(repository.findMixedByNameWithCustomQuery(TEST_PERSON1_NAME, THING_NAME).getName()).isEqualTo(TEST_PERSON1_NAME);
+	void mapsInterfaceProjectionWithConversion() {
+		Date expectedDate = Date.from(LocalDateTime.of(2019, 9, 21, 0, 0, 0).atZone(ZoneId.of("UTC")).toInstant());
+
+		assertThat(repository.findByNameWithConversion(TEST_PERSON1_NAME).getName()).isEqualTo(TEST_PERSON1_NAME);
+		assertThat(repository.findByNameWithConversion(TEST_PERSON1_NAME).getDate()).isEqualTo(expectedDate);
 	}
 
 	@Configuration

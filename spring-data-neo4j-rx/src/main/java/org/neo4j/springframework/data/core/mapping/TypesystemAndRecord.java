@@ -16,18 +16,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.springframework.data.integration.shared;
+package org.neo4j.springframework.data.core.mapping;
 
-import java.util.Date;
+import org.neo4j.driver.Record;
+import org.neo4j.driver.types.TypeSystem;
 
-/**
- * @author Gerrit Meier
- */
-public interface PersonProjection {
+public final class TypeSystemAndRecord {
 
-	String getName();
+	private final TypeSystem typeSystem;
 
-	String getSameValue();
+	private final Record record;
 
-	Date getDate();
+	public TypeSystemAndRecord(TypeSystem typeSystem, Record record) {
+		this.typeSystem = typeSystem;
+		this.record = record;
+	}
+
+	public TypeSystem getTypeSystem() {
+		return typeSystem;
+	}
+
+	public Record getRecord() {
+		return record;
+	}
 }

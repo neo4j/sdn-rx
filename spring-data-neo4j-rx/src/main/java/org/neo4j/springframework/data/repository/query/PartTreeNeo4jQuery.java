@@ -31,14 +31,12 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiFunction;
 
-import org.neo4j.driver.Record;
 import org.neo4j.driver.types.Point;
-import org.neo4j.driver.types.TypeSystem;
 import org.neo4j.springframework.data.core.Neo4jClient;
 import org.neo4j.springframework.data.core.PreparedQuery;
 import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
+import org.neo4j.springframework.data.core.mapping.TypeSystemAndRecord;
 import org.neo4j.springframework.data.repository.query.Neo4jQueryMethod.Neo4jParameters;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
@@ -107,13 +105,9 @@ final class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
 			.collect(toMap(Neo4jQueryMethod.Neo4jParameter::getNameOrIndex,
 				formalParameter -> convertParameter(parameters[formalParameter.getIndex()])));
 
-		BiFunction<TypeSystem, Record, ?> mappingFunction = projecting
-			? mappingContext.getProjectionMappingFunctionFor(domainType)
-			: mappingContext.getMappingFunctionFor(domainType);
-
 		return PreparedQuery.queryFor(domainType).withCypherQuery(cypherQuery)
 			.withParameters(boundedParameters)
-			.usingMappingFunction(mappingFunction)
+			.usingMappingFunction(TypeSystemAndRecord::new)
 			.build();
 	}
 

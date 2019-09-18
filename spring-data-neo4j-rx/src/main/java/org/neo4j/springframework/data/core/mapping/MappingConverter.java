@@ -45,6 +45,7 @@ import org.neo4j.driver.types.TypeSystem;
 import org.neo4j.springframework.data.core.convert.Neo4jConverter;
 import org.neo4j.springframework.data.core.schema.RelationshipDescription;
 import org.neo4j.springframework.data.core.schema.SchemaUtils;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.log.LogAccessor;
 import org.springframework.data.convert.EntityInstantiators;
 import org.springframework.data.mapping.AssociationHandler;
@@ -63,9 +64,9 @@ import org.springframework.data.mapping.model.ParameterValueProvider;
  * @author Michael J. Simons
  * @since 1.0
  */
-final class DefaultNeo4jMappingFunction<T> implements BiFunction<TypeSystem, Record, T> {
+final class MappingConverter<T> implements Converter<TypeSystemAndRecord, T> {
 
-	private static final LogAccessor log = new LogAccessor(LogFactory.getLog(DefaultNeo4jMappingFunction.class));
+	private static final LogAccessor log = new LogAccessor(LogFactory.getLog(MappingConverter.class));
 
 	/**
 	 * The shared entity instantiators of this context. Those should not be recreated for each entity or even not for
@@ -83,7 +84,7 @@ final class DefaultNeo4jMappingFunction<T> implements BiFunction<TypeSystem, Rec
 
 	private final Neo4jConverter converter;
 
-	DefaultNeo4jMappingFunction(Neo4jPersistentEntity<T> rootNodeDescription, Neo4jMappingContext neo4jMappingContext, Neo4jConverter converter) {
+	MappingConverter(Neo4jPersistentEntity<T> rootNodeDescription, Neo4jMappingContext neo4jMappingContext, Neo4jConverter converter) {
 
 		this.rootNodeDescription = rootNodeDescription;
 		this.mappingContext = neo4jMappingContext;
@@ -91,7 +92,10 @@ final class DefaultNeo4jMappingFunction<T> implements BiFunction<TypeSystem, Rec
 	}
 
 	@Override
-	public T apply(TypeSystem typeSystem, Record record) {
+	public T convert(TypeSystemAndRecord typeSystemAndRecord) {
+		TypeSystem typeSystem = typeSystemAndRecord.getTypeSystem();
+		Record record = typeSystemAndRecord.getRecord();
+
 		Map<Object, Object> knownObjects = new ConcurrentHashMap<>();
 
 		// That would be the place to call a custom converter for the whole object, if any such thing would be
