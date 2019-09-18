@@ -268,6 +268,10 @@ public final class CypherAdapterUtils {
 
 		}
 
+		public Expression createReturnStatementForMatch(NodeDescription<?> nodeDescription) {
+			return createReturnStatementForMatch(nodeDescription, null);
+		}
+
 		/**
 		 * @param nodeDescription
 		 * @param inputProperties A list of Java properties of the domain to be included.
@@ -275,9 +279,9 @@ public final class CypherAdapterUtils {
 		 * @return
 		 */
 		public Expression createReturnStatementForMatch(NodeDescription<?> nodeDescription,
-			List<String> inputProperties) {
+			@Nullable List<String> inputProperties) {
 
-			Predicate<String> includeField = s -> inputProperties.isEmpty() || inputProperties.contains(s);
+			Predicate<String> includeField = s -> inputProperties == null || inputProperties.isEmpty() || inputProperties.contains(s);
 			return projectPropertiesAndRelationships(nodeDescription, NAME_OF_ROOT_NODE, includeField);
 		}
 
