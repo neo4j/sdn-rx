@@ -91,7 +91,7 @@ final class ReactivePartTreeNeo4jQuery extends AbstractReactiveNeo4jQuery {
 		Neo4jParameters formalParameters = (Neo4jParameters) this.queryMethod.getParameters();
 		ParameterAccessor actualParameters = new ParametersParameterAccessor(formalParameters, parameters);
 		CypherQueryCreator queryCreator = new CypherQueryCreator(
-			mappingContext, domainType, tree, formalParameters, actualParameters
+			mappingContext, domainType, tree, formalParameters, actualParameters, includedProperties
 		);
 
 		String cypherQuery = queryCreator.createQuery();

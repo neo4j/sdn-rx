@@ -18,23 +18,76 @@
  */
 package org.neo4j.springframework.data.repository.query;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 
+import org.neo4j.driver.Record;
+import org.neo4j.driver.types.TypeSystem;
+import org.neo4j.springframework.data.core.convert.Neo4jSimpleTypes;
+import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
 import org.springframework.data.domain.Range;
 import org.springframework.data.geo.Circle;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Metrics;
+import org.springframework.data.repository.query.ResultProcessor;
+import org.springframework.util.Assert;
 
 /**
  * Some conversions used by both reactive and imperative Neo4j queries. While we try to separate reactive and imperative
- * flows, it is cumbersome to repeate those conversions all over the place.
+ * flows, it is cumbersome to repeat those conversions all over the place.
  *
  * @author Gerrit Meier
  * @author Michael J. Simons
  * @since 1.0
  */
 abstract class Neo4jQuerySupport {
+
+	protected final Neo4jMappingContext mappingContext;
+	protected final Neo4jQueryMethod queryMethod;
+	protected final Class<?> domainType;
+	/**
+	 * The returned type as defined by the method's result processor. There are some ways to query for it in the Spring Data Commons ;)
+	 */
+	protected final Class<?> returnedType;
+	/**
+	 * The list of included properties (those properties refer to field names of classes).
+	 */
+	protected final List<String> includedProperties;
+	/**
+	 * The mapping function to be used.
+	 */
+	protected final BiFunction<TypeSystem, Record, ?> mappingFunction;
+
+	Neo4jQuerySupport(Neo4jMappingContext mappingContext, Neo4jQueryMethod queryMethod) {
+
+		Assert.notNull(mappingContext, "The mapping context is required.");
+		Assert.notNull(queryMethod, "Query method must not be null!");
+
+		this.mappingContext = mappingContext;
+		this.queryMethod = queryMethod;
+
+		ResultProcessor resultProcessor = queryMethod.getResultProcessor();
+		this.domainType = resultProcessor.getReturnedType().getDomainType();
+		this.returnedType = resultProcessor.getReturnedType().getReturnedType();
+
+		if (Neo4jSimpleTypes.HOLDER.isSimpleType(returnedType)) {
+			this.includedProperties = Collections.emptyList();
+			// Clients automatically selects a single value mapping function.
+			// It will thrown an error if the query contains more than one columne.
+			this.mappingFunction = null;
+		} else if (resultProcessor.getReturnedType().isProjecting()) {
+			this.includedProperties = resultProcessor.getReturnedType().getInputProperties();
+			this.mappingFunction = this.mappingContext.hasPersistentEntityFor(this.returnedType) ?
+				this.mappingContext.getMappingFunctionFor(returnedType) :
+				this.mappingContext.getMappingFunctionFor(domainType);
+		} else {
+			this.includedProperties = Collections.emptyList();
+			this.mappingFunction = this.mappingContext.getMappingFunctionFor(domainType);
+		}
+	}
 
 	/**
 	 * Converts parameter as needed by the query generated, which is not covered by standard conversion services.

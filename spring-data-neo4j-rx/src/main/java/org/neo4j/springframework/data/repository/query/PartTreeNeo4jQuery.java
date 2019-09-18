@@ -91,7 +91,7 @@ final class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
 		Neo4jParameters formalParameters = (Neo4jParameters) this.queryMethod.getParameters();
 		ParameterAccessor actualParameters = new ParametersParameterAccessor(formalParameters, parameters);
 		CypherQueryCreator queryCreator = new CypherQueryCreator(
-			mappingContext, domainType, tree, formalParameters, actualParameters
+			mappingContext, domainType, tree, formalParameters, actualParameters, includedProperties
 		);
 
 		String cypherQuery = queryCreator.createQuery();
@@ -100,9 +100,10 @@ final class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
 			.collect(toMap(Neo4jQueryMethod.Neo4jParameter::getNameOrIndex,
 				formalParameter -> convertParameter(parameters[formalParameter.getIndex()])));
 
-		return PreparedQuery.queryFor(super.domainType).withCypherQuery(cypherQuery)
+		return PreparedQuery.queryFor(super.returnedType)
+			.withCypherQuery(cypherQuery)
 			.withParameters(boundedParameters)
-			.usingMappingFunction(mappingContext.getMappingFunctionFor(super.domainType))
+			.usingMappingFunction(super.mappingFunction)
 			.build();
 	}
 

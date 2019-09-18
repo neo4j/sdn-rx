@@ -23,8 +23,10 @@ import static org.neo4j.springframework.data.core.schema.NodeDescription.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
@@ -266,28 +268,42 @@ public final class CypherAdapterUtils {
 
 		}
 
-		public Expression createReturnStatementForMatch(NodeDescription<?> nodeDescription) {
+		/**
+		 * @param nodeDescription
+		 * @param inputProperties A list of Java properties of the domain to be included.
+		 *                        Those properties are compared with the field names of graph properties respectively relationships.
+		 * @return
+		 */
+		public Expression createReturnStatementForMatch(NodeDescription<?> nodeDescription,
+			List<String> inputProperties) {
 
-			return projectPropertiesAndRelationships(nodeDescription, NAME_OF_ROOT_NODE);
+			Predicate<String> includeField = s -> inputProperties.isEmpty() || inputProperties.contains(s);
+			return projectPropertiesAndRelationships(nodeDescription, NAME_OF_ROOT_NODE, includeField);
 		}
 
 		private MapProjection projectPropertiesAndRelationships(NodeDescription<?> nodeDescription,
-			String propertyName) {
+			String nodeName,
+			Predicate<String> includeProperty) {
 
 			Collection<RelationshipDescription> relationships = schema
 				.getRelationshipsOf(nodeDescription.getPrimaryLabel());
 
 			List<Object> contentOfProjection = new ArrayList<>();
-			contentOfProjection.addAll(projectNodeProperties(nodeDescription, propertyName));
-			contentOfProjection.addAll(generateListsOf(relationships, propertyName));
+			contentOfProjection.addAll(projectNodeProperties(nodeDescription, nodeName, includeProperty));
+			contentOfProjection.addAll(generateListsOf(relationships, nodeName, includeProperty));
 
-			return Cypher.anyNode(propertyName).project(contentOfProjection);
+			return Cypher.anyNode(nodeName).project(contentOfProjection);
 		}
 
-		private List<Object> projectNodeProperties(NodeDescription<?> nodeDescription, String nodeName) {
+		private List<Object> projectNodeProperties(NodeDescription<?> nodeDescription, String nodeName,
+			Predicate<String> includeField) {
 
 			List<Object> nodePropertiesProjection = new ArrayList<>();
 			for (GraphPropertyDescription property : nodeDescription.getGraphProperties()) {
+				if (!includeField.test(property.getFieldName())) {
+					continue;
+				}
+
 				if (property.isInternalIdProperty()) {
 					nodePropertiesProjection.add(NAME_OF_INTERNAL_ID);
 					nodePropertiesProjection.add(Functions.id(Cypher.name(nodeName)));
@@ -300,7 +316,7 @@ public final class CypherAdapterUtils {
 		}
 
 		private List<Object> generateListsOf(Collection<RelationshipDescription> relationships,
-			String nameOfStartNode) {
+			String nameOfStartNode, Predicate<String> includeField) {
 
 			List<Object> generatedLists = new ArrayList<>();
 			for (RelationshipDescription relationshipDescription : relationships) {
@@ -308,10 +324,13 @@ public final class CypherAdapterUtils {
 				String sourceLabel = relationshipDescription.getSource();
 				String targetLabel = relationshipDescription.getTarget();
 
-				String propertyName = relationshipDescription.getPropertyName();
+				String fieldName = relationshipDescription.getFieldName();
+				if (!includeField.test(fieldName)) {
+					continue;
+				}
 
 				// do not follow self-references more than once
-				if (targetLabel.equals(sourceLabel) && nameOfStartNode.equals(propertyName)) {
+				if (targetLabel.equals(sourceLabel) && nameOfStartNode.equals(fieldName)) {
 					continue;
 				}
 
@@ -319,7 +338,7 @@ public final class CypherAdapterUtils {
 				String relationshipTargetName = SchemaUtils.generateRelatedNodesCollectionName(relationshipDescription);
 
 				Node startNode = anyNode(nameOfStartNode);
-				Node endNode = node(targetLabel).named(propertyName);
+				Node endNode = node(targetLabel).named(fieldName);
 				NodeDescription<?> endNodeDescription = schema.getNodeDescription(targetLabel);
 
 				Relationship relationship = relationshipDescription.isOutgoing()
@@ -328,7 +347,7 @@ public final class CypherAdapterUtils {
 
 				generatedLists.add(relationshipTargetName);
 				generatedLists.add(listBasedOn(relationship)
-					.returning(projectPropertiesAndRelationships(endNodeDescription, propertyName)));
+					.returning(projectPropertiesAndRelationships(endNodeDescription, fieldName, includeField)));
 			}
 
 			return generatedLists;

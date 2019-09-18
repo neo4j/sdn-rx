@@ -159,10 +159,10 @@ final class ReactiveStringBasedNeo4jQuery extends AbstractReactiveNeo4jQuery {
 	@Override
 	protected PreparedQuery<?> prepareQuery(Object[] parameters) {
 
-		return PreparedQuery.queryFor(super.domainType)
+		return PreparedQuery.queryFor(super.returnedType)
 			.withCypherQuery(cypherQuery)
 			.withParameters(bindParameters(parameters))
-			.usingMappingFunction(mappingContext.getMappingFunctionFor(super.domainType)) // Null is fine
+			.usingMappingFunction(mappingFunction)
 			.build();
 	}
 

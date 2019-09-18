@@ -23,6 +23,7 @@ import org.neo4j.springframework.data.core.ReactiveNeo4jClient;
 import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ResultProcessor;
 import org.springframework.util.Assert;
 
 /**
@@ -34,22 +35,15 @@ import org.springframework.util.Assert;
  */
 abstract class AbstractReactiveNeo4jQuery extends Neo4jQuerySupport implements RepositoryQuery {
 
-	final ReactiveNeo4jClient neo4jClient;
-	final Neo4jMappingContext mappingContext;
-	final Neo4jQueryMethod queryMethod;
-	final Class<?> domainType;
+	protected final ReactiveNeo4jClient neo4jClient;
 
-	AbstractReactiveNeo4jQuery(ReactiveNeo4jClient neo4jClient,
-		Neo4jMappingContext mappingContext, Neo4jQueryMethod queryMethod) {
+	AbstractReactiveNeo4jQuery(ReactiveNeo4jClient neo4jClient, Neo4jMappingContext mappingContext,
+		Neo4jQueryMethod queryMethod) {
+
+		super(mappingContext, queryMethod);
 
 		Assert.notNull(neo4jClient, "The Neo4j client is required.");
-		Assert.notNull(mappingContext, "The mapping context is required.");
-		Assert.notNull(queryMethod, "Query method must not be null!");
-
 		this.neo4jClient = neo4jClient;
-		this.mappingContext = mappingContext;
-		this.queryMethod = queryMethod;
-		this.domainType = queryMethod.getReturnedObjectType();
 	}
 
 	@Override
@@ -59,8 +53,10 @@ abstract class AbstractReactiveNeo4jQuery extends Neo4jQuerySupport implements R
 
 	@Override
 	public final Object execute(Object[] parameters) {
-		return new Neo4jQueryExecution.ReactiveQueryExecution(neo4jClient)
-			.execute(prepareQuery(parameters), queryMethod.isCollectionQuery());
+
+		ResultProcessor resultProcessor = queryMethod.getResultProcessor();
+		return resultProcessor.processResult(new Neo4jQueryExecution.ReactiveQueryExecution(neo4jClient)
+			.execute(prepareQuery(parameters), queryMethod.isCollectionQuery()), OptionalUnwrappingConverter.INSTANCE);
 	}
 
 	protected abstract PreparedQuery prepareQuery(Object[] parameters);
