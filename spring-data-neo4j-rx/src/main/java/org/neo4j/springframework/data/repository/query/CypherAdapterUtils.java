@@ -23,7 +23,6 @@ import static org.neo4j.springframework.data.core.schema.NodeDescription.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -273,10 +272,10 @@ public final class CypherAdapterUtils {
 		}
 
 		/**
-		 * @param nodeDescription
+		 * @param nodeDescription Description of the root node
 		 * @param inputProperties A list of Java properties of the domain to be included.
 		 *                        Those properties are compared with the field names of graph properties respectively relationships.
-		 * @return
+		 * @return An expresion to be returned by a Cypher statement
 		 */
 		public Expression createReturnStatementForMatch(NodeDescription<?> nodeDescription,
 			@Nullable List<String> inputProperties) {

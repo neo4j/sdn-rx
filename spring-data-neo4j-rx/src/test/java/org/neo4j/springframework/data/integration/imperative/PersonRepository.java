@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.neo4j.driver.types.Point;
+import org.neo4j.springframework.data.integration.shared.DtoPersonProjection;
 import org.neo4j.springframework.data.integration.shared.KotlinPerson;
 import org.neo4j.springframework.data.integration.shared.PersonProjection;
 import org.neo4j.springframework.data.integration.shared.PersonWithAllConstructor;
@@ -201,6 +202,8 @@ public interface PersonRepository extends Neo4jRepository<PersonWithAllConstruct
 	PersonProjection findByName(String name);
 
 	List<PersonProjection> findBySameValue(String sameValue);
+
+	List<DtoPersonProjection> findByFirstName(String firstName);
 
 	@Query("MATCH (n:PersonWithAllConstructor) where n.name = $name return n{.name}")
 	PersonProjection findByNameWithCustomQueryAndMapProjection(@Param("name") String name);

@@ -46,14 +46,12 @@ import org.neo4j.springframework.data.core.mapping.Neo4jPersistentProperty;
 import org.neo4j.springframework.data.core.schema.GraphPropertyDescription;
 import org.neo4j.springframework.data.core.schema.NodeDescription;
 import org.neo4j.springframework.data.repository.query.Neo4jQueryMethod.Neo4jParameter;
-import org.neo4j.springframework.data.repository.query.Neo4jQueryMethod.Neo4jParameters;
 import org.springframework.data.domain.Range;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.geo.Circle;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.mapping.PersistentPropertyPath;
-import org.springframework.data.repository.query.ParameterAccessor;
-import org.springframework.data.repository.query.Parameters;
+import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
@@ -74,7 +72,7 @@ final class CypherQueryCreator extends AbstractQueryCreator<String, Condition> {
 	private final Class<?> domainType;
 	private final NodeDescription<?> nodeDescription;
 
-	private final Iterator<Neo4jParameter> formalParameters;
+	private final Iterator<?> formalParameters;
 	private final Queue<Parameter> lastParameter = new LinkedList<>();
 
 	/**
@@ -90,7 +88,7 @@ final class CypherQueryCreator extends AbstractQueryCreator<String, Condition> {
 	private final List<String> includedProperties;
 
 	CypherQueryCreator(Neo4jMappingContext mappingContext, Class<?> domainType, PartTree tree,
-		Parameters<Neo4jParameters, Neo4jParameter> formalParameters, ParameterAccessor actualParameters,
+		ParametersParameterAccessor actualParameters,
 		List<String> includedProperties
 	) {
 		super(tree, actualParameters);
@@ -99,7 +97,7 @@ final class CypherQueryCreator extends AbstractQueryCreator<String, Condition> {
 		this.domainType = domainType;
 		this.nodeDescription = this.mappingContext.getRequiredNodeDescription(this.domainType);
 
-		this.formalParameters = formalParameters.iterator();
+		this.formalParameters = actualParameters.getParameters().iterator();
 		this.maxResults = tree.isLimiting() ? tree.getMaxResults() : null;
 
 		this.includedProperties = includedProperties;
@@ -378,7 +376,7 @@ final class CypherQueryCreator extends AbstractQueryCreator<String, Condition> {
 		if (nextRequiredParameter != null) {
 			return Optional.of(nextRequiredParameter);
 		} else if (formalParameters.hasNext()) {
-			final Neo4jParameter parameter = formalParameters.next();
+			final Neo4jParameter parameter = (Neo4jParameter) formalParameters.next();
 			return Optional.of(new Parameter(parameter.getNameOrIndex(), actualParameters.next()));
 		} else {
 			return Optional.empty();
@@ -394,7 +392,7 @@ final class CypherQueryCreator extends AbstractQueryCreator<String, Condition> {
 			if (!formalParameters.hasNext()) {
 				throw new IllegalStateException("Not enough formal, bindable parameters for parts");
 			}
-			final Neo4jParameter parameter = formalParameters.next();
+			final Neo4jParameter parameter = (Neo4jParameter) formalParameters.next();
 			return new Parameter(parameter.getNameOrIndex(), actualParameters.next());
 		}
 	}

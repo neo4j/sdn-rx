@@ -28,11 +28,14 @@ import org.neo4j.driver.Record;
 import org.neo4j.driver.types.TypeSystem;
 import org.neo4j.springframework.data.core.convert.Neo4jSimpleTypes;
 import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
+import org.neo4j.springframework.data.repository.query.Neo4jQueryMethod.Neo4jParameters;
 import org.springframework.data.domain.Range;
 import org.springframework.data.geo.Circle;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Metrics;
+import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.ResultProcessor;
+import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.util.Assert;
 
 /**
@@ -48,18 +51,6 @@ abstract class Neo4jQuerySupport {
 	protected final Neo4jMappingContext mappingContext;
 	protected final Neo4jQueryMethod queryMethod;
 	protected final Class<?> domainType;
-	/**
-	 * The returned type as defined by the method's result processor. There are some ways to query for it in the Spring Data Commons ;)
-	 */
-	protected final Class<?> returnedType;
-	/**
-	 * The list of included properties (those properties refer to field names of classes).
-	 */
-	protected final List<String> includedProperties;
-	/**
-	 * The mapping function to be used.
-	 */
-	protected final BiFunction<TypeSystem, Record, ?> mappingFunction;
 
 	Neo4jQuerySupport(Neo4jMappingContext mappingContext, Neo4jQueryMethod queryMethod) {
 
@@ -68,25 +59,46 @@ abstract class Neo4jQuerySupport {
 
 		this.mappingContext = mappingContext;
 		this.queryMethod = queryMethod;
+		this.domainType = queryMethod.getDomainClass();
+	}
 
-		ResultProcessor resultProcessor = queryMethod.getResultProcessor();
-		this.domainType = resultProcessor.getReturnedType().getDomainType();
-		this.returnedType = resultProcessor.getReturnedType().getReturnedType();
+	protected final Neo4jParameterAccessor getParameterAccessor(Object[] actualParameters) {
+		return new Neo4jParameterAccessor((Neo4jParameters) this.queryMethod.getParameters(), actualParameters);
+	}
 
+	protected final ResultProcessor getResultProcessor(ParameterAccessor parameterAccessor) {
+		return queryMethod.getResultProcessor().withDynamicProjection(parameterAccessor);
+	}
+
+	protected final BiFunction<TypeSystem, Record, ?> getMappingFunction(final ResultProcessor resultProcessor) {
+
+		final Class<?> returnedType = resultProcessor.getReturnedType().getReturnedType();
+
+		final BiFunction<TypeSystem, Record, ?> mappingFunction;
 		if (Neo4jSimpleTypes.HOLDER.isSimpleType(returnedType)) {
-			this.includedProperties = Collections.emptyList();
 			// Clients automatically selects a single value mapping function.
 			// It will thrown an error if the query contains more than one columne.
-			this.mappingFunction = null;
+			mappingFunction = null;
 		} else if (resultProcessor.getReturnedType().isProjecting()) {
-			this.includedProperties = resultProcessor.getReturnedType().getInputProperties();
-			this.mappingFunction = this.mappingContext.hasPersistentEntityFor(this.returnedType) ?
-				this.mappingContext.getMappingFunctionFor(returnedType) :
-				this.mappingContext.getMappingFunctionFor(domainType);
+
+			if (returnedType.isInterface()) {
+				mappingFunction = this.mappingContext.getMappingFunctionFor(domainType);
+			} else if (this.mappingContext.hasPersistentEntityFor(returnedType)) {
+				mappingFunction = this.mappingContext.getMappingFunctionFor(returnedType);
+			} else {
+				this.mappingContext.addPersistentEntity(returnedType);
+				mappingFunction = this.mappingContext.getMappingFunctionFor(returnedType);
+			}
 		} else {
-			this.includedProperties = Collections.emptyList();
-			this.mappingFunction = this.mappingContext.getMappingFunctionFor(domainType);
+			mappingFunction = this.mappingContext.getMappingFunctionFor(domainType);
 		}
+		return mappingFunction;
+	}
+
+	protected final List<String> getInputProperties(final ResultProcessor resultProcessor) {
+
+		ReturnedType returnedType = resultProcessor.getReturnedType();
+		return returnedType.isProjecting() ? returnedType.getInputProperties() : Collections.emptyList();
 	}
 
 	/**

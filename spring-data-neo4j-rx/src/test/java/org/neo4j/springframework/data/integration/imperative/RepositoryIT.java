@@ -1587,6 +1587,11 @@ class RepositoryIT {
 	}
 
 	@Test
+	void mapsDtoProjectionWithDerivedFinderMethod() {
+		assertThat(repository.findByFirstName(TEST_PERSON1_FIRST_NAME)).hasSize(1);
+	}
+
+	@Test
 	void mapsInterfaceProjectionWithDerivedFinderMethodWithMultipleResults() {
 		assertThat(repository.findBySameValue(TEST_PERSON_SAMEVALUE)).hasSize(2);
 	}
