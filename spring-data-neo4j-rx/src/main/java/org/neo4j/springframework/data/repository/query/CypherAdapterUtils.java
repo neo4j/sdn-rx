@@ -284,6 +284,11 @@ public final class CypherAdapterUtils {
 			return projectPropertiesAndRelationships(nodeDescription, NAME_OF_ROOT_NODE, includeField);
 		}
 
+		private MapProjection projectAllPropertiesAndRelationships(NodeDescription<?> nodeDescription, String nodeName) {
+			Predicate<String> includeAllFields = (field) -> true;
+			return projectPropertiesAndRelationships(nodeDescription, nodeName, includeAllFields);
+		}
+
 		private MapProjection projectPropertiesAndRelationships(NodeDescription<?> nodeDescription,
 			String nodeName,
 			Predicate<String> includeProperty) {
@@ -350,7 +355,7 @@ public final class CypherAdapterUtils {
 
 				generatedLists.add(relationshipTargetName);
 				generatedLists.add(listBasedOn(relationship)
-					.returning(projectPropertiesAndRelationships(endNodeDescription, fieldName, includeField)));
+					.returning(projectAllPropertiesAndRelationships(endNodeDescription, fieldName)));
 			}
 
 			return generatedLists;
