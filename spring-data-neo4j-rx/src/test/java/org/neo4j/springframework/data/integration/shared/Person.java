@@ -18,6 +18,9 @@
  */
 package org.neo4j.springframework.data.integration.shared;
 
+import javax.swing.*;
+
+import org.intellij.lang.annotations.Language;
 import org.neo4j.springframework.data.core.schema.GeneratedValue;
 import org.neo4j.springframework.data.core.schema.Id;
 import org.neo4j.springframework.data.core.schema.Node;
@@ -30,8 +33,8 @@ import org.neo4j.springframework.data.core.schema.Relationship;
 public class Person {
 
 	@Id @GeneratedValue private Long id;
-	private String firstname;
-	private String lastname;
+	private String firstName;
+	private String lastName;
 
 	@Relationship("LIVES_AT")
 	private Address address;
@@ -42,5 +45,14 @@ public class Person {
 		private String zipCode;
 		private String city;
 		private String street;
+	}
+
+	// The getters are needed for Spring Expression Language in `NamesOnly`
+	public String getFirstName() {
+		return firstName;
+	}
+
+	public String getLastName() {
+		return lastName;
 	}
 }

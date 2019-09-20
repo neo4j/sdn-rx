@@ -23,8 +23,8 @@ package org.neo4j.springframework.data.integration.shared;
  */
 public interface PersonSummary {
 
-	String getFirstname();
-	String getLastname();
+	String getFirstName();
+	String getLastName();
 	AddressSummary getAddress();
 
 	/**

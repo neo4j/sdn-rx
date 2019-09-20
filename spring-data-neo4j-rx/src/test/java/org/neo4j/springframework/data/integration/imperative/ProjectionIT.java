@@ -62,7 +62,7 @@ public class ProjectionIT {
 
 		transaction.run("MATCH (n) detach delete n");
 
-		transaction.run("CREATE (:Person{firstname:'" + FIRST_NAME + "', lastname:'" + LAST_NAME + "'})"
+		transaction.run("CREATE (:Person{firstName:'" + FIRST_NAME + "', lastName:'" + LAST_NAME + "'})"
 			+ "-[:LIVES_AT]->"
 			+ "(:Address{city:'" + CITY + "'})");
 
@@ -73,23 +73,26 @@ public class ProjectionIT {
 
 	@Test
 	void loadNamesOnlyProjection() {
-		Collection<NamesOnly> people = repository.findByLastname(LAST_NAME);
+		Collection<NamesOnly> people = repository.findByLastName(LAST_NAME);
 		assertThat(people).hasSize(1);
 
 		NamesOnly person = people.iterator().next();
-		assertThat(person.getFirstname()).isEqualTo(FIRST_NAME);
-		assertThat(person.getLastname()).isEqualTo(LAST_NAME);
+		assertThat(person.getFirstName()).isEqualTo(FIRST_NAME);
+		assertThat(person.getLastName()).isEqualTo(LAST_NAME);
+
+		String expectedFullName = FIRST_NAME + " " + LAST_NAME;
+		assertThat(person.getFullName()).isEqualTo(expectedFullName);
 
 	}
 
 	@Test
 	void loadPersonSummaryProjection() {
-		Collection<PersonSummary> people = repository.findByFirstname(FIRST_NAME);
+		Collection<PersonSummary> people = repository.findByFirstName(FIRST_NAME);
 		assertThat(people).hasSize(1);
 
 		PersonSummary person = people.iterator().next();
-		assertThat(person.getFirstname()).isEqualTo(FIRST_NAME);
-		assertThat(person.getLastname()).isEqualTo(LAST_NAME);
+		assertThat(person.getFirstName()).isEqualTo(FIRST_NAME);
+		assertThat(person.getLastName()).isEqualTo(LAST_NAME);
 		assertThat(person.getAddress()).isNotNull();
 
 		PersonSummary.AddressSummary address = person.getAddress();

@@ -30,6 +30,7 @@ import org.neo4j.springframework.data.repository.Neo4jRepository;
  */
 public interface ProjectionPersonRepository extends Neo4jRepository<Person, Long> {
 
-	Collection<NamesOnly> findByLastname(String lastname);
-	Collection<PersonSummary> findByFirstname(String firstname);
+	Collection<NamesOnly> findByLastName(String lastName);
+
+	Collection<PersonSummary> findByFirstName(String firstName);
 }

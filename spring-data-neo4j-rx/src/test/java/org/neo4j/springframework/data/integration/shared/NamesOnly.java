@@ -18,11 +18,16 @@
  */
 package org.neo4j.springframework.data.integration.shared;
 
+import org.springframework.beans.factory.annotation.Value;
+
 /**
  * @author Gerrit Meier
  */
 public interface NamesOnly {
 
-	String getFirstname();
-	String getLastname();
+	String getFirstName();
+	String getLastName();
+
+	@Value("#{target.firstName + ' ' + target.lastName}")
+	String getFullName();
 }
