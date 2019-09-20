@@ -30,6 +30,7 @@ import org.neo4j.driver.Session;
 import org.neo4j.driver.Transaction;
 import org.neo4j.springframework.data.config.AbstractNeo4jConfig;
 import org.neo4j.springframework.data.integration.shared.NamesOnly;
+import org.neo4j.springframework.data.integration.shared.NamesOnlyDto;
 import org.neo4j.springframework.data.integration.shared.Person;
 import org.neo4j.springframework.data.integration.shared.PersonSummary;
 import org.neo4j.springframework.data.repository.config.EnableNeo4jRepositories;
@@ -100,6 +101,56 @@ public class ProjectionIT {
 
 	}
 
+	@Test
+	void loadNamesOnlyDtoProjection() {
+		Collection<NamesOnlyDto> people = repository.findByFirstNameAndLastName(FIRST_NAME, LAST_NAME);
+		assertThat(people).hasSize(1);
+
+		NamesOnlyDto person = people.iterator().next();
+		assertThat(person.getFirstName()).isEqualTo(FIRST_NAME);
+		assertThat(person.getLastName()).isEqualTo(LAST_NAME);
+
+	}
+
+	@Test
+	void findDynamicProjectionForNamesOnly() {
+		Collection<NamesOnly> people = repository.findByLastNameAndFirstName(LAST_NAME, FIRST_NAME, NamesOnly.class);
+		assertThat(people).hasSize(1);
+
+		NamesOnly person = people.iterator().next();
+		assertThat(person.getFirstName()).isEqualTo(FIRST_NAME);
+		assertThat(person.getLastName()).isEqualTo(LAST_NAME);
+
+		String expectedFullName = FIRST_NAME + " " + LAST_NAME;
+		assertThat(person.getFullName()).isEqualTo(expectedFullName);
+
+	}
+
+	@Test
+	void findDynamicProjectionForPersonSummary() {
+		Collection<PersonSummary> people = repository.findByLastNameAndFirstName(LAST_NAME, FIRST_NAME, PersonSummary.class);
+		assertThat(people).hasSize(1);
+
+		PersonSummary person = people.iterator().next();
+		assertThat(person.getFirstName()).isEqualTo(FIRST_NAME);
+		assertThat(person.getLastName()).isEqualTo(LAST_NAME);
+		assertThat(person.getAddress()).isNotNull();
+
+		PersonSummary.AddressSummary address = person.getAddress();
+		assertThat(address.getCity()).isEqualTo(CITY);
+
+	}
+
+	@Test
+	void findDynamicProjectionForNamesOnlyDto() {
+		Collection<NamesOnlyDto> people = repository.findByLastNameAndFirstName(LAST_NAME, FIRST_NAME, NamesOnlyDto.class);
+		assertThat(people).hasSize(1);
+
+		NamesOnlyDto person = people.iterator().next();
+		assertThat(person.getFirstName()).isEqualTo(FIRST_NAME);
+		assertThat(person.getLastName()).isEqualTo(LAST_NAME);
+
+	}
 
 	@Configuration
 	@EnableNeo4jRepositories

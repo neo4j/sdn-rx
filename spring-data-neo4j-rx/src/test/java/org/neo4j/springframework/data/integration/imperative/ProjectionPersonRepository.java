@@ -21,6 +21,7 @@ package org.neo4j.springframework.data.integration.imperative;
 import java.util.Collection;
 
 import org.neo4j.springframework.data.integration.shared.NamesOnly;
+import org.neo4j.springframework.data.integration.shared.NamesOnlyDto;
 import org.neo4j.springframework.data.integration.shared.Person;
 import org.neo4j.springframework.data.integration.shared.PersonSummary;
 import org.neo4j.springframework.data.repository.Neo4jRepository;
@@ -33,4 +34,8 @@ public interface ProjectionPersonRepository extends Neo4jRepository<Person, Long
 	Collection<NamesOnly> findByLastName(String lastName);
 
 	Collection<PersonSummary> findByFirstName(String firstName);
+
+	Collection<NamesOnlyDto> findByFirstNameAndLastName(String firstName, String lastName);
+
+	<T> Collection<T> findByLastNameAndFirstName(String lastName, String firstName, Class<T> projectionClass);
 }
