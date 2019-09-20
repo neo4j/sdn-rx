@@ -21,6 +21,7 @@ package org.neo4j.springframework.data.integration.reactive;
 import static java.util.Collections.*;
 import static org.assertj.core.api.Assertions.*;
 
+import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
 import java.util.Collection;
@@ -35,6 +36,7 @@ import org.neo4j.springframework.data.integration.shared.NamesOnly;
 import org.neo4j.springframework.data.integration.shared.NamesOnlyDto;
 import org.neo4j.springframework.data.integration.shared.Person;
 import org.neo4j.springframework.data.integration.shared.PersonSummary;
+import org.neo4j.springframework.data.repository.ReactiveNeo4jRepository;
 import org.neo4j.springframework.data.repository.config.EnableReactiveNeo4jRepositories;
 import org.neo4j.springframework.data.test.Neo4jExtension;
 import org.neo4j.springframework.data.test.Neo4jIntegrationTest;
@@ -47,7 +49,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * @author Gerrit Meier
  */
 @Neo4jIntegrationTest
-public class ReactiveProjectionIT {
+class ReactiveProjectionIT {
 
 	private static final String FIRST_NAME = "Hans";
 	private static final String LAST_NAME = "Mueller";
@@ -148,8 +150,19 @@ public class ReactiveProjectionIT {
 			.verifyComplete();
 	}
 
+	public interface ReactiveProjectionPersonRepository extends ReactiveNeo4jRepository<Person, Long> {
+
+		Flux<NamesOnly> findByLastName(String lastName);
+
+		Flux<PersonSummary> findByFirstName(String firstName);
+
+		Flux<NamesOnlyDto> findByFirstNameAndLastName(String firstName, String lastName);
+
+		<T> Flux<T> findByLastNameAndFirstName(String lastName, String firstName, Class<T> projectionClass);
+	}
+
 	@Configuration
-	@EnableReactiveNeo4jRepositories
+	@EnableReactiveNeo4jRepositories(considerNestedRepositories = true)
 	@EnableTransactionManagement
 	static class Config extends AbstractReactiveNeo4jConfig {
 
