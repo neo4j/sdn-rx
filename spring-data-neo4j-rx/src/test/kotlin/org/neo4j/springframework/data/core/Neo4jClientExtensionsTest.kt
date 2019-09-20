@@ -21,6 +21,8 @@ package org.neo4j.springframework.data.core
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
+import java.io.StringReader
+import java.util.*
 
 /**
  * @author Michael J. Simons
@@ -45,5 +47,16 @@ class Neo4jClientExtensionsTest {
 		ongoingDelegation.inDatabase("foobar");
 
 		verify(exactly = 1) { ongoingDelegation.`in`("foobar") }
+	}
+
+	@Test
+	fun `RunnableSpecTightToDatabase#fetchAs() extension should call its Java counterpart`() {
+
+		val runnableSpec = mockk<Neo4jClient.RunnableSpecTightToDatabase>(relaxed = true)
+
+		val mappingSpec : Neo4jClient.MappingSpec<String?, Collection<String>, String> =
+				runnableSpec.fetchAs();
+
+		verify(exactly = 1) { runnableSpec.fetchAs(String::class.java) }
 	}
 }
