@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.neo4j.springframework.data.core.schema.GeneratedValue;
 import org.neo4j.springframework.data.core.schema.GraphPropertyDescription;
@@ -128,6 +129,20 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 
 		super.verify();
 		this.idDescription = computeIdDescription();
+		verifyNoDuplicatedGraphProperties();
+	}
+
+	private void verifyNoDuplicatedGraphProperties() {
+
+		Set<String> allGraphPropertyNames = new HashSet<>();
+		Set<String> duplicates = getGraphProperties().stream()
+			.map(GraphPropertyDescription::getPropertyName)
+			.filter(propertyName -> !allGraphPropertyNames.add(propertyName))
+			.collect(Collectors.toSet());
+		if (!duplicates.isEmpty()) {
+			throw new IllegalStateException(
+				String.format("Duplicate definition of property %s in entity %s.", duplicates, getUnderlyingClass()));
+		}
 	}
 
 	private String computePrimaryLabel() {
