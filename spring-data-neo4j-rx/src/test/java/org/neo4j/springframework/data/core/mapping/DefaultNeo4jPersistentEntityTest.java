@@ -44,6 +44,14 @@ class DefaultNeo4jPersistentEntityTest {
 						+ "org.neo4j.springframework.data.core.mapping.DefaultNeo4jPersistentEntityTest$EntityWithDuplicatedProperties.");
 	}
 
+	@Test
+	void failsOnMultipleDuplicatedEntityProperties() {
+		assertThatIllegalStateException()
+			.isThrownBy(() -> new Neo4jMappingContext().getPersistentEntity(EntityWithMultipleDuplicatedProperties.class))
+			.withMessage("Duplicate definition of properties [foo, name] in entity class "
+				+ "org.neo4j.springframework.data.core.mapping.DefaultNeo4jPersistentEntityTest$EntityWithMultipleDuplicatedProperties.");
+	}
+
 	@Node
 	private static class CorrectEntity {
 
@@ -60,6 +68,22 @@ class DefaultNeo4jPersistentEntityTest {
 		private String name;
 
 		@Property("name") private String alsoName;
+	}
+
+	@Node
+	private static class EntityWithMultipleDuplicatedProperties {
+
+		@Id private Long id;
+
+		private String name;
+
+		@Property("name") private String alsoName;
+
+		@Property("foo")
+		private String somethingElse;
+
+		@Property("foo")
+		private String thisToo;
 	}
 
 }

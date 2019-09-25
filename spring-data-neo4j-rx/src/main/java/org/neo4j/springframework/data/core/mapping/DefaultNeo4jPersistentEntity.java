@@ -24,8 +24,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.neo4j.springframework.data.core.schema.GeneratedValue;
@@ -134,14 +136,15 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 
 	private void verifyNoDuplicatedGraphProperties() {
 
-		Set<String> allGraphPropertyNames = new HashSet<>();
 		Set<String> duplicates = getGraphProperties().stream()
 			.map(GraphPropertyDescription::getPropertyName)
-			.filter(propertyName -> !allGraphPropertyNames.add(propertyName))
+			.collect(Collectors.groupingBy(Function.identity())).entrySet().stream()
+			.filter(entry -> entry.getValue().size() > 1)
+			.map(Map.Entry::getKey)
 			.collect(Collectors.toSet());
 		if (!duplicates.isEmpty()) {
 			throw new IllegalStateException(
-				String.format("Duplicate definition of property %s in entity %s.", duplicates, getUnderlyingClass()));
+				String.format("Duplicate definition of propert%s %s in entity %s.", duplicates.size() == 1 ? "y" : "ies", duplicates, getUnderlyingClass()));
 		}
 	}
 
