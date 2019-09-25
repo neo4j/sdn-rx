@@ -18,3 +18,21 @@
  */
 package org.neo4j.springframework.data.core
 
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
+
+/**
+ * @author Michael J. Simons
+ */
+class PreparedQueryExtensionsTest {
+
+	@Test
+	fun `PreparedQueryFactory call its Java counterpart`() {
+
+		val preparedQuery = PreparedQueryFactory(String::class)
+				.withCypherQuery("RETURN 'Hallo'").
+				build();
+
+		assertThat(preparedQuery.resultType).isEqualTo(String::class.java)
+	}
+}

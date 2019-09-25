@@ -16,17 +16,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.springframework.data.integration.imperative
+package org.neo4j.springframework.data.integration.reactive
 
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.neo4j.driver.Driver
 import org.neo4j.driver.Values
-import org.neo4j.springframework.data.config.AbstractNeo4jConfig
-import org.neo4j.springframework.data.core.Neo4jClient
+import org.neo4j.springframework.data.config.AbstractReactiveNeo4jConfig
+import org.neo4j.springframework.data.core.ReactiveNeo4jClient
 import org.neo4j.springframework.data.core.fetchAs
 import org.neo4j.springframework.data.core.mappedBy
 import org.neo4j.springframework.data.test.Neo4jExtension
@@ -35,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.transaction.annotation.EnableTransactionManagement
+import reactor.test.StepVerifier
 
 /**
  * Integration tests for using the Neo4j client in a Kotlin program.
@@ -42,9 +42,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement
  * @author Michael J. Simons
  */
 @Neo4jIntegrationTest
-class Neo4jClientKotlinInteropIT @Autowired constructor(
+class ReactiveNeo4jClientKotlinInteropIT @Autowired constructor(
 		private val driver: Driver,
-		private val neo4jClient: Neo4jClient
+		private val neo4jClient: ReactiveNeo4jClient
 ) {
 
 	companion object {
@@ -54,7 +54,6 @@ class Neo4jClientKotlinInteropIT @Autowired constructor(
 
 	@BeforeEach
 	fun prepareData() {
-
 		driver.session().use {
 			val bands = mapOf(
 					Pair("Queen", listOf("Brian", "Roger", "John", "Freddie")),
@@ -83,28 +82,27 @@ class Neo4jClientKotlinInteropIT @Autowired constructor(
 	data class Band(val name: String, val member: Collection<Artist>)
 
 	@Test
-	fun `The Neo4j client should be usable from idiomatic Kotlin code`() {
+	fun `The reactive Neo4j client should be usable from idiomatic Kotlin code`() {
 
-		val dieAerzte = neo4jClient
-				.query(" MATCH (b:Band {name: \$name}) - [:HAS_MEMBER] -> (m) RETURN b as band, collect(m.name) as members")
-				.bind("Die Ärzte").to("name")
+		val queen = neo4jClient
+				.query("MATCH (b:Band {name: \$name}) - [:HAS_MEMBER] -> (m) RETURN b as band, collect(m.name) as members")
+				.bind("Queen").to("name")
 				.mappedBy { _, r ->
 					val members = r["members"].asList { v -> Artist(v.asString()) }
 					Band(r["band"]["name"].asString(), members)
-				}
-				.one()
+				}.one()
 
-		assertThat(dieAerzte).isNotNull
-		assertThat(dieAerzte!!.member).hasSize(3)
+		StepVerifier.create(queen)
+				.expectNextMatches { it.name == "Queen" && it.member.size == 4 }
+				.verifyComplete()
 
-		if (neo4jClient.query("MATCH (n:IDontExists) RETURN id(n)").fetchAs<Long>().one() != null) {
-			Assertions.fail<String>("The record does not exist, the optional had to be null")
-		}
+		StepVerifier.create(neo4jClient.query("MATCH (n:IDontExists) RETURN id(n)").fetchAs<Long>().one())
+				.verifyComplete();
 	}
 
 	@Configuration
 	@EnableTransactionManagement
-	open class Config : AbstractNeo4jConfig() {
+	open class Config : AbstractReactiveNeo4jConfig() {
 
 		@Bean
 		override fun driver(): Driver {

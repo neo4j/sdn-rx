@@ -29,7 +29,8 @@ import java.util.function.BiFunction
  * @author Michael J. Simons
  * @since 1.0
  */
-fun Neo4jClient.RunnableSpec.inDatabase(targetDatabase: String): Neo4jClient.RunnableSpecTightToDatabase = `in`(targetDatabase)
+fun Neo4jClient.RunnableSpec.inDatabase(targetDatabase: String): Neo4jClient.RunnableSpecTightToDatabase =
+		`in`(targetDatabase)
 
 /**
  * Extension for [Neo4jClient.OngoingDelegation.in] providing an `inDatabase` alias since `in` is a reserved keyword in Kotlin.
@@ -37,30 +38,34 @@ fun Neo4jClient.RunnableSpec.inDatabase(targetDatabase: String): Neo4jClient.Run
  * @author Michael J. Simons
  * @since 1.0
  */
-fun <T : Any?> Neo4jClient.OngoingDelegation<T>.inDatabase(targetDatabase: String): Neo4jClient.RunnableDelegation<T> = `in`(targetDatabase)
+fun <T : Any?> Neo4jClient.OngoingDelegation<T>.inDatabase(targetDatabase: String): Neo4jClient.RunnableDelegation<T> =
+		`in`(targetDatabase)
 
 /**
- * An implementation of a mapping spec that replaces Java's Optional with a nullable.
+ * An implementation of a fetch spec that replaces Java's Optional with a nullable.
  * @author Michael J. Simons
  */
-class DelegatingFetchSpec<T : Any>(private val delegate: Neo4jClient.MappingSpec<Optional<T>, Collection<T>, T>) : Neo4jClient.MappingSpec<T?, Collection<T>, T> {
+class DelegatingFetchSpec<T : Any>(private val delegate: Neo4jClient.RecordFetchSpec<Optional<T>, Collection<T>, T>) : Neo4jClient.RecordFetchSpec<T?, Collection<T>, T> {
 	override fun one(): T? = delegate.one().orElse(null)
 
 	override fun first(): T = delegate.first().orElse(null)
 
 	override fun all(): Collection<T> = delegate.all()
+}
 
-	override fun mappedBy(mappingFunction: BiFunction<TypeSystem, Record, T>): Neo4jClient.RecordFetchSpec<T?, Collection<T>, T> {
+/**
+ * An implementation of a mapping spec that replaces Java's Optional with a nullable.
+ * @author Michael J. Simons
+ */
+class DelegatingMappingSpec<T : Any>(private val delegate: Neo4jClient.MappingSpec<Optional<T>, Collection<T>, T>) : Neo4jClient.MappingSpec<T?, Collection<T>, T> {
+	override fun mappedBy(mappingFunction: BiFunction<TypeSystem, Record, T>): Neo4jClient.RecordFetchSpec<T?, Collection<T>, T> =
+		DelegatingFetchSpec(delegate.mappedBy(mappingFunction))
 
-		val innerDelegate = delegate.mappedBy(mappingFunction)
-		return (object : Neo4jClient.RecordFetchSpec<T?, Collection<T>, T> {
-			override fun one(): T? = innerDelegate.one().orElse(null)
+	override fun one(): T? = delegate.one().orElse(null)
 
-			override fun first(): T? = innerDelegate.first().orElse(null)
+	override fun first(): T = delegate.first().orElse(null)
 
-			override fun all(): Collection<T> = innerDelegate.all()
-		})
-	}
+	override fun all(): Collection<T> = delegate.all()
 }
 
 /**
@@ -69,4 +74,13 @@ class DelegatingFetchSpec<T : Any>(private val delegate: Neo4jClient.MappingSpec
  * @since 1.0
  */
 inline fun <reified T : Any> Neo4jClient.RunnableSpecTightToDatabase.fetchAs(): Neo4jClient.MappingSpec<T?, Collection<T>, T>
-		= DelegatingFetchSpec(fetchAs(T::class.java))
+		= DelegatingMappingSpec(fetchAs(T::class.java))
+
+/**
+ * Extension for [Neo4jClient.RunnableSpecTightToDatabase.mappedBy] leveraging reified type parameters and removing
+ * the need for an explicit `fetchAs`.
+ * @author Michael J. Simons
+ * @since 1.0
+ */
+inline fun <reified T : Any> Neo4jClient.RunnableSpecTightToDatabase.mappedBy(noinline mappingFunction: (TypeSystem, Record) -> T): Neo4jClient.RecordFetchSpec<T?, Collection<T>, T>
+		= DelegatingFetchSpec(fetchAs(T::class.java).mappedBy(mappingFunction))

@@ -21,8 +21,6 @@ package org.neo4j.springframework.data.core
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
-import java.io.StringReader
-import java.util.*
 
 /**
  * @author Michael J. Simons
@@ -54,8 +52,8 @@ class Neo4jClientExtensionsTest {
 
 		val runnableSpec = mockk<Neo4jClient.RunnableSpecTightToDatabase>(relaxed = true)
 
-		val mappingSpec : Neo4jClient.MappingSpec<String?, Collection<String>, String> =
-				runnableSpec.fetchAs();
+		val mappingSpec: Neo4jClient.RecordFetchSpec<String?, Collection<String>, String> =
+				runnableSpec.mappedBy { _, record -> "Foo" };
 
 		verify(exactly = 1) { runnableSpec.fetchAs(String::class.java) }
 	}
