@@ -157,7 +157,7 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 
 		this.doWithAssociations((Association<Neo4jPersistentProperty> association) -> {
 			Neo4jPersistentProperty inverse = association.getInverse();
-			if (inverse.isMap()) {
+			if (inverse.isDynamicAssociation()) {
 				Relationship relationship = inverse.findAnnotation(Relationship.class);
 				Supplier<String> message = () ->
 					"Dynamic relationships cannot be used with a fixed type. Omit @Relationship or use @Relationship(direction = "

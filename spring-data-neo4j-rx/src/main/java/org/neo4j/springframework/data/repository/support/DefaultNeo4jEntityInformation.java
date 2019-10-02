@@ -107,7 +107,7 @@ final class DefaultNeo4jEntityInformation<T, ID> extends PersistentEntityInforma
 	 */
 	static Collection<?> unifyRelationshipValue(Neo4jPersistentProperty property, Object rawValue) {
 		Collection<?> unifiedValue;
-		if (property.isMap()) {
+		if (property.isDynamicAssociation()) {
 			unifiedValue = ((Map<String, Object>) rawValue).entrySet();
 		} else if (property.isCollectionLike()) {
 			unifiedValue = (Collection<Object>) rawValue;
