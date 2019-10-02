@@ -162,8 +162,7 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 				Supplier<String> message = () ->
 					"Dynamic relationships cannot be used with a fixed type. Omit @Relationship or use @Relationship(direction = "
 						+ relationship.direction().name() + ").";
-				Assert.state(relationship == null || relationship.type() == null || relationship.type().isEmpty(),
-					message);
+				Assert.state(relationship == null || relationship.type().isEmpty(), message);
 			}
 		});
 	}
