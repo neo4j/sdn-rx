@@ -82,7 +82,7 @@ class SimpleQueryByExampleExecutor<T> implements QueryByExampleExecutor<T> {
 	}
 
 	@Override
-	public <S extends T> Iterable<S> findAll(Example<S> example) {
+	public <S extends T> List<S> findAll(Example<S> example) {
 
 		Predicate predicate = Predicate.create(mappingContext, example);
 		Statement statement = predicate.useWithReadingFragment(statementBuilder::prepareMatchOf)
@@ -93,7 +93,7 @@ class SimpleQueryByExampleExecutor<T> implements QueryByExampleExecutor<T> {
 	}
 
 	@Override
-	public <S extends T> Iterable<S> findAll(Example<S> example, Sort sort) {
+	public <S extends T> List<S> findAll(Example<S> example, Sort sort) {
 
 		Predicate predicate = Predicate.create(mappingContext, example);
 		Statement statement = predicate.useWithReadingFragment(statementBuilder::prepareMatchOf)

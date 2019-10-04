@@ -101,7 +101,7 @@ class SimpleNeo4jRepository<T, ID> implements PagingAndSortingRepository<T, ID> 
 	}
 
 	@Override
-	public Iterable<T> findAll(Sort sort) {
+	public List<T> findAll(Sort sort) {
 
 		Statement statement = statementBuilder.prepareMatchOf(entityMetaData)
 			.returning(statementBuilder.createReturnStatementForMatch(entityMetaData))
@@ -216,7 +216,7 @@ class SimpleNeo4jRepository<T, ID> implements PagingAndSortingRepository<T, ID> 
 
 	@Override
 	@Transactional
-	public <S extends T> Iterable<S> saveAll(Iterable<S> entities) {
+	public <S extends T> List<S> saveAll(Iterable<S> entities) {
 
 		if (entityMetaData.isUsingInternalIds()) {
 			log.debug("Saving entities using single statements.");
@@ -265,7 +265,7 @@ class SimpleNeo4jRepository<T, ID> implements PagingAndSortingRepository<T, ID> 
 	}
 
 	@Override
-	public Iterable<T> findAll() {
+	public List<T> findAll() {
 
 		Statement statement = statementBuilder.prepareMatchOf(entityMetaData)
 			.returning(statementBuilder.createReturnStatementForMatch(entityMetaData)).build();
@@ -273,7 +273,7 @@ class SimpleNeo4jRepository<T, ID> implements PagingAndSortingRepository<T, ID> 
 	}
 
 	@Override
-	public Iterable<T> findAllById(Iterable<ID> ids) {
+	public List<T> findAllById(Iterable<ID> ids) {
 
 		Statement statement = statementBuilder
 			.prepareMatchOf(entityMetaData, entityInformation.getIdExpression().in((parameter("ids"))))
