@@ -66,6 +66,7 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * @author Gerrit Meier
  * @author Michael J. Simons
+ * @author Ján Šúr
  * @since 1.0
  */
 @Repository

@@ -72,6 +72,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 /**
  * @author Michael J. Simons
  * @author Gerrit Meier
+ * @author Ján Šúr
  */
 @Neo4jIntegrationTest
 class RepositoryIT {
