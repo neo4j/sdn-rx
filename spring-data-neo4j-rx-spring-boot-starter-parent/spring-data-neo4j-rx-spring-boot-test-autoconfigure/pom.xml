@@ -53,8 +53,9 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-			<groupId>org.neo4j.springframework.data</groupId>
-			<artifactId>spring-data-neo4j-rx</artifactId>
+			<groupId>org.neo4j.test</groupId>
+			<artifactId>neo4j-harness</artifactId>
+			<version>${neo4j.version}</version>
 			<optional>true</optional>
 		</dependency>
 
@@ -80,4 +81,23 @@
 		</dependency>
 
 	</dependencies>
+
+	<build>
+		<plugins>
+			<!-- DependencyConvergence has been removed here due to Neo4j test harness having
+			     a lot of non converging, transitive dependencies. The test harness is an optional dependency for us -->
+			<plugin>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>enforce</id>
+						<phase>validate</phase>
+						<configuration>
+							<skip>true</skip>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 </project>

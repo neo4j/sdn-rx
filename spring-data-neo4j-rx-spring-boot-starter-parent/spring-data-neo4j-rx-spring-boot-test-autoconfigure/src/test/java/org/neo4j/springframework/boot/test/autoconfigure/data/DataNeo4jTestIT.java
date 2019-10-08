@@ -20,18 +20,23 @@ package org.neo4j.springframework.boot.test.autoconfigure.data;
 
 import static org.assertj.core.api.Assertions.*;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.neo4j.driver.AccessMode;
 import org.neo4j.driver.Driver;
+import org.neo4j.driver.Session;
+import org.neo4j.driver.SessionConfig;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.test.context.ContextConfiguration;
 import org.testcontainers.containers.Neo4jContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Integration tests for the SDN/RX Neo4j test slice.
@@ -39,51 +44,71 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * @author Michael J. Simons
  * @since 1.0
  */
-@ContextConfiguration(initializers = DataNeo4jTestIT.Initializer.class)
-@DataNeo4jTest
-@Testcontainers
 class DataNeo4jTestIT {
 
-	@Container
-	static final Neo4jContainer<?> neo4j = new Neo4jContainer<>().withoutAuthentication();
-
-	@Autowired
-	private Driver driver;
-
-	@Autowired
-	private ExampleRepository exampleRepository;
-
-	@Autowired
-	private ApplicationContext applicationContext;
-
-	@Test
-	void testRepository() {
-		ExampleEntity entity = new ExampleEntity("Look, new @DataNeo4jTest!");
-		assertThat(entity.getId()).isNull();
-		ExampleEntity persistedEntity = this.exampleRepository.save(entity);
-		assertThat(persistedEntity.getId()).isNotNull();
-		/*
-		try(Session session = driver.session(SessionConfig.builder().withDefaultAccessMode(AccessMode.READ).build())) {
-			// assertThat(this.session.countEntitiesOfType(ExampleGraph.class)).isEqualTo(1);
-		}
-
-		 */
-
+	@Nested
+	@DisplayName("Default usage with test harness")
+	@DataNeo4jTest
+	class DriverBasedOnTestHarness extends TestBase {
 	}
 
-	@Test
-	void didNotInjectExampleService() {
-		assertThatExceptionOfType(NoSuchBeanDefinitionException.class)
-			.isThrownBy(() -> this.applicationContext.getBean(ExampleService.class));
+	@Nested
+	@DisplayName("Usage with driver auto configuration")
+	// TODO We don't use @Containers, but the new attribute is helpful to prevent unnessary failing tests.
+	// @Testcontainers(disabledWithoutDocker = true)
+	@ContextConfiguration(initializers = TestContainerInitializer.class)
+	@DataNeo4jTest(excludeAutoConfiguration = Neo4jTestHarnessAutoConfiguration.class)
+	class DriverBasedOnAutoConfiguration extends TestBase {
 	}
 
-	static class Initializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+	/**
+	 * An initializer that starts a Neo4j test container and sets {@code org.neo4j.driver.uri} to the containers
+	 * bolt uri. It also registers an application listener that stops the container when the context closes.
+	 */
+	static class TestContainerInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
 		@Override
 		public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
-			TestPropertyValues.of("org.neo4j.driver.uri=" + neo4j.getBoltUrl())
+			final Neo4jContainer<?> neo4jContainer = new Neo4jContainer<>().withoutAuthentication();
+			neo4jContainer.start();
+			configurableApplicationContext
+				.addApplicationListener((ApplicationListener<ContextClosedEvent>) event -> neo4jContainer.stop());
+			TestPropertyValues.of("org.neo4j.driver.uri=" + neo4jContainer.getBoltUrl())
 				.applyTo(configurableApplicationContext.getEnvironment());
 		}
+	}
 
+	/**
+	 * Tests for both scenarios.
+	 */
+	abstract class TestBase {
+		@Autowired
+		private Driver driver;
+
+		@Autowired
+		private ExampleRepository exampleRepository;
+
+		@Autowired
+		private ApplicationContext applicationContext;
+
+		@Test
+		void testRepository() {
+			ExampleEntity entity = new ExampleEntity("Look, new @DataNeo4jTest!");
+			assertThat(entity.getId()).isNull();
+			ExampleEntity persistedEntity = this.exampleRepository.save(entity);
+			assertThat(persistedEntity.getId()).isNotNull();
+
+			try (Session session = driver
+				.session(SessionConfig.builder().withDefaultAccessMode(AccessMode.READ).build())) {
+				long cnt = session.run("MATCH (n:ExampleEntity) RETURN count(n) as cnt").single().get("cnt").asLong();
+				assertThat(cnt).isEqualTo(1L);
+			}
+		}
+
+		@Test
+		void didNotInjectExampleService() {
+			assertThatExceptionOfType(NoSuchBeanDefinitionException.class)
+				.isThrownBy(() -> this.applicationContext.getBean(ExampleService.class));
+		}
 	}
 }
