@@ -18,19 +18,25 @@
  */
 package org.neo4j.springframework.boot.test.autoconfigure.data;
 
+import org.neo4j.springframework.data.core.Neo4jClient;
 import org.springframework.stereotype.Service;
 
 /**
- * A sample service serving as a negative probe.
+ * A sample service.
  *
  * @author Michael J. Simons
  * @since 1.0
  */
 @Service
 public class ExampleService {
-	private final ExampleRepository exampleRepository;
+	private final Neo4jClient neo4jClient;
 
-	public ExampleService(ExampleRepository exampleRepository) {
-		this.exampleRepository = exampleRepository;
+	public ExampleService(Neo4jClient neo4jClient) {
+		this.neo4jClient = neo4jClient;
+	}
+
+	public boolean hasNode(Class<?> clazz) {
+		return neo4jClient.query(String.format("MATCH (n:%s) RETURN count(n) > 0", clazz.getSimpleName()))
+			.fetchAs(Boolean.class).one().get();
 	}
 }

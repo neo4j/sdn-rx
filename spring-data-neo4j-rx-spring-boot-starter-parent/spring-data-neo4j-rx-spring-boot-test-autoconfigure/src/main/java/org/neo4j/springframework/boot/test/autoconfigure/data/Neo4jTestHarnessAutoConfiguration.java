@@ -22,10 +22,8 @@ import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.springframework.boot.autoconfigure.Neo4jDriverAutoConfiguration;
 import org.neo4j.harness.ServerControls;
-import org.neo4j.harness.TestServerBuilder;
 import org.neo4j.harness.TestServerBuilders;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -42,19 +40,18 @@ import org.springframework.context.annotation.Configuration;
  * @since 1.0
  */
 @Configuration(proxyBeanMethods = false)
+@ConditionalOnClass(ServerControls.class)
+@ConditionalOnMissingBean(Driver.class)
 @AutoConfigureBefore(Neo4jDriverAutoConfiguration.class)
 public class Neo4jTestHarnessAutoConfiguration {
 
 	@Bean
-	@ConditionalOnClass({ TestServerBuilder.class })
 	@ConditionalOnMissingBean(ServerControls.class)
 	ServerControls neo4jServerControls() {
 		return TestServerBuilders.newInProcessBuilder().newServer();
 	}
 
 	@Bean
-	@ConditionalOnBean(ServerControls.class)
-	@ConditionalOnMissingBean(Driver.class)
 	Driver neo4jDriver(ServerControls serverControls) {
 
 		return GraphDatabase.driver(serverControls.boltURI());

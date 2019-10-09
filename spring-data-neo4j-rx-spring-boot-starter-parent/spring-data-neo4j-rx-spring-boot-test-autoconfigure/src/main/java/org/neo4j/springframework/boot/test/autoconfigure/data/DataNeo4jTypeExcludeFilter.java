@@ -18,6 +18,15 @@
  */
 package org.neo4j.springframework.boot.test.autoconfigure.data;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import org.neo4j.driver.Driver;
+import org.neo4j.springframework.data.core.Neo4jClient;
+import org.neo4j.springframework.data.core.ReactiveNeo4jClient;
+import org.neo4j.springframework.data.repository.Neo4jRepository;
+import org.neo4j.springframework.data.repository.ReactiveNeo4jRepository;
 import org.springframework.boot.context.TypeExcludeFilter;
 import org.springframework.boot.test.autoconfigure.filter.StandardAnnotationCustomizableTypeExcludeFilter;
 
@@ -32,5 +41,22 @@ class DataNeo4jTypeExcludeFilter extends StandardAnnotationCustomizableTypeExclu
 
 	DataNeo4jTypeExcludeFilter(Class<?> testClass) {
 		super(testClass);
+	}
+
+	private static final Set<Class<?>> DEFAULT_INCLUDES;
+
+	static {
+		Set<Class<?>> includes = new LinkedHashSet<>();
+		includes.add(Driver.class);
+		includes.add(Neo4jClient.class);
+		includes.add(ReactiveNeo4jClient.class);
+		includes.add(Neo4jRepository.class);
+		includes.add(ReactiveNeo4jRepository.class);
+		DEFAULT_INCLUDES = Collections.unmodifiableSet(includes);
+	}
+
+	@Override
+	protected Set<Class<?>> getDefaultIncludes() {
+		return DEFAULT_INCLUDES;
 	}
 }

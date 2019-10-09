@@ -34,7 +34,10 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.event.ContextClosedEvent;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Service;
 import org.springframework.test.context.ContextConfiguration;
 import org.testcontainers.containers.Neo4jContainer;
 
@@ -50,6 +53,34 @@ class DataNeo4jTestIT {
 	@DisplayName("Default usage with test harness")
 	@DataNeo4jTest
 	class DriverBasedOnTestHarness extends TestBase {
+	}
+
+	@Nested
+	@DisplayName("Properties should be applied.")
+	@DataNeo4jTest(properties = "spring.profiles.active=test")
+	class DataNeo4jTestPropertiesIT {
+
+		@Autowired
+		private Environment environment;
+
+		@Test
+		void environmentWithNewProfile() {
+			assertThat(this.environment.getActiveProfiles()).containsExactly("test");
+		}
+	}
+
+	@Nested
+	@DisplayName("Include filter should work")
+	@DataNeo4jTest(includeFilters = @ComponentScan.Filter(Service.class))
+	class DataNeo4jTestWithIncludeFilterIntegrationTests {
+
+		@Autowired
+		private ExampleService service;
+
+		@Test
+		void testService() {
+			assertThat(this.service.hasNode(ExampleEntity.class)).isFalse();
+		}
 	}
 
 	@Nested
