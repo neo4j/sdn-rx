@@ -85,7 +85,7 @@ class DataNeo4jTestIT {
 
 	@Nested
 	@DisplayName("Usage with driver auto configuration")
-	// TODO We don't use @Containers, but the new attribute is helpful to prevent unnessary failing tests.
+	// TODO We don't use @Containers, but the new attribute is helpful to prevent unnecessary failing tests.
 	// @Testcontainers(disabledWithoutDocker = true)
 	@ContextConfiguration(initializers = TestContainerInitializer.class)
 	@DataNeo4jTest(excludeAutoConfiguration = Neo4jTestHarnessAutoConfiguration.class)

@@ -48,7 +48,7 @@ java -jar examples/reactive-web/target/movie-api.jar \
 
 with parameters fitting to your needs.
 
-Here are some CURL commands, you can try out.
+Here are some _curl_ commands, you can try out.
 The same examples are also available in the file `movie-api-examples.http` that you can call from IDEA.
 
 [source,bash]
