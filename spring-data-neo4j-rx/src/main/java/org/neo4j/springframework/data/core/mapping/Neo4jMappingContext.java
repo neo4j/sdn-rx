@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -81,8 +80,6 @@ public final class Neo4jMappingContext
 	 * {@link AbstractMappingContext}, so this lookup is not synchronized further.
 	 */
 	private final Map<String, NodeDescription<?>> nodeDescriptionsByPrimaryLabel = new HashMap<>();
-
-	private final ConcurrentMap<String, Collection<RelationshipDescription>> relationshipsByPrimaryLabel = new ConcurrentHashMap<>();
 
 	/**
 	 * A map of fallback id generators, that have not been added to the application context
@@ -188,12 +185,6 @@ public final class Neo4jMappingContext
 			}
 		}
 		return null;
-	}
-
-	@Override
-	public Collection<RelationshipDescription> getRelationshipsOf(String primaryLabel) {
-
-		return this.relationshipsByPrimaryLabel.computeIfAbsent(primaryLabel, this::computeRelationshipsOf);
 	}
 
 	@Override
