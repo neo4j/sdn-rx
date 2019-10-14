@@ -192,7 +192,7 @@ public final class Neo4jMappingContext
 	public <T> BiFunction<TypeSystem, Record, T> getMappingFunctionFor(Class<T> targetClass) {
 		if (this.hasPersistentEntityFor(targetClass)) {
 			Neo4jPersistentEntity neo4jPersistentEntity = this.getPersistentEntity(targetClass);
-			return new DefaultNeo4jMappingFunction<>(neo4jPersistentEntity, this, this.converter);
+			return new DefaultNeo4jMappingFunction<>(neo4jPersistentEntity, this.converter);
 		}
 
 		return null;

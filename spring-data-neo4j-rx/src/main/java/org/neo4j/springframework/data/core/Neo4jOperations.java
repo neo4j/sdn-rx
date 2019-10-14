@@ -48,16 +48,6 @@ public interface Neo4jOperations {
 	long count(Statement statement, Map<String, Object> parameters);
 
 	/**
-	 * Takes a prepared query, containing all the information about the cypher template to be used, needed parameters and
-	 * an optional mapping function, and turns it into an executable query.
-	 *
-	 * @param preparedQuery prepared query that should get converted to an executable query
-	 * @param <T>           The type of the objects returned by this query.
-	 * @return              An executable query
-	 */
-	<T> ExecutableQuery<T> toExecutableQuery(PreparedQuery<T> preparedQuery);
-
-	/**
 	 * Load all entities of a given type.
 	 *
 	 * @param domainType the type of the entities. Must not be {@code null}.
@@ -134,6 +124,16 @@ public interface Neo4jOperations {
 	 * @param domainType type of the entities to be deleted. Must not be {@code null}.
 	 */
 	void deleteAll(Class<?> domainType);
+
+	/**
+	 * Takes a prepared query, containing all the information about the cypher template to be used, needed parameters and
+	 * an optional mapping function, and turns it into an executable query.
+	 *
+	 * @param preparedQuery prepared query that should get converted to an executable query
+	 * @param <T>           The type of the objects returned by this query.
+	 * @return              An executable query
+	 */
+	<T> ExecutableQuery<T> toExecutableQuery(PreparedQuery<T> preparedQuery);
 
 	/**
 	 * An interface for controlling query execution.

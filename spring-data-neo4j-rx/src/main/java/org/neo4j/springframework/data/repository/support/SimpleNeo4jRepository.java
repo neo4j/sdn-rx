@@ -73,6 +73,24 @@ public class SimpleNeo4jRepository<T, ID> implements PagingAndSortingRepository<
 	}
 
 	@Override
+	public Optional<T> findById(ID id) {
+
+		return neo4jOperations.findById(id, this.entityInformation.getJavaType());
+	}
+
+	@Override
+	public List<T> findAllById(Iterable<ID> ids) {
+
+		return neo4jOperations.findAllById(ids, this.entityInformation.getJavaType());
+	}
+
+	@Override
+	public List<T> findAll() {
+
+		return this.neo4jOperations.findAll(this.entityInformation.getJavaType());
+	}
+
+	@Override
 	public List<T> findAll(Sort sort) {
 
 		Statement statement = cypherGenerator.prepareMatchOf(entityMetaData)
@@ -100,6 +118,17 @@ public class SimpleNeo4jRepository<T, ID> implements PagingAndSortingRepository<
 	}
 
 	@Override
+	public long count() {
+
+		return neo4jOperations.count(this.entityInformation.getJavaType());
+	}
+
+	@Override
+	public boolean existsById(ID id) {
+		return findById(id).isPresent();
+	}
+
+	@Override
 	@Transactional
 	public <S extends T> S save(S entity) {
 
@@ -111,35 +140,6 @@ public class SimpleNeo4jRepository<T, ID> implements PagingAndSortingRepository<
 	public <S extends T> List<S> saveAll(Iterable<S> entities) {
 
 		return this.neo4jOperations.saveAll(entities);
-	}
-
-	@Override
-	public Optional<T> findById(ID id) {
-
-		return neo4jOperations.findById(id, this.entityInformation.getJavaType());
-	}
-
-	@Override
-	public boolean existsById(ID id) {
-		return findById(id).isPresent();
-	}
-
-	@Override
-	public List<T> findAll() {
-
-		return this.neo4jOperations.findAll(this.entityInformation.getJavaType());
-	}
-
-	@Override
-	public List<T> findAllById(Iterable<ID> ids) {
-
-		return neo4jOperations.findAllById(ids, this.entityInformation.getJavaType());
-	}
-
-	@Override
-	public long count() {
-
-		return neo4jOperations.count(this.entityInformation.getJavaType());
 	}
 
 	@Override
@@ -159,18 +159,18 @@ public class SimpleNeo4jRepository<T, ID> implements PagingAndSortingRepository<
 
 	@Override
 	@Transactional
+	public void deleteAll() {
+
+		this.neo4jOperations.deleteAll(this.entityInformation.getJavaType());
+	}
+
+	@Override
+	@Transactional
 	public void deleteAll(Iterable<? extends T> entities) {
 
 		List<Object> ids = StreamSupport.stream(entities.spliterator(), false)
 			.map(this.entityInformation::getId).collect(toList());
 
 		this.neo4jOperations.deleteAllById(ids, this.entityInformation.getJavaType());
-	}
-
-	@Override
-	@Transactional
-	public void deleteAll() {
-
-		this.neo4jOperations.deleteAll(this.entityInformation.getJavaType());
 	}
 }

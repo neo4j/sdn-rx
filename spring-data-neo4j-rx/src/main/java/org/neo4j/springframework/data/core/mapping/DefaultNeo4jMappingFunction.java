@@ -80,14 +80,11 @@ final class DefaultNeo4jMappingFunction<T> implements BiFunction<TypeSystem, Rec
 	 */
 	private final Neo4jPersistentEntity<T> rootNodeDescription;
 
-	private final Neo4jMappingContext mappingContext;
-
 	private final Neo4jConverter converter;
 
-	DefaultNeo4jMappingFunction(Neo4jPersistentEntity<T> rootNodeDescription, Neo4jMappingContext neo4jMappingContext, Neo4jConverter converter) {
+	DefaultNeo4jMappingFunction(Neo4jPersistentEntity<T> rootNodeDescription, Neo4jConverter converter) {
 
 		this.rootNodeDescription = rootNodeDescription;
-		this.mappingContext = neo4jMappingContext;
 		this.converter = converter;
 	}
 

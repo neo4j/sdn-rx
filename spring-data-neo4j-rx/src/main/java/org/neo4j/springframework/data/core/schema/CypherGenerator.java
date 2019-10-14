@@ -117,7 +117,8 @@ public enum CypherGenerator {
 				.returning(rootNode.internalId())
 				.build();
 		} else {
-			org.neo4j.springframework.data.core.cypher.Node possibleExistingNode = node(primaryLabel).named("hlp");
+			String nameOfPossibleExistingNode = "hlp";
+			org.neo4j.springframework.data.core.cypher.Node possibleExistingNode = node(primaryLabel).named(nameOfPossibleExistingNode);
 
 			Statement createIfNew = optionalMatch(possibleExistingNode)
 				.where(possibleExistingNode.internalId().isEqualTo(idParameter))

@@ -82,32 +82,6 @@ public class SimpleReactiveNeo4jRepository<T, ID> implements ReactiveSortingRepo
 	}
 
 	@Override
-	public Flux<T> findAll(Sort sort) {
-		Statement statement = cypherGenerator.prepareMatchOf(entityMetaData)
-			.returning(cypherGenerator.createReturnStatementForMatch(entityMetaData))
-			.orderBy(toSortItems(entityMetaData, sort))
-			.build();
-
-		return neo4jOperations.findAll(statement, this.entityInformation.getJavaType());
-	}
-
-	@Override
-	public Mono<Boolean> existsById(ID id) {
-		return findById(id).hasElement();
-	}
-
-	@Override
-	public Mono<Boolean> existsById(Publisher<ID> idPublisher) {
-		return Mono.from(idPublisher).flatMap(this::existsById);
-	}
-
-	@Override
-	public Flux<T> findAll() {
-
-		return this.neo4jOperations.findAll(this.entityInformation.getJavaType());
-	}
-
-	@Override
 	public Flux<T> findAllById(Iterable<ID> ids) {
 
 		return this.neo4jOperations.findAllById(ids, this.entityInformation.getJavaType());
@@ -119,9 +93,35 @@ public class SimpleReactiveNeo4jRepository<T, ID> implements ReactiveSortingRepo
 	}
 
 	@Override
+	public Flux<T> findAll() {
+
+		return this.neo4jOperations.findAll(this.entityInformation.getJavaType());
+	}
+
+	@Override
+	public Flux<T> findAll(Sort sort) {
+		Statement statement = cypherGenerator.prepareMatchOf(entityMetaData)
+			.returning(cypherGenerator.createReturnStatementForMatch(entityMetaData))
+			.orderBy(toSortItems(entityMetaData, sort))
+			.build();
+
+		return neo4jOperations.findAll(statement, this.entityInformation.getJavaType());
+	}
+
+	@Override
 	public Mono<Long> count() {
 
 		return this.neo4jOperations.count(this.entityInformation.getJavaType());
+	}
+
+	@Override
+	public Mono<Boolean> existsById(ID id) {
+		return findById(id).hasElement();
+	}
+
+	@Override
+	public Mono<Boolean> existsById(Publisher<ID> idPublisher) {
+		return Mono.from(idPublisher).flatMap(this::existsById);
 	}
 
 	@Override
@@ -158,6 +158,18 @@ public class SimpleReactiveNeo4jRepository<T, ID> implements ReactiveSortingRepo
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.data.repository.reactive.ReactiveCrudRepository#deleteById(org.reactivestreams.Publisher)
+	 */
+	@Override
+	@Transactional
+	public Mono<Void> deleteById(Publisher<ID> idPublisher) {
+
+		Assert.notNull(idPublisher, "The given Publisher of an id must not be null!");
+		return Mono.from(idPublisher).flatMap(this::deleteById);
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.data.repository.reactive.ReactiveCrudRepository#delete(java.lang.Object)
 	 */
 	@Override
@@ -170,14 +182,13 @@ public class SimpleReactiveNeo4jRepository<T, ID> implements ReactiveSortingRepo
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.data.repository.reactive.ReactiveCrudRepository#deleteById(org.reactivestreams.Publisher)
+	 * @see org.springframework.data.repository.reactive.ReactiveCrudRepository#deleteAll()
 	 */
 	@Override
 	@Transactional
-	public Mono<Void> deleteById(Publisher<ID> idPublisher) {
+	public Mono<Void> deleteAll() {
 
-		Assert.notNull(idPublisher, "The given Publisher of an id must not be null!");
-		return Mono.from(idPublisher).flatMap(this::deleteById);
+		return this.neo4jOperations.deleteAll(this.entityInformation.getJavaType());
 	}
 
 	/*
@@ -205,16 +216,5 @@ public class SimpleReactiveNeo4jRepository<T, ID> implements ReactiveSortingRepo
 
 		Assert.notNull(entitiesPublisher, "The given Publisher of entities must not be null!");
 		return Flux.from(entitiesPublisher).flatMap(this::delete).then();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.repository.reactive.ReactiveCrudRepository#deleteAll()
-	 */
-	@Override
-	@Transactional
-	public Mono<Void> deleteAll() {
-
-		return this.neo4jOperations.deleteAll(this.entityInformation.getJavaType());
 	}
 }
