@@ -315,7 +315,7 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 					.filter(r -> r.getFieldName().equals(inverse.getName()))
 					.findFirst().get();
 
-				// remove all relationships before creating all new when the entity is not new
+				// remove all relationships before creating all new if the entity is not new
 				// this avoids the usage of cache but might have significant impact on overall performance
 				if (!neo4jPersistentEntity.isNew(parentObject)) {
 					Statement relationshipRemoveQuery = statementBuilder
