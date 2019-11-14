@@ -24,8 +24,6 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apiguardian.api.API;
-import org.neo4j.driver.Value;
-import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.data.convert.CustomConversions;
 
 /**
@@ -38,7 +36,6 @@ public final class Neo4jConversions extends CustomConversions {
 
 	private static final StoreConversions STORE_CONVERSIONS;
 	private static final List<Object> STORE_CONVERTERS;
-	private static final TypeDescriptor TYPE_DESCRIPTOR_OF_VALUE = TypeDescriptor.valueOf(Value.class);
 
 	static {
 
