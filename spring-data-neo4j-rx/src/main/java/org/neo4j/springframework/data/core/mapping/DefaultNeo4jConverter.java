@@ -80,8 +80,7 @@ final class DefaultNeo4jConverter implements Neo4jConverter {
 
 			return conversionService.convert(value, rawType);
 		} catch (Exception e) {
-			String msg = String.format("Could not convert %s into %s",
-				(value == null ? "literal null" : value), type.toString());
+			String msg = String.format("Could not convert %s into %s", value, type.toString());
 			throw new TypeMismatchDataAccessException(msg, e);
 		}
 	}
