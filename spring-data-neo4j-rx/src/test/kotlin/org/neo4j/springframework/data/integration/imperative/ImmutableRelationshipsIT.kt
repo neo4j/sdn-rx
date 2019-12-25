@@ -21,10 +21,7 @@ package org.neo4j.springframework.data.integration.imperative
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
-import org.neo4j.driver.AuthTokens
 import org.neo4j.driver.Driver
-import org.neo4j.driver.GraphDatabase
 import org.neo4j.springframework.data.config.AbstractNeo4jConfig
 import org.neo4j.springframework.data.core.schema.GeneratedValue
 import org.neo4j.springframework.data.core.schema.Id
@@ -32,10 +29,11 @@ import org.neo4j.springframework.data.core.schema.Node
 import org.neo4j.springframework.data.core.schema.Relationship
 import org.neo4j.springframework.data.repository.Neo4jRepository
 import org.neo4j.springframework.data.repository.config.EnableNeo4jRepositories
+import org.neo4j.springframework.data.test.Neo4jExtension
+import org.neo4j.springframework.data.test.Neo4jIntegrationTest
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.transaction.annotation.EnableTransactionManagement
 
 /**
@@ -45,11 +43,18 @@ import org.springframework.transaction.annotation.EnableTransactionManagement
  *
  * @author Gerrit Meier
  */
-@ExtendWith(SpringExtension::class)
+@Neo4jIntegrationTest
 class ImmutableRelationshipsIT @Autowired constructor(
     private val repository: DeviceRepository,
     private val driver: Driver
 ) {
+
+    companion object {
+        @JvmStatic
+        private lateinit var neo4jConnectionSupport: Neo4jExtension.Neo4jConnectionSupport
+    }
+
+
     @Test
     fun createRelationshipsBeforeRootObject() {
 
@@ -72,7 +77,7 @@ class ImmutableRelationshipsIT @Autowired constructor(
     open class MyConfig : AbstractNeo4jConfig() {
         @Bean
         override fun driver(): Driver {
-            return GraphDatabase.driver("neo4j://localhost:7687", AuthTokens.basic("neo4j", "secret"))
+            return neo4jConnectionSupport.driver
         }
 
         override fun getMappingBasePackages(): Collection<String> {
