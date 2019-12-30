@@ -54,7 +54,6 @@ class ImmutableRelationshipsIT @Autowired constructor(
         private lateinit var neo4jConnectionSupport: Neo4jExtension.Neo4jConnectionSupport
     }
 
-
     @Test
     fun createRelationshipsBeforeRootObject() {
 
@@ -69,6 +68,28 @@ class ImmutableRelationshipsIT @Autowired constructor(
         assertThat(device.location).isNotNull
         assertThat(device.location!!.latitude).isEqualTo(20.0)
         assertThat(device.location!!.longitude).isEqualTo(20.0)
+    }
+
+    @Test
+    fun createDeepSameClassRelationshipsBeforeRootObject() {
+
+        driver.session().use { session ->
+            session.run("MATCH (n) DETACH DELETE n")
+            session.run("CREATE (n:DeviceEntity {deviceId:'123', phoneNumber:'some number'})" +
+                "-[:LATEST_LOCATION]->" +
+                "(l1: LocationEntity{latitude: 10.0, longitude: 20.0})" +
+                "-[:PREVIOUS_LOCATION]->" +
+                "(l2: LocationEntity{latitude: 30.0, longitude: 40.0})")
+        }
+        val device = repository.findById("123").get()
+        assertThat(device.deviceId).isEqualTo("123")
+        assertThat(device.phoneNumber).isEqualTo("some number")
+
+        assertThat(device.location).isNotNull
+        assertThat(device.location!!.latitude).isEqualTo(10.0)
+        assertThat(device.location!!.longitude).isEqualTo(20.0)
+        assertThat(device.location!!.previousLocation!!.latitude).isEqualTo(30.0)
+        assertThat(device.location!!.previousLocation!!.longitude).isEqualTo(40.0)
     }
 
     @Configuration
