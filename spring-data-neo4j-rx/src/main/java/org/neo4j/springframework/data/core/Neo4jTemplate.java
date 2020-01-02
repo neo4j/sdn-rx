@@ -27,6 +27,7 @@ import static org.neo4j.springframework.data.core.schema.NodeDescription.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -64,6 +65,7 @@ import org.springframework.util.CollectionUtils;
 
 /**
  * @author Michael J. Simons
+ * @author Philipp Tölle
  * @soundtrack Motörhead - We Are Motörhead
  * @since 1.0
  */
@@ -319,15 +321,21 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 
 			Object value = propertyAccessor.getProperty(inverse);
 
-			Class<?> associationTargetType = inverse.getAssociationTargetType();
-
-			Neo4jPersistentEntity<?> targetNodeDescription = (Neo4jPersistentEntity<?>) neo4jMappingContext
-				.getPersistentEntity(associationTargetType);
-
 			Collection<RelationshipDescription> relationships = neo4jPersistentEntity.getRelationships();
 			RelationshipDescription relationship = relationships.stream()
 				.filter(r -> r.getFieldName().equals(inverse.getName()))
 				.findFirst().get();
+
+			Class<?> associationTargetType;
+			// if we have a relationship with properties, the targetNodeType is the Map Key
+			if (relationship.hasRelationshipProperties()) {
+				associationTargetType = inverse.getComponentType();
+			} else {
+				associationTargetType = inverse.getAssociationTargetType();
+			}
+
+			Neo4jPersistentEntity<?> targetNodeDescription = neo4jMappingContext
+				.getPersistentEntity(associationTargetType);
 
 			// remove all relationships before creating all new if the entity is not new
 			// this avoids the usage of cache but might have significant impact on overall performance
@@ -345,21 +353,43 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 
 			for (Object relatedValue : Relationships.unifyRelationshipValue(inverse, value)) {
 
-				Object valueToBeSaved = relatedValue instanceof Map.Entry ?
-					((Map.Entry) relatedValue).getValue() :
-					relatedValue;
+				// here map entry is not always anymore a dynamic association
+				Object valueToBeSaved = relatedValue;
+				if (relatedValue instanceof Map.Entry && inverse.isDynamicAssociation()) {
+					valueToBeSaved = ((Map.Entry) relatedValue).getValue();
+				} else if (relatedValue instanceof Map.Entry && relationship.hasRelationshipProperties()) {
+					valueToBeSaved = ((Map.Entry) relatedValue).getKey();
+				}
+
 				valueToBeSaved = eventSupport.maybeCallBeforeBind(valueToBeSaved);
 
 				Long relatedInternalId = saveRelatedNode(valueToBeSaved, associationTargetType, targetNodeDescription);
 
-				Statement relationshipCreationQuery = cypherGenerator
-					.createRelationshipCreationQuery(neo4jPersistentEntity,
+				Statement relationshipCreationQuery;
+				if (relationship.hasRelationshipProperties()) {
+					relationshipCreationQuery = cypherGenerator.createRelationshipWithPropertiesCreationQuery(
+						neo4jPersistentEntity,
 						relationship,
-						relatedValue instanceof Map.Entry ? ((Map.Entry<String, ?>) relatedValue).getKey() : null,
-						relatedInternalId);
+						relatedInternalId
+					);
+					Map<String, Object> propMap = new HashMap<>();
+					neo4jMappingContext.getConverter().write(((Map.Entry) relatedValue).getValue(), propMap);
 
-				neo4jClient.query(renderer.render(relationshipCreationQuery))
-					.bind(fromId).to(FROM_ID_PARAMETER_NAME).run();
+					neo4jClient.query(renderer.render(relationshipCreationQuery))
+						.bind(fromId).to(FROM_ID_PARAMETER_NAME)
+						.bindAll(propMap)
+						.run();
+				} else {
+					relationshipCreationQuery = cypherGenerator
+						.createRelationshipCreationQuery(neo4jPersistentEntity,
+							relationship,
+							relatedValue instanceof Map.Entry ? ((Map.Entry<String, ?>) relatedValue).getKey() : null,
+							relatedInternalId);
+
+					neo4jClient.query(renderer.render(relationshipCreationQuery))
+						.bind(fromId).to(FROM_ID_PARAMETER_NAME)
+						.run();
+				}
 
 				// if an internal id is used this must get set to link this entity in the next iteration
 				if (targetNodeDescription.isUsingInternalIds()) {
