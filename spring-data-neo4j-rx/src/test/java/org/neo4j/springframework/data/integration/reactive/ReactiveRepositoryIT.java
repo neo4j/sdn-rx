@@ -58,11 +58,12 @@ import org.neo4j.springframework.data.integration.shared.Hobby;
 import org.neo4j.springframework.data.integration.shared.LikesHobbyRelationship;
 import org.neo4j.springframework.data.integration.shared.PersonWithAllConstructor;
 import org.neo4j.springframework.data.integration.shared.PersonWithRelationship;
+import org.neo4j.springframework.data.integration.shared.PersonWithRelationshipWithProperties;
 import org.neo4j.springframework.data.integration.shared.Pet;
 import org.neo4j.springframework.data.integration.shared.ThingWithAssignedId;
 import org.neo4j.springframework.data.repository.config.EnableReactiveNeo4jRepositories;
-import org.neo4j.springframework.data.test.Neo4jIntegrationTest;
 import org.neo4j.springframework.data.test.Neo4jExtension.*;
+import org.neo4j.springframework.data.test.Neo4jIntegrationTest;
 import org.neo4j.springframework.data.types.CartesianPoint2d;
 import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,6 +79,7 @@ import org.springframework.transaction.reactive.TransactionalOperator;
 /**
  * @author Gerrit Meier
  * @author Michael J. Simons
+ * @author Philipp Tölle
  */
 @Neo4jIntegrationTest
 @Tag(NEEDS_REACTIVE_SUPPORT)
@@ -436,6 +438,94 @@ class ReactiveRepositoryIT {
 			})
 			.verifyComplete();
 
+	}
+	@Test
+	void persistEntityWithRelationshipWithProperties() {
+		// given
+
+		long personId;
+
+		try (Session session = driver.session()) {
+			Record record = session
+				.run("CREATE (n:PersonWithRelationshipWithProperties{name:'Freddie'}),"
+					+ " (n)-[l1:LIKES"
+					+ "{since: 1995, active: true, localDate: date('1995-02-26'), myEnum: 'SOMETHING', point: point({x: 0, y: 1})}"
+					+ "]->(h1:Hobby{name:'Music'}),"
+					+ " (n)-[l2:LIKES"
+					+ "{since: 2000, active: false, localDate: date('2000-06-28'), myEnum: 'SOMETHING_DIFFERENT', point: point({x: 2, y: 3})}"
+					+ "]->(h2:Hobby{name:'Something else'})"
+					+ "RETURN n, h1, h2").single();
+
+			Node personNode = record.get("n").asNode();
+
+			personId = personNode.id();
+		}
+
+		StepVerifier.create(relationshipWithPropertiesRepository.findById(personId))
+			.assertNext(persProps -> assertThat(persProps).isNotNull())
+			.verifyComplete();
+
+		PersonWithRelationshipWithProperties person = relationshipWithPropertiesRepository.findById(personId).block();
+
+		PersonWithRelationshipWithProperties clonePerson = new PersonWithRelationshipWithProperties(
+			person.getName() + " clone");
+		clonePerson.setHobbies(person.getHobbies());
+
+		// when
+		Mono<PersonWithRelationshipWithProperties> operationUnderTest = relationshipWithPropertiesRepository
+			.save(clonePerson);
+
+		// then
+		List<PersonWithRelationshipWithProperties> shouldBeDifferentPersons = new ArrayList<>();
+
+		TransactionalOperator transactionalOperator = TransactionalOperator.create(transactionManager);
+		transactionalOperator.execute(t -> operationUnderTest)
+			.as(StepVerifier::create)
+			.recordWith(() -> shouldBeDifferentPersons)
+			.expectNextCount(1L)
+			.verifyComplete();
+
+		assertThat(shouldBeDifferentPersons).size().isEqualTo(1);
+
+		PersonWithRelationshipWithProperties shouldBeDifferentPerson = shouldBeDifferentPersons.get(0);
+		assertThat(shouldBeDifferentPerson)
+			.isNotEqualTo(person)
+			.isEqualToComparingOnlyGivenFields(person, "hobbies");
+		assertThat(shouldBeDifferentPerson.getName()).isEqualToIgnoringCase("Freddie clone");
+
+		// check content of db
+		String matchQuery =
+			"MATCH (n:PersonWithRelationshipWithProperties {name:'Freddie clone'}) \n"
+				+ "RETURN n, \n"
+				+ "[(n) -[:LIKES]->(h:Hobby) |h] as Hobbies, \n"
+				+ "[(n) -[r:LIKES]->(:Hobby) |r] as rels";
+		Flux.usingWhen(
+			Mono.fromSupplier(() -> driver.rxSession()),
+			s -> s.run(matchQuery).records(),
+			RxSession::close
+		).as(StepVerifier::create)
+			.assertNext(record -> {
+
+				assertThat(record.containsKey("n")).isTrue();
+				assertThat(record.containsKey("Hobbies")).isTrue();
+				assertThat(record.containsKey("rels")).isTrue();
+				assertThat(record.values()).size().isEqualTo(3);
+				assertThat(record.get("Hobbies").values()).size().isEqualTo(2);
+				assertThat(record.get("rels").values()).size().isEqualTo(2);
+
+				assertThat(record.get("rels").values(Value::asRelationship)).allSatisfy(relationship -> {
+						assertThat(relationship.type()).isEqualToIgnoringCase("LIKES");
+						assertThat(relationship.size()).isEqualTo(5);
+						assertThat(relationship.containsKey("active")).isTrue();
+						assertThat(relationship.containsKey("localDate")).isTrue();
+						assertThat(relationship.containsKey("point")).isTrue();
+						assertThat(relationship.containsKey("myEnum")).isTrue();
+						assertThat(relationship.containsKey("since")).isTrue();
+						assertThat(relationship.get("myEnum").asString().contains("SOMETHING")).isTrue();
+					}
+				);
+			})
+			.verifyComplete();
 	}
 
 	@Test

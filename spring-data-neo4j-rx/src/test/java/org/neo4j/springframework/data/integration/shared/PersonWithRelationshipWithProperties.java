@@ -27,6 +27,7 @@ import org.neo4j.springframework.data.core.schema.Relationship;
 
 /**
  * @author Gerrit Meier
+ * @author Philipp Tölle
  */
 @Node
 public class PersonWithRelationshipWithProperties {
@@ -48,5 +49,9 @@ public class PersonWithRelationshipWithProperties {
 
 	public Map<Hobby, LikesHobbyRelationship> getHobbies() {
 		return hobbies;
+	}
+
+	public void setHobbies(Map<Hobby, LikesHobbyRelationship> hobbies) {
+		this.hobbies = hobbies;
 	}
 }

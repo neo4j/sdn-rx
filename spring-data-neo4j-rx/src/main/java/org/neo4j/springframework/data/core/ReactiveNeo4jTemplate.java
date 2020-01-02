@@ -31,6 +31,7 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -38,6 +39,7 @@ import java.util.function.Function;
 import org.apache.commons.logging.LogFactory;
 import org.apiguardian.api.API;
 import org.neo4j.driver.exceptions.NoSuchRecordException;
+import org.neo4j.driver.summary.ResultSummary;
 import org.neo4j.driver.summary.SummaryCounters;
 import org.neo4j.springframework.data.core.cypher.Condition;
 import org.neo4j.springframework.data.core.cypher.Functions;
@@ -64,6 +66,7 @@ import org.springframework.util.CollectionUtils;
 
 /**
  * @author Michael J. Simons
+ * @author Philipp Tölle
  * @since 1.0
  */
 @API(status = API.Status.STABLE, since = "1.0")
@@ -307,14 +310,20 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 
 				Collection<RelationshipDescription> relationships = neo4jPersistentEntity.getRelationships();
 
-				Class<?> associationTargetType = inverse.getAssociationTargetType();
-
-				Neo4jPersistentEntity<?> targetNodeDescription = (Neo4jPersistentEntity<?>) neo4jMappingContext
-					.getRequiredNodeDescription(associationTargetType);
-
 				RelationshipDescription relationship = relationships.stream()
 					.filter(r -> r.getFieldName().equals(inverse.getName()))
 					.findFirst().get();
+
+				Class<?> associationTargetType;
+				// if we have a relationship with properties, the targetNodeType is the Map Key
+				if (relationship.hasRelationshipProperties()) {
+					associationTargetType = inverse.getComponentType();
+				} else {
+					associationTargetType = inverse.getAssociationTargetType();
+				}
+
+				Neo4jPersistentEntity<?> targetNodeDescription = (Neo4jPersistentEntity<?>) neo4jMappingContext
+					.getRequiredNodeDescription(associationTargetType);
 
 				// remove all relationships before creating all new if the entity is not new
 				// this avoids the usage of cache but might have significant impact on overall performance
@@ -325,7 +334,7 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 					relationshipCreationMonos.add(
 						neo4jClient.query(renderer.render(relationshipRemoveQuery))
 							.bind(fromId).to(FROM_ID_PARAMETER_NAME)
-							.run().then());
+							.run().checkpoint("delete relationships").then());
 				}
 
 				if (value == null) {
@@ -334,9 +343,13 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 
 				for (Object relatedValue : unifyRelationshipValue(inverse, value)) {
 
-					Mono<Object> valueToBeSavedMono = eventSupport
-						.maybeCallBeforeBind(relatedValue instanceof Map.Entry ?
-							((Map.Entry) relatedValue).getValue() : relatedValue);
+					Object valueToBeSavedBeforeBind = relatedValue;
+					if (relatedValue instanceof Map.Entry && inverse.isDynamicAssociation()) {
+						valueToBeSavedBeforeBind = ((Map.Entry) relatedValue).getValue();
+					} else if (relatedValue instanceof Map.Entry && relationship.hasRelationshipProperties()) {
+						valueToBeSavedBeforeBind = ((Map.Entry) relatedValue).getKey();
+					}
+					Mono<Object> valueToBeSavedMono = eventSupport.maybeCallBeforeBind(valueToBeSavedBeforeBind);
 
 					relationshipCreationMonos.add(
 						valueToBeSavedMono
@@ -352,24 +365,51 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 												.setProperty(targetNodeDescription.getRequiredIdProperty(),
 													relatedInternalId);
 										}
-										Statement relationshipCreationQuery = statementBuilder
-											.createRelationshipCreationQuery(
-												neo4jPersistentEntity, relationship,
-												relatedValue instanceof Map.Entry ?
-													((Map.Entry<String, ?>) relatedValue).getKey() :
-													null,
-												relatedInternalId);
 
-										return
-											neo4jClient.query(renderer.render(relationshipCreationQuery))
+										// handle creation of relationship depending on properties on relationship or not
+										Mono<ResultSummary> relationshipCreationMonoNested;
+										if (relationship.hasRelationshipProperties()) {
+
+											Statement relationshipCreationQuery =
+												statementBuilder.createRelationshipWithPropertiesCreationQuery(
+													neo4jPersistentEntity,
+													relationship,
+													relatedInternalId
+												);
+
+											// prepare Properties
+											Map<String, Object> propMap = new HashMap<>();
+											neo4jMappingContext.getConverter()
+												.write(((Map.Entry) relatedValue).getValue(), propMap);
+
+											relationshipCreationMonoNested = neo4jClient
+												.query(renderer.render(relationshipCreationQuery))
 												.bind(fromId).to(FROM_ID_PARAMETER_NAME)
-												.run()
-												.then(processNestedAssociations(targetNodeDescription, valueToBeSaved));
-									})));
+												.bindAll(propMap)
+												.run();
+
+										} else {
+											Statement relationshipCreationQuery =
+												statementBuilder.createRelationshipCreationQuery(
+													neo4jPersistentEntity,
+													relationship,
+													relatedValue instanceof Map.Entry ?
+														((Map.Entry<String, ?>) relatedValue).getKey() :
+														null,
+													relatedInternalId);
+											relationshipCreationMonoNested = neo4jClient
+												.query(renderer.render(relationshipCreationQuery))
+												.bind(fromId).to(FROM_ID_PARAMETER_NAME)
+												.run();
+										}
+
+										return relationshipCreationMonoNested.checkpoint()
+											.then(processNestedAssociations(targetNodeDescription, valueToBeSaved));
+									}).checkpoint()));
 				}
 			});
 
-			return Flux.concat(relationshipCreationMonos).then();
+			return Flux.concat(relationshipCreationMonos).checkpoint().then();
 		});
 	}
 
