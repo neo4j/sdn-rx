@@ -107,6 +107,8 @@ public interface RelationshipDescription {
 		return Direction.INCOMING.equals(this.getDirection());
 	}
 
+	boolean isInverseOf(RelationshipDescription relationshipDescription);
+
 	@NotNull
 	default String generateRelatedNodesCollectionName() {
 

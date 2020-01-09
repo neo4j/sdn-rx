@@ -103,6 +103,8 @@ class RepositoryIT {
 	private final RelationshipRepository relationshipRepository;
 	private final PersonWithRelationshipWithPropertiesRepository relationshipWithPropertiesRepository;
 	private final PetRepository petRepository;
+	private final BidirectionalStartRepository bidirectionalStartRepository;
+	private final BidirectionalEndRepository bidirectionalEndRepository;
 	private final Driver driver;
 	private Long id1;
 	private Long id2;
@@ -112,7 +114,9 @@ class RepositoryIT {
 	@Autowired
 	RepositoryIT(PersonRepository repository, ThingRepository thingRepository,
 		RelationshipRepository relationshipRepository, PetRepository petRepository, Driver driver,
-		PersonWithRelationshipWithPropertiesRepository relationshipWithPropertiesRepository) {
+		PersonWithRelationshipWithPropertiesRepository relationshipWithPropertiesRepository,
+		BidirectionalStartRepository bidirectionalStartRepository,
+		BidirectionalEndRepository bidirectionalEndRepository) {
 
 		this.repository = repository;
 		this.relationshipRepository = relationshipRepository;
@@ -120,6 +124,8 @@ class RepositoryIT {
 		this.petRepository = petRepository;
 		this.relationshipWithPropertiesRepository = relationshipWithPropertiesRepository;
 		this.driver = driver;
+		this.bidirectionalStartRepository = bidirectionalStartRepository;
+		this.bidirectionalEndRepository = bidirectionalEndRepository;
 	}
 
 	@BeforeEach
@@ -307,6 +313,48 @@ class RepositoryIT {
 		assertThat(petHobby.getName()).isEqualTo("Music");
 
 		assertThat(petHobby).isSameAs(hobby);
+
+	}
+
+	@Test
+	void loadEntityWithBidirectionalRelationship() {
+
+		long startId;
+
+		try (Session session = driver.session()) {
+			Record record = session
+				.run("CREATE (n:BidirectionalStart{name:'Ernie'})-[:CONNECTED]->(e:BidirectionalEnd{name:'Bert'}) "
+					+ "RETURN n").single();
+
+			Node startNode = record.get("n").asNode();
+			startId = startNode.id();
+		}
+
+		Optional<BidirectionalStart> entityOptional = bidirectionalStartRepository.findById(startId);
+		assertThat(entityOptional).isPresent();
+		BidirectionalStart entity = entityOptional.get();
+		assertThat(entity.getEnds()).hasSize(1);
+
+	}
+
+	@Test
+	void loadEntityWithBidirectionalRelationshipFromIncomingSide() {
+
+		long endId;
+
+		try (Session session = driver.session()) {
+			Record record = session
+				.run("CREATE (n:BidirectionalStart{name:'Ernie'})-[:CONNECTED]->(e:BidirectionalEnd{name:'Bert'}) "
+					+ "RETURN e").single();
+
+			Node endNode = record.get("e").asNode();
+			endId = endNode.id();
+		}
+
+		Optional<BidirectionalEnd> entityOptional = bidirectionalEndRepository.findById(endId);
+		assertThat(entityOptional).isPresent();
+		BidirectionalEnd entity = entityOptional.get();
+		assertThat(entity.getStart()).isNotNull();
 
 	}
 

@@ -18,6 +18,8 @@
  */
 package org.neo4j.springframework.data.core.mapping;
 
+import static org.neo4j.springframework.data.core.schema.Relationship.Direction.*;
+
 import java.util.Objects;
 
 import org.neo4j.springframework.data.core.schema.NodeDescription;
@@ -124,6 +126,19 @@ class DefaultRelationshipDescription extends Association<Neo4jPersistentProperty
 		DefaultRelationshipDescription that = (DefaultRelationshipDescription) o;
 		return type.equals(that.type) && target.equals(that.target) && source.equals(that.source)
 			&& direction.equals(that.direction);
+	}
+
+	public boolean isInverseOf(RelationshipDescription inverse) {
+		return type.equals(inverse.getType()) && target.equals(inverse.getSource())
+			&& source.equals(inverse.getTarget()) && direction.equals(inverse(inverse.getDirection()));
+	}
+
+	private Relationship.Direction inverse(Relationship.Direction directionToInverse) {
+		if (directionToInverse == INCOMING) {
+			return OUTGOING;
+		} else {
+			return INCOMING;
+		}
 	}
 
 	@Override
