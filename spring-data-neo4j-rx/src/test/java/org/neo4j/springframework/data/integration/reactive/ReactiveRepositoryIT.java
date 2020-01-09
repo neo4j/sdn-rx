@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import org.assertj.core.data.MapEntry;
@@ -291,6 +292,48 @@ class ReactiveRepositoryIT {
 
 		StepVerifier.create(repository.findByNameStartingWith("Test", PageRequest.of(page, limit, sort)))
 			.assertNext(person -> assertThat(person).isEqualTo(person2))
+			.verifyComplete();
+	}
+
+	@Test
+	void loadEntityWithBidirectionalRelationship() {
+
+		long startId;
+
+		try (Session session = driver.session()) {
+			Record record = session
+				.run("CREATE (n:BidirectionalStart{name:'Ernie'})-[:CONNECTED]->(e:BidirectionalEnd{name:'Bert'}) "
+					+ "RETURN n").single();
+
+			Node startNode = record.get("n").asNode();
+			startId = startNode.id();
+		}
+
+		StepVerifier.create(bidirectionalStartRepository.findById(startId))
+			.assertNext(entity -> {
+				assertThat(entity.getEnds()).hasSize(1);
+			})
+			.verifyComplete();
+	}
+
+	@Test
+	void loadEntityWithBidirectionalRelationshipFromIncomingSide() {
+
+		long endId;
+
+		try (Session session = driver.session()) {
+			Record record = session
+				.run("CREATE (n:BidirectionalStart{name:'Ernie'})-[:CONNECTED]->(e:BidirectionalEnd{name:'Bert'}) "
+					+ "RETURN e").single();
+
+			Node endNode = record.get("e").asNode();
+			endId = endNode.id();
+		}
+
+		StepVerifier.create(bidirectionalEndRepository.findById(endId))
+			.assertNext(entity -> {
+				assertThat(entity.getStart()).isNotNull();
+			})
 			.verifyComplete();
 	}
 
