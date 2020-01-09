@@ -97,10 +97,6 @@ public final class RelationshipDetail implements Visitable {
 		return !this.types.isEmpty();
 	}
 
-	public Optional<Properties> getProperties() {
-		return Optional.ofNullable(this.properties);
-	}
-
 	@Override
 	public void accept(Visitor visitor) {
 

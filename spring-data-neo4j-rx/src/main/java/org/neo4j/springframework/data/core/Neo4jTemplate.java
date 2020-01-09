@@ -20,6 +20,7 @@ package org.neo4j.springframework.data.core;
 
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
+import static org.neo4j.springframework.data.core.RelationshipStatementHolder.*;
 import static org.neo4j.springframework.data.core.cypher.Cypher.*;
 import static org.neo4j.springframework.data.core.schema.CypherGenerator.*;
 import static org.neo4j.springframework.data.core.schema.NodeDescription.*;
@@ -27,7 +28,6 @@ import static org.neo4j.springframework.data.core.schema.NodeDescription.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -47,7 +47,6 @@ import org.neo4j.springframework.data.core.mapping.Neo4jPersistentEntity;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentProperty;
 import org.neo4j.springframework.data.core.schema.CypherGenerator;
 import org.neo4j.springframework.data.core.schema.NodeDescription;
-import org.neo4j.springframework.data.core.schema.RelationshipDescription;
 import org.neo4j.springframework.data.core.support.Relationships;
 import org.neo4j.springframework.data.repository.NoResultException;
 import org.neo4j.springframework.data.repository.event.BeforeBindCallback;
@@ -313,83 +312,59 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 	private void processNestedAssociations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject) {
 
 		PersistentPropertyAccessor<?> propertyAccessor = neo4jPersistentEntity.getPropertyAccessor(parentObject);
-		Object fromId = propertyAccessor.getProperty(neo4jPersistentEntity.getRequiredIdProperty());
 
 		neo4jPersistentEntity.doWithAssociations((AssociationHandler<Neo4jPersistentProperty>) handler -> {
 
-			Neo4jPersistentProperty inverse = handler.getInverse();
-
-			Object value = propertyAccessor.getProperty(inverse);
-
-			Collection<RelationshipDescription> relationships = neo4jPersistentEntity.getRelationships();
-			RelationshipDescription relationship = relationships.stream()
-				.filter(r -> r.getFieldName().equals(inverse.getName()))
-				.findFirst().get();
-
-			Class<?> associationTargetType;
-			// if we have a relationship with properties, the targetNodeType is the Map Key
-			if (relationship.hasRelationshipProperties()) {
-				associationTargetType = inverse.getComponentType();
-			} else {
-				associationTargetType = inverse.getAssociationTargetType();
-			}
+			// create context to bundle parameters
+			NestedRelationshipContext relationshipContext = NestedRelationshipContext
+				.of(handler, propertyAccessor, neo4jPersistentEntity);
 
 			Neo4jPersistentEntity<?> targetNodeDescription = neo4jMappingContext
-				.getPersistentEntity(associationTargetType);
+				.getPersistentEntity(relationshipContext.getAssociationTargetType());
 
+			Object fromId = propertyAccessor.getProperty(neo4jPersistentEntity.getRequiredIdProperty());
 			// remove all relationships before creating all new if the entity is not new
 			// this avoids the usage of cache but might have significant impact on overall performance
 			if (!neo4jPersistentEntity.isNew(parentObject)) {
 				Statement relationshipRemoveQuery = cypherGenerator.createRelationshipRemoveQuery(neo4jPersistentEntity,
-					relationship, targetNodeDescription.getPrimaryLabel());
+					relationshipContext.getRelationship(), targetNodeDescription.getPrimaryLabel());
 
 				neo4jClient.query(renderer.render(relationshipRemoveQuery))
 					.bind(fromId).to(FROM_ID_PARAMETER_NAME).run();
 			}
 
-			if (value == null) {
+			// break recursive
+			if (relationshipContext.inverseValueIsEmpty()) {
 				return;
 			}
 
-			for (Object relatedValue : Relationships.unifyRelationshipValue(inverse, value)) {
+			for (Object relatedValue : Relationships
+				.unifyRelationshipValue(relationshipContext.getInverse(), relationshipContext.getValue())) {
 
 				// here map entry is not always anymore a dynamic association
-				Object valueToBeSaved = relatedValue;
-				if (relatedValue instanceof Map.Entry && inverse.isDynamicAssociation()) {
-					valueToBeSaved = ((Map.Entry) relatedValue).getValue();
-				} else if (relatedValue instanceof Map.Entry && relationship.hasRelationshipProperties()) {
-					valueToBeSaved = ((Map.Entry) relatedValue).getKey();
-				}
+				Object valueToBeSaved = relationshipContext.identifyAndExtractRelationshipValue(relatedValue);
 
 				valueToBeSaved = eventSupport.maybeCallBeforeBind(valueToBeSaved);
 
-				Long relatedInternalId = saveRelatedNode(valueToBeSaved, associationTargetType, targetNodeDescription);
+				Long relatedInternalId = saveRelatedNode(valueToBeSaved, relationshipContext.getAssociationTargetType(),
+					targetNodeDescription);
 
-				Statement relationshipCreationQuery;
-				if (relationship.hasRelationshipProperties()) {
-					relationshipCreationQuery = cypherGenerator.createRelationshipWithPropertiesCreationQuery(
+				// handle creation of relationship depending on properties on relationship or not
+				RelationshipStatementHolder statementHolder = relationshipContext.hasRelationshipWithProperties()
+					? createStatementForRelationShipWithProperties(neo4jMappingContext,
 						neo4jPersistentEntity,
-						relationship,
-						relatedInternalId
-					);
-					Map<String, Object> propMap = new HashMap<>();
-					neo4jMappingContext.getConverter().write(((Map.Entry) relatedValue).getValue(), propMap);
+						relationshipContext,
+						relatedInternalId,
+						(Map.Entry) relatedValue)
+					: createStatementForRelationshipWithoutProperties(neo4jPersistentEntity,
+						relationshipContext,
+						relatedInternalId,
+						relatedValue);
 
-					neo4jClient.query(renderer.render(relationshipCreationQuery))
-						.bind(fromId).to(FROM_ID_PARAMETER_NAME)
-						.bindAll(propMap)
-						.run();
-				} else {
-					relationshipCreationQuery = cypherGenerator
-						.createRelationshipCreationQuery(neo4jPersistentEntity,
-							relationship,
-							relatedValue instanceof Map.Entry ? ((Map.Entry<String, ?>) relatedValue).getKey() : null,
-							relatedInternalId);
-
-					neo4jClient.query(renderer.render(relationshipCreationQuery))
-						.bind(fromId).to(FROM_ID_PARAMETER_NAME)
-						.run();
-				}
+				neo4jClient.query(renderer.render(statementHolder.getRelationshipCreationQuery()))
+					.bind(fromId).to(FROM_ID_PARAMETER_NAME)
+					.bindAll(statementHolder.getProperties())
+					.run();
 
 				// if an internal id is used this must get set to link this entity in the next iteration
 				if (targetNodeDescription.isUsingInternalIds()) {

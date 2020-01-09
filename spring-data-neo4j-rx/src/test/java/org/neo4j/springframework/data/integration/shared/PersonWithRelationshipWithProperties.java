@@ -19,6 +19,7 @@
 package org.neo4j.springframework.data.integration.shared;
 
 import java.util.Map;
+import java.util.Set;
 
 import org.neo4j.springframework.data.core.schema.GeneratedValue;
 import org.neo4j.springframework.data.core.schema.Id;
@@ -38,6 +39,9 @@ public class PersonWithRelationshipWithProperties {
 
 	@Relationship("LIKES")
 	private Map<Hobby, LikesHobbyRelationship> hobbies;
+
+	@Relationship("OWNS")
+	private Set<Pet> pets;
 
 	public PersonWithRelationshipWithProperties(String name) {
 		this.name = name;

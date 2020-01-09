@@ -186,7 +186,7 @@ final class DefaultNeo4jConverter implements Neo4jConverter {
 
 		parameters.put(NAME_OF_PROPERTIES_PARAM, properties);
 
-		// in case of relationship properties ignore internal id property for now
+		// in case of relationship properties ignore internal id property
 		if (nodeDescription.hasIdProperty()) {
 			parameters.put(NAME_OF_ID_PARAM, propertyAccessor.getProperty(nodeDescription.getRequiredIdProperty()));
 		}

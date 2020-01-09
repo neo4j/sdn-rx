@@ -36,8 +36,8 @@ public final class Relationships {
 	 * This method unifies the type into something iterable, depending on the given inverse type.
 	 *
 	 * @param rawValue The raw value to unify
-	 * @return A unified collection (Either a collection of Map.Entry (for dynamic and relationships with properties
-	 * 			or a list of related values)
+	 * @return A unified collection (Either a collection of Map.Entry for dynamic and relationships with properties
+	 * or a list of related values)
 	 */
 	public static Collection<?> unifyRelationshipValue(Neo4jPersistentProperty property, Object rawValue) {
 		Collection<?> unifiedValue;

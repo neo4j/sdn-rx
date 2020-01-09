@@ -440,36 +440,29 @@ class ReactiveRepositoryIT {
 
 	}
 	@Test
-	void persistEntityWithRelationshipWithProperties() {
+	void saveEntityWithRelationshipWithProperties() {
 		// given
+		Hobby h1 = new Hobby();
+		h1.setName("Music");
+		LikesHobbyRelationship rel1 = new LikesHobbyRelationship(1995);
+		rel1.setActive(true);
+		rel1.setLocalDate(LocalDate.of(1995, 2, 26));
+		rel1.setMyEnum(LikesHobbyRelationship.MyEnum.SOMETHING);
+		rel1.setPoint(new CartesianPoint2d(0.0, 1.0));
 
-		long personId;
+		Hobby h2 = new Hobby();
+		h2.setName("Something else");
+		LikesHobbyRelationship rel2 = new LikesHobbyRelationship(1995);
+		rel2.setActive(false);
+		rel2.setLocalDate(LocalDate.of(2000, 6, 28));
+		rel2.setMyEnum(LikesHobbyRelationship.MyEnum.SOMETHING_DIFFERENT);
+		rel2.setPoint(new CartesianPoint2d(2.0, 3.0));
 
-		try (Session session = driver.session()) {
-			Record record = session
-				.run("CREATE (n:PersonWithRelationshipWithProperties{name:'Freddie'}),"
-					+ " (n)-[l1:LIKES"
-					+ "{since: 1995, active: true, localDate: date('1995-02-26'), myEnum: 'SOMETHING', point: point({x: 0, y: 1})}"
-					+ "]->(h1:Hobby{name:'Music'}),"
-					+ " (n)-[l2:LIKES"
-					+ "{since: 2000, active: false, localDate: date('2000-06-28'), myEnum: 'SOMETHING_DIFFERENT', point: point({x: 2, y: 3})}"
-					+ "]->(h2:Hobby{name:'Something else'})"
-					+ "RETURN n, h1, h2").single();
-
-			Node personNode = record.get("n").asNode();
-
-			personId = personNode.id();
-		}
-
-		StepVerifier.create(relationshipWithPropertiesRepository.findById(personId))
-			.assertNext(persProps -> assertThat(persProps).isNotNull())
-			.verifyComplete();
-
-		PersonWithRelationshipWithProperties person = relationshipWithPropertiesRepository.findById(personId).block();
-
-		PersonWithRelationshipWithProperties clonePerson = new PersonWithRelationshipWithProperties(
-			person.getName() + " clone");
-		clonePerson.setHobbies(person.getHobbies());
+		Map<Hobby, LikesHobbyRelationship> hobbies = new HashMap<>();
+		hobbies.put(h1, rel1);
+		hobbies.put(h2, rel2);
+		PersonWithRelationshipWithProperties clonePerson = new PersonWithRelationshipWithProperties("Freddie clone");
+		clonePerson.setHobbies(hobbies);
 
 		// when
 		Mono<PersonWithRelationshipWithProperties> operationUnderTest = relationshipWithPropertiesRepository
@@ -489,8 +482,8 @@ class ReactiveRepositoryIT {
 
 		PersonWithRelationshipWithProperties shouldBeDifferentPerson = shouldBeDifferentPersons.get(0);
 		assertThat(shouldBeDifferentPerson)
-			.isNotEqualTo(person)
-			.isEqualToComparingOnlyGivenFields(person, "hobbies");
+			.isNotNull()
+			.isEqualToComparingOnlyGivenFields(clonePerson, "hobbies");
 		assertThat(shouldBeDifferentPerson.getName()).isEqualToIgnoringCase("Freddie clone");
 
 		// check content of db
