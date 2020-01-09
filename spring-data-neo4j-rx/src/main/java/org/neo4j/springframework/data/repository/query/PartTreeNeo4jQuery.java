@@ -30,19 +30,23 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.Map;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 
+import org.neo4j.driver.Record;
 import org.neo4j.driver.types.Point;
+import org.neo4j.driver.types.TypeSystem;
 import org.neo4j.springframework.data.core.Neo4jOperations;
 import org.neo4j.springframework.data.core.PreparedQuery;
 import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
 import org.springframework.data.repository.query.RepositoryQuery;
-import org.springframework.data.repository.query.ResultProcessor;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.repository.query.parser.PartTree.OrPart;
 import org.springframework.data.util.ClassTypeInformation;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -85,22 +89,23 @@ final class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
 	}
 
 	@Override
-	protected PreparedQuery prepareQuery(ResultProcessor resultProcessor, Neo4jParameterAccessor parameterAccessor) {
+	protected <T extends Object> PreparedQuery<T> prepareQuery(
+		Class<T> returnedType, List<String> includedProperties, Neo4jParameterAccessor parameterAccessor,
+		@Nullable Neo4jQueryType queryType,
+		@Nullable BiFunction<TypeSystem, Record, ?> mappingFunction) {
 
 		CypherQueryCreator queryCreator = new CypherQueryCreator(
-			mappingContext, domainType, tree, parameterAccessor, getInputProperties(resultProcessor)
+			mappingContext, domainType, Optional.ofNullable(queryType).orElseGet(() -> Neo4jQueryType.fromPartTree(tree)), tree, parameterAccessor,
+			includedProperties,
+			this::convertParameter
 		);
 
-		String cypherQuery = queryCreator.createQuery();
-		Map<String, Object> boundedParameters = parameterAccessor.getParameters()
-			.getBindableParameters().stream()
-			.collect(toMap(Neo4jQueryMethod.Neo4jParameter::getNameOrIndex,
-				formalParameter -> convertParameter(parameterAccessor.getBindableValue(formalParameter.getIndex()))));
+		QueryAndParameters queryAndParameters = queryCreator.createQuery();
 
-		return PreparedQuery.queryFor(resultProcessor.getReturnedType().getReturnedType())
-			.withCypherQuery(cypherQuery)
-			.withParameters(boundedParameters)
-			.usingMappingFunction(getMappingFunction(resultProcessor))
+		return PreparedQuery.queryFor(returnedType)
+			.withCypherQuery(queryAndParameters.getQuery())
+			.withParameters(queryAndParameters.getParameters())
+			.usingMappingFunction(mappingFunction)
 			.build();
 	}
 
@@ -113,26 +118,6 @@ final class PartTreeNeo4jQuery extends AbstractNeo4jQuery {
 	static boolean canIgnoreCase(Part part) {
 		return part.getProperty().getLeafType() == String.class && TYPES_SUPPORTING_CASE_INSENSITIVITY
 			.contains(part.getType());
-	}
-
-	@Override
-	protected boolean isCountQuery() {
-		return tree.isCountProjection();
-	}
-
-	@Override
-	protected boolean isExistsQuery() {
-		return tree.isExistsProjection();
-	}
-
-	@Override
-	protected boolean isDeleteQuery() {
-		return tree.isDelete();
-	}
-
-	@Override
-	protected boolean isLimiting() {
-		return tree.isLimiting();
 	}
 
 	static class PartValidator {

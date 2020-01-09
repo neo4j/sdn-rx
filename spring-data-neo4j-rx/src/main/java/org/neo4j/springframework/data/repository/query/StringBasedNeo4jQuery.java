@@ -19,9 +19,13 @@
 package org.neo4j.springframework.data.repository.query;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
+import org.neo4j.driver.Record;
+import org.neo4j.driver.types.TypeSystem;
 import org.neo4j.springframework.data.core.Neo4jOperations;
 import org.neo4j.springframework.data.core.PreparedQuery;
 import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
@@ -30,10 +34,10 @@ import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
-import org.springframework.data.repository.query.ResultProcessor;
 import org.springframework.data.repository.query.SpelEvaluator;
 import org.springframework.data.repository.query.SpelQueryContext;
 import org.springframework.data.repository.query.SpelQueryContext.SpelExtractor;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -158,34 +162,16 @@ final class StringBasedNeo4jQuery extends AbstractNeo4jQuery {
 	}
 
 	@Override
-	protected PreparedQuery<?> prepareQuery(ResultProcessor resultProcessor, Neo4jParameterAccessor parameterAccessor) {
+	protected <T extends Object> PreparedQuery<T> prepareQuery(
+		Class<T> returnedType, List<String> includedProperties, Neo4jParameterAccessor parameterAccessor,
+		@Nullable Neo4jQueryType queryType,
+		@Nullable BiFunction<TypeSystem, Record, ?> mappingFunction) {
 
-		return PreparedQuery.queryFor(resultProcessor.getReturnedType().getReturnedType())
+		return PreparedQuery.queryFor(returnedType)
 			.withCypherQuery(cypherQuery)
 			.withParameters(bindParameters(parameterAccessor))
-			.usingMappingFunction(
-				getMappingFunction(resultProcessor))
+			.usingMappingFunction(mappingFunction)
 			.build();
-	}
-
-	@Override
-	public boolean isCountQuery() {
-		return countQuery;
-	}
-
-	@Override
-	public boolean isExistsQuery() {
-		return existsQuery;
-	}
-
-	@Override
-	public boolean isDeleteQuery() {
-		return deleteQuery;
-	}
-
-	@Override
-	protected boolean isLimiting() {
-		return false;
 	}
 
 	Map<String, Object> bindParameters(Neo4jParameterAccessor parameterAccessor) {
