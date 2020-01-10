@@ -107,11 +107,11 @@ public interface RelationshipDescription {
 		return Direction.INCOMING.equals(this.getDirection());
 	}
 
-	boolean isInverseOf(RelationshipDescription relationshipDescription);
-
 	@NotNull
 	default String generateRelatedNodesCollectionName() {
 
 		return this.getSource().getPrimaryLabel() + "_" + this.getType() + "_" + this.getTarget().getPrimaryLabel();
 	}
+
+	RelationshipDescription asInverse();
 }

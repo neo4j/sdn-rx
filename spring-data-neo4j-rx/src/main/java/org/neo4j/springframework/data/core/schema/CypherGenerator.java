@@ -350,7 +350,7 @@ public enum CypherGenerator {
 			Node endNode = node(targetLabel).named(fieldName);
 			NodeDescription<?> endNodeDescription = relationshipDescription.getTarget();
 
-			processedRelationships.add(relationshipDescription);
+			storeRelationshipAsProcessed(relationshipDescription, processedRelationships);
 
 			if (relationshipDescription.isDynamic()) {
 				Relationship relationship = relationshipDescription
@@ -390,15 +390,17 @@ public enum CypherGenerator {
 		return condition == null ? Conditions.noCondition() : condition;
 	}
 
-	private boolean hasInverse(RelationshipDescription relationshipDescription,
-		Collection<RelationshipDescription> relationships) {
+	private void storeRelationshipAsProcessed(RelationshipDescription relationshipDescription,
+		java.util.Set<RelationshipDescription> processedRelationships) {
 
-		for (RelationshipDescription relationship : relationships) {
-			if (relationshipDescription.isInverseOf(relationship)) {
-				return true;
-			}
-		}
-		return false;
+		processedRelationships.add(relationshipDescription);
+		processedRelationships.add(relationshipDescription.asInverse());
+	}
+
+	private boolean hasInverse(RelationshipDescription relationshipDescription,
+		Collection<RelationshipDescription> processedRelationships) {
+
+		return processedRelationships.contains(relationshipDescription);
 	}
 }
 

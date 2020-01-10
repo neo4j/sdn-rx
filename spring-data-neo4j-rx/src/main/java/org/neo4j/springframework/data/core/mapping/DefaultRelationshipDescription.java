@@ -115,6 +115,10 @@ class DefaultRelationshipDescription extends Association<Neo4jPersistentProperty
 			'}';
 	}
 
+	public RelationshipDescription asInverse() {
+		return new InvertedRelationshipDescription(type, target, source, direction);
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (this == o) {
@@ -124,25 +128,87 @@ class DefaultRelationshipDescription extends Association<Neo4jPersistentProperty
 			return false;
 		}
 		DefaultRelationshipDescription that = (DefaultRelationshipDescription) o;
-		return type.equals(that.type) && target.equals(that.target) && source.equals(that.source)
-			&& direction.equals(that.direction);
-	}
-
-	public boolean isInverseOf(RelationshipDescription inverse) {
-		return type.equals(inverse.getType()) && target.equals(inverse.getSource())
-			&& source.equals(inverse.getTarget()) && direction.equals(inverse(inverse.getDirection()));
-	}
-
-	private Relationship.Direction inverse(Relationship.Direction directionToInverse) {
-		if (directionToInverse == INCOMING) {
-			return OUTGOING;
-		} else {
-			return INCOMING;
-		}
+		return getType().equals(that.getType()) && getTarget().equals(that.getTarget())
+			&& getSource().equals(that.getSource()) && getDirection().equals(that.getDirection());
 	}
 
 	@Override
 	public int hashCode() {
 		return Objects.hash(type, target, source, direction);
+	}
+
+	/**
+	 * This class should get only created by a {@link RelationshipDescription} to create an inverted version of
+	 * the relationship description for comparison reasons.
+	 * Only the fields for equality comparison with a {@link DefaultRelationshipDescription} are implemented and
+	 * most of the getters are stubs and will result in an {@link UnsupportedOperationException}.
+	 */
+	static class InvertedRelationshipDescription extends DefaultRelationshipDescription {
+
+		private static final String ACCESS_EXCEPTION = "Do not try to access stubbed fields";
+
+		private final String type;
+		private final NodeDescription<?> source;
+		private final NodeDescription<?> target;
+		private final Relationship.Direction direction;
+
+		public InvertedRelationshipDescription(String type, NodeDescription<?> source, NodeDescription<?> target,
+				Relationship.Direction direction) {
+
+			// To keep the equals / hashCodes just in the DefaultRelationshipDescription we need to extend it.
+			// don't judge me
+			super(null, null, null, false, null, null, null, null, null);
+
+			this.type = type;
+			this.source = source;
+			this.target = target;
+			this.direction = direction.equals(INCOMING) ? OUTGOING : INCOMING;
+		}
+
+		@Override
+		public String getType() {
+			return type;
+		}
+
+		@Override
+		public NodeDescription<?> getSource() {
+			return source;
+		}
+
+		@Override
+		public NodeDescription<?> getTarget() {
+			return target;
+		}
+
+		@Override
+		public Relationship.Direction getDirection() {
+			return direction;
+		}
+
+		// below are unused fields that do not make any sense for the inverse comparison
+		@Override
+		public boolean isDynamic() {
+			throw new UnsupportedOperationException(ACCESS_EXCEPTION);
+		}
+
+		@Override
+		public String getFieldName() {
+			throw new UnsupportedOperationException(ACCESS_EXCEPTION);
+		}
+
+		@Override
+		public Class<?> getRelationshipPropertiesClass() {
+			throw new UnsupportedOperationException(ACCESS_EXCEPTION);
+		}
+
+		@Override
+		public boolean hasRelationshipProperties() {
+			throw new UnsupportedOperationException(ACCESS_EXCEPTION);
+		}
+
+		@Override
+		public RelationshipDescription asInverse() {
+			throw new UnsupportedOperationException(ACCESS_EXCEPTION);
+		}
 	}
 }
