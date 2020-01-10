@@ -47,9 +47,9 @@ abstract class AbstractNeo4jQuery extends Neo4jQuerySupport implements Repositor
 	protected final Neo4jOperations neo4jOperations;
 
 	AbstractNeo4jQuery(Neo4jOperations neo4jOperations, Neo4jMappingContext mappingContext,
-		Neo4jQueryMethod queryMethod) {
+		Neo4jQueryMethod queryMethod, Neo4jQueryType queryType) {
 
-		super(mappingContext, queryMethod);
+		super(mappingContext, queryMethod, queryType);
 
 		Assert.notNull(neo4jOperations, "The Neo4j operations are required.");
 		this.neo4jOperations = neo4jOperations;
@@ -80,7 +80,7 @@ abstract class AbstractNeo4jQuery extends Neo4jQuerySupport implements Repositor
 			return PageableExecutionUtils.getPage((List<?>) processedResult, parameterAccessor.getPageable(), () -> {
 
 				PreparedQuery<Long> countQuery = prepareQuery(Long.class, Collections.emptyList(), parameterAccessor,
-					Neo4jQueryType.count(), null);
+					Neo4jQueryType.COUNT, null);
 				return neo4jOperations.toExecutableQuery(countQuery).getRequiredSingleResult();
 			});
 		}

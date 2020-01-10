@@ -73,15 +73,21 @@ final class ReactivePartTreeNeo4jQuery extends AbstractReactiveNeo4jQuery {
 
 	private final PartTree tree;
 
-	ReactivePartTreeNeo4jQuery(
+	public static RepositoryQuery create(ReactiveNeo4jOperations neo4jOperations, Neo4jMappingContext mappingContext,
+		Neo4jQueryMethod queryMethod) {
+		return new ReactivePartTreeNeo4jQuery(neo4jOperations, mappingContext, queryMethod,
+			new PartTree(queryMethod.getName(), queryMethod.getDomainClass()));
+	}
+
+	private ReactivePartTreeNeo4jQuery(
 		ReactiveNeo4jOperations neo4jOperations,
 		Neo4jMappingContext mappingContext,
-		Neo4jQueryMethod queryMethod
+		Neo4jQueryMethod queryMethod,
+		PartTree tree
 	) {
-		super(neo4jOperations, mappingContext, queryMethod);
+		super(neo4jOperations, mappingContext, queryMethod, Neo4jQueryType.fromPartTree(tree));
 
-		this.tree = new PartTree(queryMethod.getName(), domainType);
-
+		this.tree = tree;
 		// Validate parts. Sort properties will be validated by Spring Data already.
 		PartValidator validator = new PartValidator(queryMethod);
 		this.tree.flatMap(OrPart::stream).forEach(validator::validatePart);
@@ -117,26 +123,6 @@ final class ReactivePartTreeNeo4jQuery extends AbstractReactiveNeo4jQuery {
 	static boolean canIgnoreCase(Part part) {
 		return part.getProperty().getLeafType() == String.class && TYPES_SUPPORTING_CASE_INSENSITIVITY
 			.contains(part.getType());
-	}
-
-	@Override
-	protected boolean isCountQuery() {
-		return tree.isCountProjection();
-	}
-
-	@Override
-	protected boolean isExistsQuery() {
-		return tree.isExistsProjection();
-	}
-
-	@Override
-	protected boolean isDeleteQuery() {
-		return tree.isDelete();
-	}
-
-	@Override
-	protected boolean isLimiting() {
-		return tree.isLimiting();
 	}
 
 	static class PartValidator {

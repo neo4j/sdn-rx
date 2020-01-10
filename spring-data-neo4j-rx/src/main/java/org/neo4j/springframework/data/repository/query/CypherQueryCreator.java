@@ -80,7 +80,7 @@ final class CypherQueryCreator extends AbstractQueryCreator<QueryAndParameters, 
 	private final Class<?> domainType;
 	private final NodeDescription<?> nodeDescription;
 
-	private final Neo4jQueryType queryCharacteristics;
+	private final Neo4jQueryType queryType;
 
 	private final Iterator<?> formalParameters;
 	private final Queue<Parameter> lastParameter = new LinkedList<>();
@@ -104,7 +104,7 @@ final class CypherQueryCreator extends AbstractQueryCreator<QueryAndParameters, 
 
 	private final List<String> includedProperties;
 
-	CypherQueryCreator(Neo4jMappingContext mappingContext, Class<?> domainType, Neo4jQueryType queryCharacteristics,
+	CypherQueryCreator(Neo4jMappingContext mappingContext, Class<?> domainType, Neo4jQueryType queryType,
 		PartTree tree,
 		ParametersParameterAccessor actualParameters,
 		List<String> includedProperties,
@@ -116,7 +116,7 @@ final class CypherQueryCreator extends AbstractQueryCreator<QueryAndParameters, 
 		this.domainType = domainType;
 		this.nodeDescription = this.mappingContext.getRequiredNodeDescription(this.domainType);
 
-		this.queryCharacteristics = queryCharacteristics;
+		this.queryType = queryType;
 
 		this.formalParameters = actualParameters.getParameters().iterator();
 		this.maxResults = tree.isLimiting() ? tree.getMaxResults() : null;
@@ -152,7 +152,7 @@ final class CypherQueryCreator extends AbstractQueryCreator<QueryAndParameters, 
 
 		CypherGenerator cypherGenerator = CypherGenerator.INSTANCE;
 		Statement statement;
-		if (queryCharacteristics.isCountQuery()) {
+		if (queryType == Neo4jQueryType.COUNT) {
 			statement = cypherGenerator
 				.prepareMatchOf(nodeDescription, condition)
 				.returning(Functions.count(asterisk()))

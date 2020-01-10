@@ -18,53 +18,78 @@
  */
 package org.neo4j.springframework.data.repository.query;
 
+import java.util.function.Function;
+
 import org.springframework.data.repository.query.parser.PartTree;
 
 /**
- * Describes the characteristics of a query.
+ * Describes the type of a query. The types are mutually exclusive.
  *
  * @author Michael J. Simons
  */
-final class Neo4jQueryType {
+enum Neo4jQueryType {
 
-	private final boolean countQuery;
-	private final boolean existsQuery;
-	private final boolean deleteQuery;
+	/**
+	 * A query without projection.
+	 */
+	DEFAULT,
+	/**
+	 * Query with a count projection.
+	 */
+	COUNT,
+	/**
+	 * Query with an exists projection.
+	 */
+	EXISTS,
+	/**
+	 * Query to delete all matched results.
+	 */
+	DELETE;
 
 	static Neo4jQueryType fromPartTree(PartTree partTree) {
 
-		return new Neo4jQueryType(partTree.isCountProjection(), partTree.isExistsProjection(), partTree.isDelete());
+		return getOrThrow(partTree.isCountProjection(), partTree.isExistsProjection(), partTree.isDelete());
 	}
 
-	static Neo4jQueryType count() {
+	static Neo4jQueryType fromDefinition(Query definition) {
 
-		return new Neo4jQueryType(true, false, false);
-	}
-
-	private Neo4jQueryType(boolean countQuery, boolean existsQuery, boolean deleteQuery) {
-		this.countQuery = countQuery;
-		this.existsQuery = existsQuery;
-		this.deleteQuery = deleteQuery;
+		return getOrThrow(definition.count(), definition.exists(), definition.delete());
 	}
 
 	/**
-	 * @return True if the query should get a count projection applied.
+	 * Gets the corresponding query type or throws an exception if the definition is not unique.
+	 *
+	 * @param countQuery True if you want a query with count projection.
+	 * @param existsQuery True if you want a query with exists projection.
+	 * @param deleteQuery True if you want a delete query.
+	 * @return the query type
+	 * @throws IllegalArgumentException in case more than one parameter is true.
 	 */
-	public boolean isCountQuery() {
-		return countQuery;
-	}
+	private static Neo4jQueryType getOrThrow(boolean countQuery, boolean existsQuery, boolean deleteQuery) {
 
-	/**
-	 * @return True if the query should get an exists projection applied.
-	 */
-	public boolean isExistsQuery() {
-		return existsQuery;
-	}
+		Neo4jQueryType queryType = DEFAULT;
+		Function<Neo4jQueryType, IllegalArgumentException> exceptionSupplier = qt -> new IllegalArgumentException(
+			"Query type already defined as " + qt);
 
-	/**
-	 * @return True if the query should delete matching nodes.
-	 */
-	public boolean isDeleteQuery() {
-		return deleteQuery;
+		if (countQuery) {
+			queryType = COUNT;
+		}
+		if (existsQuery) {
+			if (queryType != DEFAULT) {
+				throw exceptionSupplier.apply(queryType);
+			}
+
+			queryType = EXISTS;
+		}
+
+		if (deleteQuery) {
+			if (queryType != DEFAULT) {
+				throw exceptionSupplier.apply(queryType);
+			}
+
+			queryType = DELETE;
+		}
+
+		return queryType;
 	}
 }

@@ -688,7 +688,7 @@ class ReactiveRepositoryIT {
 			.verifyComplete();
 	}
 
-	@Test // GH-114
+	@Test // GH-112
 	void countBySimplePropertiesOred() {
 
 		repository.countAllByNameOrName(TEST_PERSON1_NAME, TEST_PERSON2_NAME)

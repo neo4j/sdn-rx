@@ -67,21 +67,6 @@ final class StringBasedNeo4jQuery extends AbstractNeo4jQuery {
 		.of(StringBasedNeo4jQuery::parameterNameSource, StringBasedNeo4jQuery::replacementSource);
 
 	/**
-	 * Is this a count projection?
-	 */
-	private final boolean countQuery;
-
-	/**
-	 * Is this an exists projection?
-	 */
-	private final boolean existsQuery;
-
-	/**
-	 * Is this a modifying delete query?
-	 */
-	private final boolean deleteQuery;
-
-	/**
 	 * Used to evaluate the expression found while parsing the cypher template of this query against the actual parameters
 	 * with the help of the formal parameters during the building of the {@link PreparedQuery}.
 	 */
@@ -115,7 +100,7 @@ final class StringBasedNeo4jQuery extends AbstractNeo4jQuery {
 			.orElseThrow(() -> new MappingException("Expected @Query annotation to have a value, but it did not."));
 
 		return new StringBasedNeo4jQuery(neo4jOperations, mappingContext, evaluationContextProvider, queryMethod,
-			cypherTemplate, queryAnnotation.count(), queryAnnotation.exists(), queryAnnotation.delete());
+			cypherTemplate, Neo4jQueryType.fromDefinition(queryAnnotation));
 	}
 
 	/**
@@ -135,19 +120,14 @@ final class StringBasedNeo4jQuery extends AbstractNeo4jQuery {
 		Assert.hasText(cypherTemplate, "Cannot create String based Neo4j query without a cypher template.");
 
 		return new StringBasedNeo4jQuery(neo4jOperations, mappingContext, evaluationContextProvider, queryMethod,
-			cypherTemplate, false, false, false);
+			cypherTemplate, Neo4jQueryType.DEFAULT);
 	}
 
 	private StringBasedNeo4jQuery(Neo4jOperations neo4jOperations,
 		Neo4jMappingContext mappingContext, QueryMethodEvaluationContextProvider evaluationContextProvider,
-		Neo4jQueryMethod queryMethod, String cypherTemplate, boolean countQuery,
-		boolean existsQuery, boolean deleteQuery) {
+		Neo4jQueryMethod queryMethod, String cypherTemplate, Neo4jQueryType queryType) {
 
-		super(neo4jOperations, mappingContext, queryMethod);
-
-		this.countQuery = countQuery;
-		this.existsQuery = existsQuery;
-		this.deleteQuery = deleteQuery;
+		super(neo4jOperations, mappingContext, queryMethod, queryType);
 
 		SpelExtractor spelExtractor = SPEL_QUERY_CONTEXT.parse(cypherTemplate);
 		this.spelEvaluator = new SpelEvaluator(evaluationContextProvider, queryMethod.getParameters(), spelExtractor);

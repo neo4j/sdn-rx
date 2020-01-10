@@ -44,9 +44,9 @@ abstract class AbstractReactiveNeo4jQuery extends Neo4jQuerySupport implements R
 	protected final ReactiveNeo4jOperations neo4jOperations;
 
 	AbstractReactiveNeo4jQuery(ReactiveNeo4jOperations neo4jOperations, Neo4jMappingContext mappingContext,
-		Neo4jQueryMethod queryMethod) {
+		Neo4jQueryMethod queryMethod, Neo4jQueryType queryType) {
 
-		super(mappingContext, queryMethod);
+		super(mappingContext, queryMethod, queryType);
 
 		Assert.notNull(neo4jOperations, "The Neo4j operations are required.");
 		this.neo4jOperations = neo4jOperations;
@@ -76,25 +76,4 @@ abstract class AbstractReactiveNeo4jQuery extends Neo4jQuerySupport implements R
 		Class<T> returnedType, List<String> includedProperties, Neo4jParameterAccessor parameterAccessor,
 		@Nullable Neo4jQueryType queryType,
 		@Nullable BiFunction<TypeSystem, Record, ?> mappingFunction);
-
-	/**
-	 *
-	 * @return True if the query shout get a count projection applied.
-	 */
-	protected abstract boolean isCountQuery();
-
-	/**
-	 * @return True if the query should get an exists projection applied.
-	 */
-	protected abstract boolean isExistsQuery();
-
-	/**
-	 * @return True if the query should delete matching nodes.
-	 */
-	protected abstract boolean isDeleteQuery();
-
-	/**
-	 * @return True if the query has an explicit limit set.
-	 */
-	protected abstract boolean isLimiting();
 }
