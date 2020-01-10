@@ -339,7 +339,7 @@ public enum CypherGenerator {
 			}
 
 			// if we already processed the other way before, do not try to jump in the infinite loop
-			if (hasInverse(relationshipDescription, processedRelationships)) {
+			if (relationshipDescription.hasRelationshipObverse() && processedRelationships.contains(relationshipDescription.getRelationshipObverse())) {
 				continue;
 			}
 
@@ -350,7 +350,7 @@ public enum CypherGenerator {
 			Node endNode = node(targetLabel).named(fieldName);
 			NodeDescription<?> endNodeDescription = relationshipDescription.getTarget();
 
-			storeRelationshipAsProcessed(relationshipDescription, processedRelationships);
+			processedRelationships.add(relationshipDescription);
 
 			if (relationshipDescription.isDynamic()) {
 				Relationship relationship = relationshipDescription
@@ -390,17 +390,5 @@ public enum CypherGenerator {
 		return condition == null ? Conditions.noCondition() : condition;
 	}
 
-	private void storeRelationshipAsProcessed(RelationshipDescription relationshipDescription,
-		java.util.Set<RelationshipDescription> processedRelationships) {
-
-		processedRelationships.add(relationshipDescription);
-		processedRelationships.add(relationshipDescription.asInverse());
-	}
-
-	private boolean hasInverse(RelationshipDescription relationshipDescription,
-		Collection<RelationshipDescription> processedRelationships) {
-
-		return processedRelationships.contains(relationshipDescription);
-	}
 }
 

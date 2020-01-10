@@ -18,8 +18,6 @@
  */
 package org.neo4j.springframework.data.core.mapping;
 
-import static org.neo4j.springframework.data.core.schema.Relationship.Direction.*;
-
 import java.util.Objects;
 
 import org.neo4j.springframework.data.core.schema.NodeDescription;
@@ -49,13 +47,18 @@ class DefaultRelationshipDescription extends Association<Neo4jPersistentProperty
 
 	private Class<?> relationshipPropertiesClass;
 
+	private RelationshipDescription relationshipObverse;
+
 	DefaultRelationshipDescription(Neo4jPersistentProperty inverse,
-		Neo4jPersistentProperty obverse,
+		@Nullable RelationshipDescription relationshipObverse,
 		String type, boolean dynamic, NodeDescription<?> source, String fieldName, NodeDescription<?> target,
 		Relationship.Direction direction, @Nullable Class<?> relationshipPropertiesClass) {
 
-		super(inverse, obverse);
+		// the immutable obverse association-wise is always null because we cannot determine them on both sides
+		// if we consider to support bidirectional relationships.
+		super(inverse, null);
 
+		this.relationshipObverse = relationshipObverse;
 		this.type = type;
 		this.dynamic = dynamic;
 		this.source = source;
@@ -106,6 +109,21 @@ class DefaultRelationshipDescription extends Association<Neo4jPersistentProperty
 	}
 
 	@Override
+	public void setRelationshipObverse(RelationshipDescription relationshipObverse) {
+		this.relationshipObverse = relationshipObverse;
+	}
+
+	@Override
+	public RelationshipDescription getRelationshipObverse() {
+		return relationshipObverse;
+	}
+
+	@Override
+	public boolean hasRelationshipObverse() {
+		return this.relationshipObverse != null;
+	}
+
+	@Override
 	public String toString() {
 		return "DefaultRelationshipDescription{" +
 			"type='" + type + '\'' +
@@ -113,10 +131,6 @@ class DefaultRelationshipDescription extends Association<Neo4jPersistentProperty
 			", direction='" + direction + '\'' +
 			", target='" + target +
 			'}';
-	}
-
-	public RelationshipDescription asInverse() {
-		return new InvertedRelationshipDescription(type, target, source, direction);
 	}
 
 	@Override
@@ -137,78 +151,4 @@ class DefaultRelationshipDescription extends Association<Neo4jPersistentProperty
 		return Objects.hash(type, target, source, direction);
 	}
 
-	/**
-	 * This class should get only created by a {@link RelationshipDescription} to create an inverted version of
-	 * the relationship description for comparison reasons.
-	 * Only the fields for equality comparison with a {@link DefaultRelationshipDescription} are implemented and
-	 * most of the getters are stubs and will result in an {@link UnsupportedOperationException}.
-	 */
-	static class InvertedRelationshipDescription extends DefaultRelationshipDescription {
-
-		private static final String ACCESS_EXCEPTION = "Do not try to access stubbed fields";
-
-		private final String type;
-		private final NodeDescription<?> source;
-		private final NodeDescription<?> target;
-		private final Relationship.Direction direction;
-
-		public InvertedRelationshipDescription(String type, NodeDescription<?> source, NodeDescription<?> target,
-				Relationship.Direction direction) {
-
-			// To keep the equals / hashCodes just in the DefaultRelationshipDescription we need to extend it.
-			// don't judge me
-			super(null, null, null, false, null, null, null, null, null);
-
-			this.type = type;
-			this.source = source;
-			this.target = target;
-			this.direction = direction.equals(INCOMING) ? OUTGOING : INCOMING;
-		}
-
-		@Override
-		public String getType() {
-			return type;
-		}
-
-		@Override
-		public NodeDescription<?> getSource() {
-			return source;
-		}
-
-		@Override
-		public NodeDescription<?> getTarget() {
-			return target;
-		}
-
-		@Override
-		public Relationship.Direction getDirection() {
-			return direction;
-		}
-
-		// below are unused fields that do not make any sense for the inverse comparison
-		@Override
-		public boolean isDynamic() {
-			throw new UnsupportedOperationException(ACCESS_EXCEPTION);
-		}
-
-		@Override
-		public String getFieldName() {
-			throw new UnsupportedOperationException(ACCESS_EXCEPTION);
-		}
-
-		@Override
-		public Class<?> getRelationshipPropertiesClass() {
-			throw new UnsupportedOperationException(ACCESS_EXCEPTION);
-		}
-
-		@Override
-		public boolean hasRelationshipProperties() {
-			throw new UnsupportedOperationException(ACCESS_EXCEPTION);
-		}
-
-		@Override
-		public RelationshipDescription asInverse() {
-			throw new UnsupportedOperationException(ACCESS_EXCEPTION);
-		}
-	}
 }
