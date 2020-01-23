@@ -75,8 +75,8 @@ final class ReactiveNeo4jQueryMethod extends Neo4jQueryMethod {
 
 			if (!multiWrapper) {
 				throw new IllegalStateException(String.format(
-					"Method has to use a either multi-item reactive wrapper return type or a wrapped Page/Slice type. "
-						+ "Offending method: %s", method.toString()));
+					"Method has to use a multi-item reactive wrapper return type. Offending method: %s",
+					method.toString()));
 			}
 		}
 	}
