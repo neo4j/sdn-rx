@@ -90,5 +90,4 @@ final class ReactiveNeo4jQueryMethod extends Neo4jQueryMethod {
 	public boolean isStreamQuery() {
 		return true;
 	}
-
 }
