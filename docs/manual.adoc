@@ -467,16 +467,30 @@ That bean could use for example Spring's security context to retrieve a tenant:
 
 [source,java]
 ----
-class SpringSecurityBasedDatabaseNameProvider implements Neo4jDatabaseNameProvider {
+import java.util.Optional;
 
-  public Optional<String> getCurrentDatabaseName() {
+import org.neo4j.springframework.data.core.Neo4jDatabaseNameProvider;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 
-    return Optional.ofNullable(SecurityContextHolder.getContext())
-			  .map(SecurityContext::getAuthentication)
-			  .filter(Authentication::isAuthenticated)
-			  .map(Authentication::getPrincipal)
-			  .map(UserDetails.class::getUsername);
-  }
+@Configuration
+public class Neo4jConfig {
+
+	@Bean
+	Neo4jDatabaseNameProvider databaseNameProvider() {
+
+		return () -> Optional.ofNullable(SecurityContextHolder.getContext())
+			.map(SecurityContext::getAuthentication)
+			.filter(Authentication::isAuthenticated)
+			.map(Authentication::getPrincipal)
+			.map(User.class::cast)
+			.map(User::getUsername);
+	}
 }
 ----
 
