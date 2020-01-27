@@ -35,8 +35,15 @@ import org.springframework.security.core.userdetails.User;
 @Configuration
 public class Neo4jConfig {
 
-	@Bean
+	/**
+	 * This bean is only active in profile {@literal "selection-by-user"}. The {@link Neo4jDatabaseNameProvider} created here
+	 * uses Springs security context to retrieve the authenticated principal and extracts the username. Thus all requests
+	 * will use a different database, depending on the user being logged into the application.
+	 *
+	 * @return A database name provider.
+	 */
 	@Profile("selection-by-user")
+	@Bean
 	Neo4jDatabaseNameProvider databaseNameProvider() {
 
 		return () -> Optional.ofNullable(SecurityContextHolder.getContext())
