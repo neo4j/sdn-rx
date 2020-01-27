@@ -41,13 +41,16 @@ class RepositoryWithADifferentDatabaseIT extends RepositoryIT {
 
 	private static final String TEST_DATABASE_NAME = "aTestDatabase";
 
-	@Autowired RepositoryWithADifferentDatabaseIT(PersonRepository repository,
-		ThingRepository thingRepository,
+	@Autowired
+	RepositoryWithADifferentDatabaseIT(
+		PersonRepository repository, ThingRepository thingRepository,
 		RelationshipRepository relationshipRepository,
 		PetRepository petRepository, Driver driver,
-		PersonWithRelationshipWithPropertiesRepository relationshipWithPropertiesRepository) {
+		PersonWithRelationshipWithPropertiesRepository relationshipWithPropertiesRepository,
+		BidirectionalStartRepository bidirectionalStartRepository,
+		BidirectionalEndRepository bidirectionalEndRepository) {
 		super(repository, thingRepository, relationshipRepository, petRepository, driver,
-			relationshipWithPropertiesRepository);
+			relationshipWithPropertiesRepository, bidirectionalStartRepository, bidirectionalEndRepository);
 	}
 
 	@BeforeAll
