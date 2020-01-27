@@ -39,11 +39,18 @@ public class BidirectionalEnd {
 	@Relationship(type = "CONNECTED", direction = INCOMING)
 	private BidirectionalStart start;
 
+	@Relationship(type = "ANOTHER_CONNECTION", direction = INCOMING)
+	private BidirectionalStart anotherStart;
+
 	public BidirectionalEnd(String name) {
 		this.name = name;
 	}
 
 	public BidirectionalStart getStart() {
 		return start;
+	}
+
+	public BidirectionalStart getAnotherStart() {
+		return anotherStart;
 	}
 }

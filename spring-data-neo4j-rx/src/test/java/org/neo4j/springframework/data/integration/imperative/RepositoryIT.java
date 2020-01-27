@@ -275,6 +275,36 @@ class RepositoryIT {
 	}
 
 	@Test
+	void loadDeepSameLabelsAndTypeRelationships() {
+
+		long petNode1Id;
+		long petNode2Id;
+		long petNode3Id;
+
+		try (Session session = driver.session()) {
+			Record record = session
+				.run("CREATE "
+					+ "(p1:Pet{name: 'Pet1'})-[:Has]->(p2:Pet{name: 'Pet2'}), "
+					+ "(p2)-[:Has]->(p3:Pet{name: 'Pet3'}) "
+					+ "RETURN p1, p2, p3").single();
+
+			petNode1Id = record.get("p1").asNode().id();
+			petNode2Id = record.get("p2").asNode().id();
+			petNode3Id = record.get("p3").asNode().id();
+		}
+
+		Pet loadedPet = petRepository.findById(petNode1Id).get();
+
+		Pet comparisonPet2 = new Pet(petNode2Id, "Pet2");
+		Pet comparisonPet3 = new Pet(petNode3Id, "Pet3");
+		assertThat(loadedPet.getFriends()).containsExactlyInAnyOrder(comparisonPet2);
+
+		Pet pet2 = loadedPet.getFriends().get(loadedPet.getFriends().indexOf(comparisonPet2));
+		assertThat(pet2.getFriends()).containsExactly(comparisonPet3);
+
+	}
+
+	@Test
 	void loadEntityWithRelationshipToTheSameNode() {
 
 		long personId;
@@ -323,7 +353,8 @@ class RepositoryIT {
 
 		try (Session session = driver.session()) {
 			Record record = session
-				.run("CREATE (n:BidirectionalStart{name:'Ernie'})-[:CONNECTED]->(e:BidirectionalEnd{name:'Bert'}) "
+				.run("CREATE (n:BidirectionalStart{name:'Ernie'})-[:CONNECTED]->(e:BidirectionalEnd{name:'Bert'}), "
+					+ "(e)<-[:ANOTHER_CONNECTION]-(anotherStart:BidirectionalStart{name:'Elmo'})"
 					+ "RETURN n").single();
 
 			Node startNode = record.get("n").asNode();
@@ -334,6 +365,10 @@ class RepositoryIT {
 		assertThat(entityOptional).isPresent();
 		BidirectionalStart entity = entityOptional.get();
 		assertThat(entity.getEnds()).hasSize(1);
+
+		BidirectionalEnd end = entity.getEnds().iterator().next();
+		assertThat(end.getAnotherStart()).isNotNull();
+		assertThat(end.getAnotherStart().getName()).isEqualTo("Elmo");
 
 	}
 

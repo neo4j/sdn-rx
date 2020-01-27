@@ -59,6 +59,7 @@ import org.neo4j.springframework.data.integration.shared.Hobby;
 import org.neo4j.springframework.data.integration.shared.LikesHobbyRelationship;
 import org.neo4j.springframework.data.integration.shared.PersonWithAllConstructor;
 import org.neo4j.springframework.data.integration.shared.PersonWithRelationship;
+import org.neo4j.springframework.data.integration.shared.PersonWithRelationshipWithProperties;
 import org.neo4j.springframework.data.integration.shared.Pet;
 import org.neo4j.springframework.data.integration.shared.ThingWithAssignedId;
 import org.neo4j.springframework.data.repository.config.EnableReactiveNeo4jRepositories;

@@ -44,6 +44,10 @@ public class BidirectionalStart {
 		this.ends = ends;
 	}
 
+	public String getName() {
+		return name;
+	}
+
 	public Set<BidirectionalEnd> getEnds() {
 		return ends;
 	}
