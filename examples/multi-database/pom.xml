@@ -17,8 +17,7 @@
 | See the License for the specific language governing permissions and
 | limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
@@ -32,8 +31,9 @@
 	<groupId>org.neo4j.doc.springframework.data</groupId>
 	<artifactId>spring-data-neo4j-rx-examples-multi-database</artifactId>
 	<version>999-SNAPSHOT</version>
-	<name>spring-data-neo4j-rx-examples-multi-database</name>
-	<description>A couple of examples how to use multi-database support with Neo4j 4.0.</description>
+
+	<name>SDN⚡️RX Examples for Spring Boot (Database Selection)</name>
+	<description>Demonstrating how to use SDN⚡️RX from within Spring Boot.</description>
 
 	<properties>
 		<java.version>11</java.version>
@@ -54,12 +54,21 @@
 			<version>${spring-data-neo4j-rx.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-security</artifactId>
+			<groupId>org.neo4j.springframework.data</groupId>
+			<artifactId>spring-data-neo4j-rx-spring-boot-test-autoconfigure</artifactId>
+			<version>${spring-data-neo4j-rx.version}</version>
+			<scope>test</scope>
+			<!-- Don't to to bring in Neo4j Test Harness enterprise edition (neither 3.5 or 4.0) for multidabase, so we can exclude it completly -->
+			<exclusions>
+				<exclusion>
+					<artifactId>neo4j-harness</artifactId>
+					<groupId>org.neo4j.test</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
+			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 
 		<dependency>
@@ -68,15 +77,10 @@
 			<scope>test</scope>
 			<exclusions>
 				<exclusion>
-					<groupId>org.junit.vintage</groupId>
 					<artifactId>junit-vintage-engine</artifactId>
+					<groupId>org.junit.vintage</groupId>
 				</exclusion>
 			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-test</artifactId>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -84,17 +88,13 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.neo4j.springframework.data</groupId>
-			<artifactId>spring-data-neo4j-rx-spring-boot-test-autoconfigure</artifactId>
-			<version>${spring-data-neo4j-rx.version}</version>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
-			<!-- Don't to to bring in Neo4j Test Harness enterprise edition (neither 3.5 or 4.0) for multidabase, so we can exclude it completly -->
-			<exclusions>
-				<exclusion>
-					<groupId>org.neo4j.test</groupId>
-					<artifactId>neo4j-harness</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
