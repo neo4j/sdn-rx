@@ -95,7 +95,7 @@ class ExampleUsingMultipleTransactionManagerTest {
 		transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 		name = transactionTemplate.execute(t -> client
 			.query("MATCH (p:Person) RETURN p.name")
-			.in("statisticsdb")
+			.in("otherDb")
 			.fetchAs(String.class).one());
 		assertThat(name).isEmpty();
 	}
