@@ -35,6 +35,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Michael J. Simons
  */
 @Tag(COMMERCIAL_EDITION_ONLY)
+@Tag(REQUIRES + "4.0.0")
 class ReactiveRepositoryWithADifferentDatabaseIT extends ReactiveRepositoryIT {
 
 	private static final String TEST_DATABASE_NAME = "aTestDatabase";
