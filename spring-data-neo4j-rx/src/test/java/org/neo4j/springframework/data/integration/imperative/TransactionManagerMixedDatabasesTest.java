@@ -95,8 +95,7 @@ class TransactionManagerMixedDatabasesTest {
 	@Test
 	void usingTheSameDatabaseDeclarative() {
 
-		Optional<Long> numberOfNodes =
-			neo4jClient.query(TEST_QUERY).in(null).fetchAs(Long.class).one();
+		Optional<Long> numberOfNodes = neo4jClient.query(TEST_QUERY).fetchAs(Long.class).one();
 
 		assertThat(numberOfNodes).isPresent().hasValue(0L);
 	}

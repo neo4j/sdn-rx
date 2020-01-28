@@ -190,7 +190,7 @@ class ReactiveTransactionManagerMixedDatabasesTest {
 		@Transactional
 		public Mono<Long> usingTheSameDatabaseDeclarative() {
 
-			return neo4jClient.query(TEST_QUERY).in(null).fetchAs(Long.class).one();
+			return neo4jClient.query(TEST_QUERY).fetchAs(Long.class).one();
 		}
 
 		@Transactional
