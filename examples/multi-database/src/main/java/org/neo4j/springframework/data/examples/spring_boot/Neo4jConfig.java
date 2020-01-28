@@ -20,7 +20,10 @@ package org.neo4j.springframework.data.examples.spring_boot;
 
 import java.util.Optional;
 
+import org.neo4j.driver.Driver;
 import org.neo4j.springframework.data.core.Neo4jDatabaseNameProvider;
+import org.neo4j.springframework.data.core.transaction.Neo4jTransactionManager;
+import org.neo4j.springframework.data.repository.config.Neo4jRepositoryConfigurationExtension;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -52,5 +55,36 @@ public class Neo4jConfig {
 			.map(Authentication::getPrincipal)
 			.map(User.class::cast)
 			.map(User::getUsername);
+	}
+
+	@Profile("multiple-transaction-manager")
+	@Configuration
+	static class MultipleTransactionManager {
+
+		/**
+		 * This is gonna be the default transaction manager, it's name corresponds with {@link Neo4jRepositoryConfigurationExtension#DEFAULT_TRANSACTION_MANAGER_BEAN_NAME}.
+		 *
+		 * @param driver               The driver needed
+		 * @param databaseNameProvider Whatever database name provider is configured
+		 * @return A transaction manager
+		 */
+		@Bean
+		public Neo4jTransactionManager transactionManager(Driver driver,
+			Neo4jDatabaseNameProvider databaseNameProvider) {
+
+			return new Neo4jTransactionManager(driver, databaseNameProvider);
+		}
+
+		/**
+		 * A 2nd transaction manager for user with another database.
+		 *
+		 * @param driver The driver needed
+		 * @return A transaction manager
+		 */
+		@Bean
+		public Neo4jTransactionManager transactionManagerForOtherDb(Driver driver) {
+			return new Neo4jTransactionManager(driver,
+				Neo4jDatabaseNameProvider.createStaticDatabaseNameProvider("otherDb"));
+		}
 	}
 }
