@@ -48,7 +48,7 @@ public class Neo4jConfig {
 	 */
 	@Profile("selection-by-user")
 	@Bean
-	DatabaseSelectionProvider databaseNameProvider() {
+	DatabaseSelectionProvider databaseSelectionProvider() {
 
 		return () -> Optional.ofNullable(SecurityContextHolder.getContext())
 			.map(SecurityContext::getAuthentication)
