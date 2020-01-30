@@ -423,9 +423,11 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 		});
 	}
 
-	private boolean hasProcessed(Set<RelationshipDescription> relationshipDescriptions, RelationshipDescription rd) {
-		if (rd != null) {
-			return relationshipDescriptions.contains(rd);
+	private boolean hasProcessed(Set<RelationshipDescription> relationshipDescriptions,
+		RelationshipDescription relationshipDescription) {
+
+		if (relationshipDescription != null) {
+			return relationshipDescriptions.contains(relationshipDescription);
 		}
 		return false;
 	}

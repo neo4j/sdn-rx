@@ -99,38 +99,19 @@ class RepositoryIT {
 
 	protected static Neo4jConnectionSupport neo4jConnectionSupport;
 
-	private final PersonRepository repository;
-	private final ThingRepository thingRepository;
-	private final RelationshipRepository relationshipRepository;
-	private final PersonWithRelationshipWithPropertiesRepository relationshipWithPropertiesRepository;
-	private final PetRepository petRepository;
-	private final BidirectionalStartRepository bidirectionalStartRepository;
-	private final BidirectionalEndRepository bidirectionalEndRepository;
-	private final SimilarThingRepository similarThingRepository;
-	private final Driver driver;
+	@Autowired private PersonRepository repository;
+	@Autowired private ThingRepository thingRepository;
+	@Autowired private RelationshipRepository relationshipRepository;
+	@Autowired private PersonWithRelationshipWithPropertiesRepository relationshipWithPropertiesRepository;
+	@Autowired private PetRepository petRepository;
+	@Autowired private BidirectionalStartRepository bidirectionalStartRepository;
+	@Autowired private BidirectionalEndRepository bidirectionalEndRepository;
+	@Autowired private SimilarThingRepository similarThingRepository;
+	@Autowired private Driver driver;
 	private Long id1;
 	private Long id2;
 	private PersonWithAllConstructor person1;
 	private PersonWithAllConstructor person2;
-
-	@Autowired
-	RepositoryIT(PersonRepository repository, ThingRepository thingRepository,
-		RelationshipRepository relationshipRepository, PetRepository petRepository, Driver driver,
-		PersonWithRelationshipWithPropertiesRepository relationshipWithPropertiesRepository,
-		BidirectionalStartRepository bidirectionalStartRepository,
-		BidirectionalEndRepository bidirectionalEndRepository,
-		SimilarThingRepository similarThingRepository) {
-
-		this.repository = repository;
-		this.relationshipRepository = relationshipRepository;
-		this.thingRepository = thingRepository;
-		this.petRepository = petRepository;
-		this.relationshipWithPropertiesRepository = relationshipWithPropertiesRepository;
-		this.driver = driver;
-		this.bidirectionalStartRepository = bidirectionalStartRepository;
-		this.bidirectionalEndRepository = bidirectionalEndRepository;
-		this.similarThingRepository = similarThingRepository;
-	}
 
 	/**
 	 * Shall be configured by test making use of database selection, so that the verification queries run in the correct database.
