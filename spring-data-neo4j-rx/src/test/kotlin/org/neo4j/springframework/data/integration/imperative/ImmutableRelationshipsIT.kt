@@ -66,9 +66,8 @@ class ImmutableRelationshipsIT @Autowired constructor(
         assertThat(device.deviceId).isEqualTo("123")
         assertThat(device.phoneNumber).isEqualTo("some number")
 
-        assertThat(device.location).isNotNull
-        assertThat(device.location.latitude).isEqualTo(20.0)
-        assertThat(device.location.longitude).isEqualTo(20.0)
+        assertThat(device.location!!.latitude).isEqualTo(20.0)
+        assertThat(device.location!!.longitude).isEqualTo(20.0)
     }
 
     @Test
@@ -86,11 +85,10 @@ class ImmutableRelationshipsIT @Autowired constructor(
         assertThat(device.deviceId).isEqualTo("123")
         assertThat(device.phoneNumber).isEqualTo("some number")
 
-        assertThat(device.location).isNotNull
-        assertThat(device.location.latitude).isEqualTo(10.0)
-        assertThat(device.location.longitude).isEqualTo(20.0)
-        assertThat(device.location.previousLocation!!.latitude).isEqualTo(30.0)
-        assertThat(device.location.previousLocation!!.longitude).isEqualTo(40.0)
+        assertThat(device.location!!.latitude).isEqualTo(10.0)
+        assertThat(device.location!!.longitude).isEqualTo(20.0)
+        assertThat(device.location!!.previousLocation!!.latitude).isEqualTo(30.0)
+        assertThat(device.location!!.previousLocation!!.longitude).isEqualTo(40.0)
     }
 
     @Configuration
