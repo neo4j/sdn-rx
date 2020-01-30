@@ -48,9 +48,11 @@ class RepositoryWithADifferentDatabaseIT extends RepositoryIT {
 		PetRepository petRepository, Driver driver,
 		PersonWithRelationshipWithPropertiesRepository relationshipWithPropertiesRepository,
 		BidirectionalStartRepository bidirectionalStartRepository,
-		BidirectionalEndRepository bidirectionalEndRepository) {
+		BidirectionalEndRepository bidirectionalEndRepository,
+		SimilarThingRepository similarThingRepository) {
 		super(repository, thingRepository, relationshipRepository, petRepository, driver,
-			relationshipWithPropertiesRepository, bidirectionalStartRepository, bidirectionalEndRepository);
+			relationshipWithPropertiesRepository, bidirectionalStartRepository, bidirectionalEndRepository,
+			similarThingRepository);
 	}
 
 	@BeforeAll

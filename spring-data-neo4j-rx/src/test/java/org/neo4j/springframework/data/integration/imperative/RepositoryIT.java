@@ -106,6 +106,7 @@ class RepositoryIT {
 	private final PetRepository petRepository;
 	private final BidirectionalStartRepository bidirectionalStartRepository;
 	private final BidirectionalEndRepository bidirectionalEndRepository;
+	private final SimilarThingRepository similarThingRepository;
 	private final Driver driver;
 	private Long id1;
 	private Long id2;
@@ -117,7 +118,8 @@ class RepositoryIT {
 		RelationshipRepository relationshipRepository, PetRepository petRepository, Driver driver,
 		PersonWithRelationshipWithPropertiesRepository relationshipWithPropertiesRepository,
 		BidirectionalStartRepository bidirectionalStartRepository,
-		BidirectionalEndRepository bidirectionalEndRepository) {
+		BidirectionalEndRepository bidirectionalEndRepository,
+		SimilarThingRepository similarThingRepository) {
 
 		this.repository = repository;
 		this.relationshipRepository = relationshipRepository;
@@ -127,6 +129,7 @@ class RepositoryIT {
 		this.driver = driver;
 		this.bidirectionalStartRepository = bidirectionalStartRepository;
 		this.bidirectionalEndRepository = bidirectionalEndRepository;
+		this.similarThingRepository = similarThingRepository;
 	}
 
 	/**
@@ -928,6 +931,52 @@ class RepositoryIT {
 			// assert that only one hobby is stored
 			recordList = session.run("MATCH (h:Hobby) RETURN h").list();
 			assertThat(recordList).hasSize(1);
+		}
+	}
+
+	@Test
+	void saveEntityWithDeepSelfReferences() {
+		Pet rootPet = new Pet("Luna");
+		Pet petOfRootPet = new Pet("Daphne");
+		Pet petOfChildPet = new Pet("Mucki");
+		Pet petOfGrandChildPet = new Pet("Blacky");
+
+		rootPet.setFriends(singletonList(petOfRootPet));
+		petOfRootPet.setFriends(singletonList(petOfChildPet));
+		petOfChildPet.setFriends(singletonList(petOfGrandChildPet));
+
+		petRepository.save(rootPet);
+
+		try (Session session = driver.session(getSessionConfig())) {
+			Record record = session.run("MATCH (rootPet:Pet)-[:Has]->(petOfRootPet:Pet)-[:Has]->(petOfChildPet:Pet)"
+				+ "-[:Has]->(petOfGrandChildPet:Pet) "
+				+ "RETURN rootPet, petOfRootPet, petOfChildPet, petOfGrandChildPet", emptyMap()).single();
+
+			assertThat(record.get("rootPet").asNode().get("name").asString()).isEqualTo("Luna");
+			assertThat(record.get("petOfRootPet").asNode().get("name").asString()).isEqualTo("Daphne");
+			assertThat(record.get("petOfChildPet").asNode().get("name").asString()).isEqualTo("Mucki");
+			assertThat(record.get("petOfGrandChildPet").asNode().get("name").asString()).isEqualTo("Blacky");
+		}
+	}
+
+	@Test
+	void saveEntityGraphWithSelfInverseRelationshipDefined() {
+		SimilarThing originalThing = new SimilarThing().withName("Original");
+		SimilarThing similarThing = new SimilarThing().withName("Similar");
+
+
+		originalThing.setSimilar(similarThing);
+		similarThing.setSimilarOf(originalThing);
+		similarThingRepository.save(originalThing);
+
+		try (Session session = driver.session(getSessionConfig())) {
+			Record record = session.run(
+				"MATCH (ot:SimilarThing{name:'Original'})-[r:SimilarTo]->(st:SimilarThing {name:'Similar'})"
+				+ " RETURN r").single();
+
+			assertThat(record.keys()).isNotEmpty();
+			assertThat(record.containsKey("r")).isTrue();
+			assertThat(record.get("r").asRelationship().type()).isEqualToIgnoringCase("SimilarTo");
 		}
 	}
 
