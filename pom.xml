@@ -82,8 +82,8 @@
 
 	<properties>
 		<apiguardian.version>1.0.0</apiguardian.version>
-		<byte-buddy.version>1.9.10</byte-buddy.version>
 		<assertj.version>3.15.0</assertj.version>
+		<byte-buddy.version>1.9.10</byte-buddy.version>
 		<changelist>-SNAPSHOT</changelist>
 		<checkstyle.version>8.29</checkstyle.version>
 		<flatten-maven-plugin.version>1.2.1</flatten-maven-plugin.version>
