@@ -412,11 +412,11 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 		});
 	}
 
-	private boolean hasProcessed(Set<RelationshipDescription> relationshipDescriptions,
+	private boolean hasProcessed(Set<RelationshipDescription> processedRelationshipDescriptions,
 		RelationshipDescription relationshipDescription) {
 
 		if (relationshipDescription != null) {
-			return relationshipDescriptions.contains(relationshipDescription);
+			return processedRelationshipDescriptions.contains(relationshipDescription);
 		}
 		return false;
 	}
