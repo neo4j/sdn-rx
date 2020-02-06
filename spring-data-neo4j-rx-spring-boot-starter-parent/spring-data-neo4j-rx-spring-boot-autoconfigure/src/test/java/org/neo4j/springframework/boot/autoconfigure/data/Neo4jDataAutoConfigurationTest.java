@@ -34,17 +34,11 @@ import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
 import org.neo4j.driver.springframework.boot.autoconfigure.Neo4jDriverAutoConfiguration;
 import org.neo4j.driver.types.TypeSystem;
-import org.neo4j.springframework.data.core.DatabaseSelection;
-import org.neo4j.springframework.data.core.DatabaseSelectionProvider;
-import org.neo4j.springframework.data.core.Neo4jClient;
-import org.neo4j.springframework.data.core.Neo4jOperations;
-import org.neo4j.springframework.data.core.Neo4jTemplate;
-import org.neo4j.springframework.data.core.ReactiveDatabaseSelectionProvider;
-import org.neo4j.springframework.data.core.ReactiveNeo4jClient;
-import org.neo4j.springframework.data.core.ReactiveNeo4jOperations;
-import org.neo4j.springframework.data.core.ReactiveNeo4jTemplate;
+import org.neo4j.springframework.data.core.*;
+import org.neo4j.springframework.data.core.convert.Neo4jConversions;
 import org.neo4j.springframework.data.core.transaction.Neo4jTransactionManager;
 import org.neo4j.springframework.data.core.transaction.ReactiveNeo4jTransactionManager;
+import org.neo4j.springframework.data.repository.support.Neo4jPersistenceExceptionTranslator;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -65,7 +59,20 @@ class Neo4jDataAutoConfigurationTest {
 		private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 			.withPropertyValues("spring.data.neo4j.repositories.type=imperative")
 			.withUserConfiguration(MockedDriverConfiguration.class)
-			.withConfiguration(AutoConfigurations.of(Neo4jDriverAutoConfiguration.class, Neo4jDataAutoConfiguration.class));
+			.withConfiguration(
+				AutoConfigurations.of(Neo4jDriverAutoConfiguration.class, Neo4jDataAutoConfiguration.class));
+
+		@Test
+		void shouldProvideConversions() {
+
+			contextRunner.run(ctx -> assertThat(ctx).hasSingleBean(Neo4jConversions.class));
+		}
+
+		@Test
+		void shouldProvideExceptionTranslator() {
+
+			contextRunner.run(ctx -> assertThat(ctx).hasSingleBean(Neo4jPersistenceExceptionTranslator.class));
+		}
 
 		@Test
 		void shouldProvideDefaultDatabaseNameProvider() {
@@ -210,6 +217,18 @@ class Neo4jDataAutoConfigurationTest {
 			.withPropertyValues("spring.data.neo4j.repositories.type=reactive")
 			.withUserConfiguration(MockedDriverConfiguration.class)
 			.withConfiguration(AutoConfigurations.of(Neo4jDriverAutoConfiguration.class, Neo4jDataAutoConfiguration.class));
+
+		@Test
+		void shouldProvideConversions() {
+
+			contextRunner.run(ctx -> assertThat(ctx).hasSingleBean(Neo4jConversions.class));
+		}
+
+		@Test
+		void shouldProvideExceptionTranslator() {
+
+			contextRunner.run(ctx -> assertThat(ctx).hasSingleBean(Neo4jPersistenceExceptionTranslator.class));
+		}
 
 		@Test
 		void shouldProvideDefaultDatabaseNameProvider() {
