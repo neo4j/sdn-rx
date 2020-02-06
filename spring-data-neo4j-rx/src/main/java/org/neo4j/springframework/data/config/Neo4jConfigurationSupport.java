@@ -24,7 +24,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apiguardian.api.API;
-import org.neo4j.springframework.data.repository.support.Neo4jPersistenceExceptionTranslator;
 import org.neo4j.springframework.data.core.convert.Neo4jConversions;
 import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
 import org.neo4j.springframework.data.core.schema.Node;
