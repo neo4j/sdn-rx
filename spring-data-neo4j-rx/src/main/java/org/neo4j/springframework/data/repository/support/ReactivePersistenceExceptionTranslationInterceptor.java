@@ -28,6 +28,7 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.ListableBeanFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.ChainedPersistenceExceptionTranslator;
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
@@ -78,7 +79,7 @@ final class ReactivePersistenceExceptionTranslationInterceptor implements Method
 		} else {
 			// Add the translation. Nothing will happen if no-one subscribe the reactive result.
 			Function<RuntimeException, Throwable> errorMappingFunction =
-				t -> DataAccessUtils.translateIfNecessary(t, translator);
+				t -> t instanceof DataAccessException ? t : DataAccessUtils.translateIfNecessary(t, translator);
 			if (m instanceof Mono) {
 				return ((Mono<?>) m).onErrorMap(RuntimeException.class, errorMappingFunction);
 			} else if (m instanceof Flux) {

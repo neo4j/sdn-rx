@@ -38,7 +38,6 @@ import org.neo4j.springframework.data.core.*;
 import org.neo4j.springframework.data.core.convert.Neo4jConversions;
 import org.neo4j.springframework.data.core.transaction.Neo4jTransactionManager;
 import org.neo4j.springframework.data.core.transaction.ReactiveNeo4jTransactionManager;
-import org.neo4j.springframework.data.repository.support.Neo4jPersistenceExceptionTranslator;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -66,12 +65,6 @@ class Neo4jDataAutoConfigurationTest {
 		void shouldProvideConversions() {
 
 			contextRunner.run(ctx -> assertThat(ctx).hasSingleBean(Neo4jConversions.class));
-		}
-
-		@Test
-		void shouldProvideExceptionTranslator() {
-
-			contextRunner.run(ctx -> assertThat(ctx).hasSingleBean(Neo4jPersistenceExceptionTranslator.class));
 		}
 
 		@Test
@@ -222,12 +215,6 @@ class Neo4jDataAutoConfigurationTest {
 		void shouldProvideConversions() {
 
 			contextRunner.run(ctx -> assertThat(ctx).hasSingleBean(Neo4jConversions.class));
-		}
-
-		@Test
-		void shouldProvideExceptionTranslator() {
-
-			contextRunner.run(ctx -> assertThat(ctx).hasSingleBean(Neo4jPersistenceExceptionTranslator.class));
 		}
 
 		@Test

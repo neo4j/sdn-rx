@@ -34,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
+import org.neo4j.driver.reactive.RxResult;
 import org.neo4j.driver.reactive.RxSession;
 import org.neo4j.driver.summary.ResultSummary;
 import org.neo4j.springframework.data.config.AbstractReactiveNeo4jConfig;
@@ -43,6 +44,7 @@ import org.neo4j.springframework.data.core.schema.Id;
 import org.neo4j.springframework.data.core.schema.Node;
 import org.neo4j.springframework.data.repository.ReactiveNeo4jRepository;
 import org.neo4j.springframework.data.repository.config.EnableReactiveNeo4jRepositories;
+import org.neo4j.springframework.data.repository.support.Neo4jPersistenceExceptionTranslator;
 import org.neo4j.springframework.data.repository.support.ReactivePersistenceExceptionTranslationPostProcessor;
 import org.neo4j.springframework.data.test.Neo4jIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,6 +97,19 @@ class ReactiveExceptionTranslationIT {
 	}
 
 	@Test
+	void exceptionsFromClientShouldBeTranslated(@Autowired ReactiveNeo4jClient neo4jClient) {
+
+		neo4jClient.query("CREATE (:SimplePerson {name: 'Tom'})").run()
+			.then()
+			.as(StepVerifier::create)
+			.verifyComplete();
+
+		neo4jClient.query("CREATE (:SimplePerson {name: 'Tom'})").run()
+			.as(StepVerifier::create)
+			.verifyErrorMatches(aTranslatedException);
+	}
+
+	@Test
 	void exceptionsFromRepositoriesShouldBeTranslated(@Autowired SimplePersonRepository repository) {
 		repository.save(new SimplePerson("Tom")).then().as(StepVerifier::create).verifyComplete();
 
@@ -125,14 +140,20 @@ class ReactiveExceptionTranslationIT {
 			return neo4jConnectionSupport.getDriver();
 		}
 
+		@Override
+		protected Collection<String> getMappingBasePackages() {
+			return Collections.singletonList(SimplePerson.class.getPackage().getName());
+		}
+
 		@Bean
 		public CustomDAO customDAO(ReactiveNeo4jClient neo4jClient) {
 			return new CustomDAO(neo4jClient);
 		}
 
-		@Override
-		protected Collection<String> getMappingBasePackages() {
-			return Collections.singletonList(SimplePerson.class.getPackage().getName());
+		// If someone wants to use the plain driver or the delegating mechanism of the client, than they must provide a couple of more beans.
+		@Bean
+		public Neo4jPersistenceExceptionTranslator neo4jPersistenceExceptionTranslator() {
+			return new Neo4jPersistenceExceptionTranslator();
 		}
 
 		@Bean
@@ -172,7 +193,10 @@ class ReactiveExceptionTranslationIT {
 		}
 
 		public Mono<ResultSummary> createPerson() {
-			return neo4jClient.query("CREATE (:SimplePerson {name: 'Aaron Paul'})").run();
+			return neo4jClient.delegateTo(rxQueryRunner -> {
+				RxResult rxResult = rxQueryRunner.run("CREATE (:SimplePerson {name: 'Tom'})");
+				return Flux.from(rxResult.records()).then(Mono.from(rxResult.consume()));
+			}).run();
 		}
 	}
 }

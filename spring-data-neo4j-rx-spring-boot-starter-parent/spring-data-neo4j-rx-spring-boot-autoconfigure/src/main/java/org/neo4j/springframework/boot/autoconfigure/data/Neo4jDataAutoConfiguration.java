@@ -21,7 +21,6 @@ package org.neo4j.springframework.boot.autoconfigure.data;
 import java.util.Set;
 
 import org.neo4j.driver.Driver;
-import org.neo4j.springframework.data.repository.support.Neo4jPersistenceExceptionTranslator;
 import org.neo4j.springframework.data.core.convert.Neo4jConversions;
 import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
 import org.neo4j.springframework.data.core.schema.Node;
@@ -51,12 +50,6 @@ public final class Neo4jDataAutoConfiguration {
 	@ConditionalOnMissingBean
 	public Neo4jConversions neo4jConversions() {
 		return new Neo4jConversions();
-	}
-
-	@Bean
-	@ConditionalOnMissingBean
-	public Neo4jPersistenceExceptionTranslator neo4jPersistenceExceptionTranslator() {
-		return new Neo4jPersistenceExceptionTranslator();
 	}
 
 	@Bean

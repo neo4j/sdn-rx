@@ -53,14 +53,6 @@ abstract class Neo4jConfigurationSupport {
 	}
 
 	/**
-	 * @return A {@link org.springframework.dao.support.PersistenceExceptionTranslator} specialized for Neo4j related exceptions.
-	 */
-	@Bean
-	public Neo4jPersistenceExceptionTranslator neo4jPersistenceExceptionTranslator() {
-		return new Neo4jPersistenceExceptionTranslator();
-	}
-
-	/**
 	 * Creates a {@link org.neo4j.springframework.data.core.mapping.Neo4jMappingContext} equipped with entity classes
 	 * scanned from the mapping base package.
 	 *

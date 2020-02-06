@@ -23,6 +23,7 @@ import static org.neo4j.springframework.data.test.Neo4jExtension.*;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Optional;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,6 +39,7 @@ import org.neo4j.springframework.data.core.schema.Id;
 import org.neo4j.springframework.data.core.schema.Node;
 import org.neo4j.springframework.data.repository.Neo4jRepository;
 import org.neo4j.springframework.data.repository.config.EnableNeo4jRepositories;
+import org.neo4j.springframework.data.repository.support.Neo4jPersistenceExceptionTranslator;
 import org.neo4j.springframework.data.test.Neo4jIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -82,6 +84,16 @@ class ExceptionTranslationIT {
 	}
 
 	@Test
+	void exceptionsFromClientShouldBeTranslated(@Autowired Neo4jClient neo4jClient) {
+		neo4jClient.query("CREATE (:SimplePerson {name: 'Tom'})").run();
+
+		assertThatExceptionOfType(DataIntegrityViolationException.class)
+			.isThrownBy(() -> neo4jClient.query("CREATE (:SimplePerson {name: 'Tom'})").run())
+			.withMessageMatching(
+				"Node\\(\\d+\\) already exists with label `SimplePerson` and property `name` = '[\\w\\s]+'; Error code 'Neo.ClientError.Schema.ConstraintValidationFailed'");
+	}
+
+	@Test
 	void exceptionsFromRepositoriesShouldBeTranslated(@Autowired SimplePersonRepository repository) {
 		repository.save(new SimplePerson("Jerry"));
 
@@ -118,14 +130,20 @@ class ExceptionTranslationIT {
 			return neo4jConnectionSupport.getDriver();
 		}
 
+		@Override
+		protected Collection<String> getMappingBasePackages() {
+			return Collections.singletonList(SimplePerson.class.getPackage().getName());
+		}
+
 		@Bean
 		public CustomDAO customDAO(Neo4jClient neo4jClient) {
 			return new CustomDAO(neo4jClient);
 		}
 
-		@Override
-		protected Collection<String> getMappingBasePackages() {
-			return Collections.singletonList(SimplePerson.class.getPackage().getName());
+		// If someone wants to use the plain driver or the delegating mechanism of the client, than they must provide a couple of more beans.
+		@Bean
+		public Neo4jPersistenceExceptionTranslator neo4jPersistenceExceptionTranslator() {
+			return new Neo4jPersistenceExceptionTranslator();
 		}
 
 		@Bean
@@ -164,7 +182,10 @@ class ExceptionTranslationIT {
 		}
 
 		public ResultSummary createPerson() {
-			return neo4jClient.query("CREATE (:SimplePerson {name: 'Tom'})").run();
+
+			return neo4jClient.delegateTo(queryRunner ->
+				Optional.of(queryRunner.run("CREATE (:SimplePerson {name: 'Tom'})").consume()))
+				.run().get();
 		}
 	}
 }

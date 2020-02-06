@@ -57,7 +57,9 @@ public final class Neo4jPersistenceExceptionTranslator implements PersistenceExc
 	@Override
 	public DataAccessException translateExceptionIfPossible(RuntimeException ex) {
 
-		if (ex instanceof DiscoveryException) {
+		if (ex instanceof DataAccessException) {
+			return (DataAccessException) ex;
+		} else if (ex instanceof DiscoveryException) {
 			return translateImpl((Neo4jException) ex, TransientDataAccessResourceException::new);
 		} else if (ex instanceof DatabaseException) {
 			return translateImpl((Neo4jException) ex, NonTransientDataAccessResourceException::new);
