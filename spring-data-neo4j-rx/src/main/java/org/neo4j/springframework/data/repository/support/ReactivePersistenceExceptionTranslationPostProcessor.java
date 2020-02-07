@@ -46,7 +46,7 @@ import org.springframework.util.Assert;
  * <p>This class can be declared as a standard bean if you run a lot of custom repositories in which you use either the
  * {@link org.neo4j.springframework.data.core.ReactiveNeo4jTemplate} or the {@link org.neo4j.springframework.data.core.ReactiveNeo4jClient}.
  *
- * @author Michael J. SImons
+ * @author Michael J. Simons
  * @soundtrack Fatoni - Andorra
  * @since 1.0
  */

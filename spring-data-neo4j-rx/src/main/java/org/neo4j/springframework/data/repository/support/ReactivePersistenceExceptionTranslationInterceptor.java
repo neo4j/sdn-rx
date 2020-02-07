@@ -38,7 +38,7 @@ import org.springframework.util.Assert;
  * This method interceptor is modelled somewhat after {@link org.springframework.dao.support.PersistenceExceptionTranslationInterceptor},
  * but caters for reactive needs: If the method identified by the pointcut returns a supported reactive type (either {@link Mono} or {@link Flux}),
  * it installs an error mapping function with {@code onErrorMap} that tries to translate the given exception
- * into Springs hierarchy.
+ * into Spring's hierarchy.
  * <p>
  * The interceptor uses all {@link PersistenceExceptionTranslator persistence exception translators} it finds in the context
  * through a {@link ChainedPersistenceExceptionTranslator}. Translations is eventually done with
