@@ -65,6 +65,8 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 
 	private final Lazy<Collection<GraphPropertyDescription>> graphProperties;
 
+	private final Lazy<String[]> additionalLabels;
+
 	/**
 	 * A view on all simple properties stored on a node.
 	 */
@@ -74,7 +76,8 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 		super(information);
 
 		this.primaryLabel = computePrimaryLabel();
-		this.graphProperties = Lazy.of(() -> computeGraphProperties());
+		this.additionalLabels = Lazy.of(this::computeAdditionalLabels);
+		this.graphProperties = Lazy.of(this::computeGraphProperties);
 	}
 
 	/*
@@ -114,6 +117,10 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 		return this.graphProperties.get();
 	}
 
+	@Override
+	public String[] getAdditionalLabels() {
+		return this.additionalLabels.get();
+	}
 	/*
 	 * (non-Javadoc)
 	 * @see NodeDescription#getGraphProperty(String)
@@ -171,11 +178,21 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 	private String computePrimaryLabel() {
 
 		Node nodeAnnotation = this.findAnnotation(Node.class);
-		if (nodeAnnotation == null || nodeAnnotation.labels().length != 1) {
+		if (nodeAnnotation == null || nodeAnnotation.labels().length < 1) {
 			return this.getType().getSimpleName();
 		} else {
 			return nodeAnnotation.labels()[0];
 		}
+	}
+
+	private String[] computeAdditionalLabels() {
+
+		Node nodeAnnotation = this.findAnnotation(Node.class);
+		if (nodeAnnotation != null && nodeAnnotation.labels().length > 1) {
+			return Arrays.copyOfRange(nodeAnnotation.labels(), 1, nodeAnnotation.labels().length);
+		}
+
+		return new String[]{};
 	}
 
 	private IdDescription computeIdDescription() {

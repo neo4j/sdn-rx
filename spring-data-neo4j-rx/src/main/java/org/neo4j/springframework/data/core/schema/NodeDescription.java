@@ -65,6 +65,8 @@ public interface NodeDescription<T> {
 	 */
 	Collection<GraphPropertyDescription> getGraphProperties();
 
+	String[] getAdditionalLabels();
+
 	/**
 	 * Retrieves a {@link GraphPropertyDescription} by its field name.
 	 *
