@@ -1,6 +1,5 @@
 = Spring Data Neo4j⚡️RX
-Gerrit Meier <gerrit.meier@neo4j.com>
-Michael Simons <michael.simons@neo4j.com>
+Gerrit Meier <gerrit.meier@neo4j.com>; Michael Simons <michael.simons@neo4j.com>
 :toc:
 :doctype: book
 :lang: en
