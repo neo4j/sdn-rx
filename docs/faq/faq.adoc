@@ -145,13 +145,13 @@ with the `$` syntax (from Neo4j 4.0 on upwards, the old `{foo}` syntax for Cyphe
 ----
 include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/docs/repositories/domain_events/ARepository.java[tags=standard-parameter]
 ----
-<.> Here we are referring to the parameter by it's name.
+<.> Here we are referring to the parameter by its name.
     You can also use `$0` etc. instead.
 
 NOTE: You need to compile your Java 8+ project with `-parameters` to make named parameters
       work without further annotations. The Spring Boot Maven and Gradle plugins do this
       automatically for you. If this is not feasible for any reason, you can either add
-      `@Param`  and specify the name explicitly or used the parameters index.
+      `@Param`  and specify the name explicitly or use the parameters index.
 
 == How do I use Spring Expression Language in custom queries?
 
@@ -167,7 +167,7 @@ The following example basically defines the same query as above, but uses a `WHE
 include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/docs/repositories/domain_events/ARepository.java[tags=spel]
 ----
 
-The SpEL blocked starts with `:#{` and than refers to the given `String`  parameters by name (`#pt1`).
+The SpEL blocked starts with `:#{` and than refers to the given `String` parameters by name (`#pt1`).
 Don't confuse this with the above Cypher syntax!
 The SpEL expression concatenates both parameters into one single value that is eventually passed on to the <<neo4j-client>>.
 The SpEL block ends with `}`.
@@ -208,4 +208,3 @@ movieExample = Example.of(
 );
 movies = this.movieRepository.findAll(movieExample);
 ----
-
