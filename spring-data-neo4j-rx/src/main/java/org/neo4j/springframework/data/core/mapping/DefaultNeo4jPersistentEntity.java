@@ -189,7 +189,7 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 	private String computePrimaryLabel() {
 
 		Node nodeAnnotation = this.findAnnotation(Node.class);
-		if (nodeAnnotation == null || (hasEmptyLabelInformation(nodeAnnotation))) {
+		if (nodeAnnotation == null || hasEmptyLabelInformation(nodeAnnotation)) {
 			return this.getType().getSimpleName();
 		} else if (hasText(nodeAnnotation.primaryLabel())) {
 			return nodeAnnotation.primaryLabel();
