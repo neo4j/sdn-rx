@@ -103,6 +103,24 @@ class DefaultNeo4jPersistentEntityTest {
 			assertThat(persistentEntity.getPrimaryLabel()).isEqualTo("a");
 			assertThat(persistentEntity.getAdditionalLabels()).containsExactlyInAnyOrder("b", "c");
 		}
+
+		@Test
+		void supportExplicitPrimaryLabel() {
+			Neo4jPersistentEntity<?> persistentEntity = new Neo4jMappingContext()
+				.getPersistentEntity(EntityWithExplicitPrimaryLabel.class);
+
+			assertThat(persistentEntity.getPrimaryLabel()).isEqualTo("a");
+			assertThat(persistentEntity.getAdditionalLabels()).isEmpty();
+		}
+
+		@Test
+		void supportExplicitPrimaryLabelAndAdditionalLabels() {
+			Neo4jPersistentEntity<?> persistentEntity = new Neo4jMappingContext()
+				.getPersistentEntity(EntityWithExplicitPrimaryLabelAndAdditionalLabels.class);
+
+			assertThat(persistentEntity.getPrimaryLabel()).isEqualTo("a");
+			assertThat(persistentEntity.getAdditionalLabels()).containsExactlyInAnyOrder("b", "c");
+		}
 	}
 
 	@Node
@@ -170,6 +188,16 @@ class DefaultNeo4jPersistentEntityTest {
 
 	@Node({"a", "b", "c"})
 	private static class EntityWithMultipleLabels {
+		@Id private Long id;
+	}
+
+	@Node(primaryLabel = "a")
+	private static class EntityWithExplicitPrimaryLabel {
+		@Id private Long id;
+	}
+
+	@Node(primaryLabel = "a", labels = {"b", "c"})
+	private static class EntityWithExplicitPrimaryLabelAndAdditionalLabels {
 		@Id private Long id;
 	}
 

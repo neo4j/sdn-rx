@@ -65,6 +65,9 @@ public interface NodeDescription<T> {
 	 */
 	Collection<GraphPropertyDescription> getGraphProperties();
 
+	/**
+	 * @return the list of all additional labels (All labels except the {@link NodeDescription#getPrimaryLabel()}.
+	 */
 	String[] getAdditionalLabels();
 
 	/**

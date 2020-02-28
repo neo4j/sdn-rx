@@ -18,6 +18,8 @@
  */
 package org.neo4j.springframework.data.core.mapping;
 
+import static org.springframework.util.StringUtils.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -175,24 +177,50 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 		});
 	}
 
+	/**
+	 * The primary label will get computed and returned by following rules:<br>
+	 * 1. If there is no {@link Node} annotation, use the class name.<br>
+	 * 2. If there is an annotation but it has no properties set, use the class name.<br>
+	 * 3. If only {@link Node#labels()} property is set, use the first one as the primary label
+	 * 4. If the {@link Node#primaryLabel()} property is set, use this as the primary label
+	 *
+	 * @return computed primary label
+	 */
 	private String computePrimaryLabel() {
 
 		Node nodeAnnotation = this.findAnnotation(Node.class);
-		if (nodeAnnotation == null || nodeAnnotation.labels().length < 1) {
+		if (nodeAnnotation == null || (hasEmptyLabelInformation(nodeAnnotation))) {
 			return this.getType().getSimpleName();
+		} else if (hasText(nodeAnnotation.primaryLabel())) {
+			return nodeAnnotation.primaryLabel();
 		} else {
 			return nodeAnnotation.labels()[0];
 		}
 	}
 
+	/**
+	 * The additional labels will get computed and returned by following rules:<br>
+	 * 1. If there is no {@link Node} annotation, empty {@code String} array.<br>
+	 * 2. If there is an annotation but it has no properties set, empty {@code String} array.<br>
+	 * 3. If only {@link Node#labels()} property is set, use the all but the first one as the additional labels.<br>
+	 * 3. If the {@link Node#primaryLabel()} property is set, use the all but the first one as the additional labels.<br>
+	 *
+	 * @return computed additional labels
+	 */
 	private String[] computeAdditionalLabels() {
 
 		Node nodeAnnotation = this.findAnnotation(Node.class);
-		if (nodeAnnotation != null && nodeAnnotation.labels().length > 1) {
+		if (nodeAnnotation == null || hasEmptyLabelInformation(nodeAnnotation)) {
+			return new String[] {};
+		} else if (hasText(nodeAnnotation.primaryLabel())) {
+			return nodeAnnotation.labels();
+		} else {
 			return Arrays.copyOfRange(nodeAnnotation.labels(), 1, nodeAnnotation.labels().length);
 		}
+	}
 
-		return new String[]{};
+	private boolean hasEmptyLabelInformation(Node nodeAnnotation) {
+		return nodeAnnotation.labels().length < 1 && !hasText(nodeAnnotation.primaryLabel());
 	}
 
 	private IdDescription computeIdDescription() {
