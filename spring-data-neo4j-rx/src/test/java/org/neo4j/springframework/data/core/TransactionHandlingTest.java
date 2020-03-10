@@ -161,7 +161,7 @@ class TransactionHandlingTest {
 			neo4jClient.query("RETURN 1").in("aDatabase").fetch().one();
 
 			verify(driver, never()).rxSession(any(SessionConfig.class));
-			verifyZeroInteractions(driver, session);
+			verifyNoMoreInteractions(driver, session);
 		}
 
 		@Test
@@ -185,7 +185,7 @@ class TransactionHandlingTest {
 			verify(transaction).commit();
 			verify(transaction).rollback();
 			verify(session).close();
-			verifyZeroInteractions(driver, session, transaction);
+			verifyNoMoreInteractions(driver, session, transaction);
 		}
 
 		@Test
@@ -210,7 +210,7 @@ class TransactionHandlingTest {
 			verify(transaction).commit();
 			verify(transaction).rollback();
 			verify(session).close();
-			verifyZeroInteractions(driver, session, transaction);
+			verifyNoMoreInteractions(driver, session, transaction);
 		}
 	}
 
