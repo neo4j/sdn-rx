@@ -78,7 +78,7 @@ class Neo4jTransactionManagerTest {
 
 		assertThat(optionalTransaction).isNull();
 
-		verifyZeroInteractions(driver, session, transaction);
+		verifyNoInteractions(driver, session, transaction);
 	}
 
 	@Test

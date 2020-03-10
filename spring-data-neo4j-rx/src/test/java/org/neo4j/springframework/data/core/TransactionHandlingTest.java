@@ -139,6 +139,7 @@ class TransactionHandlingTest {
 				verify(transaction).commit();
 				verify(transaction).close();
 				verify(session).isOpen();
+				verify(session).lastBookmark();
 				verify(session).close();
 				verifyNoMoreInteractions(driver, session, transaction);
 			}
