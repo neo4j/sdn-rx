@@ -37,6 +37,7 @@ import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.neo4j.driver.Driver;
 import org.neo4j.springframework.data.config.AbstractReactiveNeo4jConfig;
@@ -59,6 +60,7 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * @author Michael J. Simons
  */
+@EnabledIfEnvironmentVariable(named = "TEAMCITY_HOST", matches = "notyetenabled")
 @ExtendWith(SpringExtension.class)
 class ReactiveCausalClusterLoadTestIT {
 
