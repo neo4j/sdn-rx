@@ -20,6 +20,7 @@ package org.neo4j.springframework.data.integration.imperative;
 
 import static java.util.stream.Collectors.*;
 
+import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 
@@ -36,14 +38,18 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.neo4j.driver.AuthTokens;
+import org.neo4j.driver.Config;
 import org.neo4j.driver.Driver;
+import org.neo4j.driver.GraphDatabase;
+import org.neo4j.junit.jupiter.causal_cluster.NeedsCausalCluster;
+import org.neo4j.junit.jupiter.causal_cluster.Neo4jUri;
 import org.neo4j.springframework.data.config.AbstractNeo4jConfig;
 import org.neo4j.springframework.data.core.Neo4jClient;
 import org.neo4j.springframework.data.integration.shared.ThingWithGeneratedId;
 import org.neo4j.springframework.data.integration.shared.ThingWithSequence;
 import org.neo4j.springframework.data.repository.Neo4jRepository;
 import org.neo4j.springframework.data.repository.config.EnableNeo4jRepositories;
-import org.neo4j.springframework.data.test.BoltkitHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -52,14 +58,18 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * This integration tests needs the <a href="https://github.com/neo4j-drivers/boltkit">Neo4j Boltkit</a>
- * and with {@code neoctrl} installed and configured to bring up a causal cluster.
+ * This tests needs a Neo4j causal cluster. We run them based on Testcontainers. It requires some resources
+ * as well as acceptance of the commercial license, so this test is disabled by default.
  *
  * @author Michael J. Simons
  */
-@EnabledIfEnvironmentVariable(named = "TEAMCITY_HOST", matches = "notyetenabled")
 @ExtendWith(SpringExtension.class)
+@NeedsCausalCluster(password = "secret", startupTimeOutInMillis = 600_000L)
+@EnabledIfEnvironmentVariable(named = "SDN_RX_NEO4J_ACCEPT_COMMERCIAL_EDITION", matches = "yes")
 class CausalClusterLoadTestIT {
+
+	@Neo4jUri
+	private static URI neo4jUri;
 
 	@RepeatedTest(20)
 	void transactionsShouldBeSerializable(@Autowired ThingService thingService) throws InterruptedException {
@@ -128,11 +138,14 @@ class CausalClusterLoadTestIT {
 	@Configuration
 	@EnableTransactionManagement
 	@EnableNeo4jRepositories(considerNestedRepositories = true)
-	static class Config extends AbstractNeo4jConfig {
+	static class TestConfig extends AbstractNeo4jConfig {
 
 		@Bean
 		public Driver driver() {
-			return BoltkitHelper.getClusterConnection();
+			Driver driver = GraphDatabase.driver(neo4jUri, AuthTokens.basic("neo4j", "secret"),
+				Config.builder().withConnectionTimeout(2, TimeUnit.MINUTES).build());
+			driver.verifyConnectivity();
+			return driver;
 		}
 
 		@Override
