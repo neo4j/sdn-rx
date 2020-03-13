@@ -44,6 +44,7 @@ import org.neo4j.springframework.data.core.Neo4jClient;
 import org.neo4j.springframework.data.core.ReactiveNeo4jClient;
 import org.neo4j.springframework.data.core.ReactiveDatabaseSelectionProvider;
 import org.neo4j.springframework.data.core.transaction.ReactiveNeo4jTransactionManager;
+import org.neo4j.springframework.data.integration.reactive.repositories.ReactivePersonRepository;
 import org.neo4j.springframework.data.integration.shared.PersonWithAllConstructor;
 import org.neo4j.springframework.data.repository.config.EnableReactiveNeo4jRepositories;
 import org.springframework.beans.factory.annotation.Autowired;

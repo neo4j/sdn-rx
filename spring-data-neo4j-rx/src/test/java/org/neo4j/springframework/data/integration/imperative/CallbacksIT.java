@@ -27,6 +27,7 @@ import java.util.Collections;
 import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
 import org.neo4j.springframework.data.config.AbstractNeo4jConfig;
+import org.neo4j.springframework.data.integration.imperative.repositories.ThingRepository;
 import org.neo4j.springframework.data.integration.shared.CallbacksITBase;
 import org.neo4j.springframework.data.integration.shared.ThingWithAssignedId;
 import org.neo4j.springframework.data.repository.config.EnableNeo4jRepositories;

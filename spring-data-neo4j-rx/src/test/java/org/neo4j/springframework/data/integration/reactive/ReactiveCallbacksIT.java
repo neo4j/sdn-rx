@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
 import org.neo4j.springframework.data.config.AbstractReactiveNeo4jConfig;
+import org.neo4j.springframework.data.integration.reactive.repositories.ReactiveThingRepository;
 import org.neo4j.springframework.data.integration.shared.CallbacksITBase;
 import org.neo4j.springframework.data.integration.shared.ThingWithAssignedId;
 import org.neo4j.springframework.data.repository.config.EnableReactiveNeo4jRepositories;

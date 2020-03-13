@@ -53,8 +53,12 @@ import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Point;
 import org.neo4j.driver.types.Relationship;
 import org.neo4j.springframework.data.config.AbstractNeo4jConfig;
+import org.neo4j.springframework.data.integration.imperative.repositories.PersonRepository;
+import org.neo4j.springframework.data.integration.imperative.repositories.ThingRepository;
 import org.neo4j.springframework.data.integration.shared.*;
+import org.neo4j.springframework.data.repository.Neo4jRepository;
 import org.neo4j.springframework.data.repository.config.EnableNeo4jRepositories;
+import org.neo4j.springframework.data.repository.query.Query;
 import org.neo4j.springframework.data.test.Neo4jExtension.Neo4jConnectionSupport;
 import org.neo4j.springframework.data.test.Neo4jIntegrationTest;
 import org.neo4j.springframework.data.types.CartesianPoint2d;
@@ -74,6 +78,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.geo.Circle;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Metrics;
+import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
@@ -2262,6 +2267,48 @@ class RepositoryIT {
 			assertThat(session.run("MATCH (n:Y:Z) return n").list()).hasSize(1);
 			assertThat(session.run("MATCH (n:X) return n").list()).hasSize(1);
 		}
+	}
+
+	interface BidirectionalStartRepository extends Neo4jRepository<BidirectionalStart, Long> {
+	}
+
+	interface BidirectionalEndRepository extends Neo4jRepository<BidirectionalEnd, Long> {
+	}
+
+	interface DeepRelationshipRepository extends Neo4jRepository<DeepRelationships.Type1, Long> {
+	}
+
+	interface LoopingRelationshipRepository extends Neo4jRepository<DeepRelationships.LoopingType1, Long> {
+	}
+
+	interface ImmutablePersonRepository extends Neo4jRepository<ImmutablePerson, String> {
+	}
+
+	interface MultipleLabelRepository extends Neo4jRepository<MultipleLabels.MultipleLabelsEntity, Long> {
+	}
+
+	interface MultipleLabelWithAssignedIdRepository extends Neo4jRepository<MultipleLabels.MultipleLabelsEntityWithAssignedId, Long> {
+	}
+
+	interface PersonWithRelationshipWithPropertiesRepository extends Neo4jRepository<PersonWithRelationshipWithProperties, Long> {
+
+		@Query("MATCH (p:PersonWithRelationshipWithProperties)-[l:LIKES]->(h:Hobby) return p, collect(l), collect(h)")
+		PersonWithRelationshipWithProperties loadFromCustomQuery(@Param("id") Long id);
+	}
+
+	interface PetRepository extends Neo4jRepository<Pet, Long> {
+	}
+
+	interface RelationshipRepository extends Neo4jRepository<PersonWithRelationship, Long> {
+
+		@Query("MATCH (n:PersonWithRelationship{name:'Freddie'}) "
+			+ "OPTIONAL MATCH (n)-[r1:Has]->(p:Pet) WITH n, collect(r1) as petRels, collect(p) as pets "
+			+ "OPTIONAL MATCH (n)-[r2:Has]->(h:Hobby) "
+			+ "return n, petRels, pets, collect(r2) as hobbyRels, collect(h) as hobbies")
+		PersonWithRelationship getPersonWithRelationshipsViaQuery();
+	}
+
+	interface SimilarThingRepository extends Neo4jRepository<SimilarThing, Long> {
 	}
 
 	@Configuration

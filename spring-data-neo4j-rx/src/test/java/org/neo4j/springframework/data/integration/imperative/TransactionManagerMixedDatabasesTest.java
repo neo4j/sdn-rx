@@ -40,6 +40,7 @@ import org.neo4j.driver.SessionConfig;
 import org.neo4j.springframework.data.config.AbstractNeo4jConfig;
 import org.neo4j.springframework.data.core.Neo4jClient;
 import org.neo4j.springframework.data.core.transaction.Neo4jTransactionManager;
+import org.neo4j.springframework.data.integration.imperative.repositories.PersonRepository;
 import org.neo4j.springframework.data.integration.shared.PersonWithAllConstructor;
 import org.neo4j.springframework.data.core.DatabaseSelectionProvider;
 import org.neo4j.springframework.data.repository.config.EnableNeo4jRepositories;

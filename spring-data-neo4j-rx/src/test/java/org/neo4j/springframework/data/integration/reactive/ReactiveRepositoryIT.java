@@ -54,8 +54,12 @@ import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Point;
 import org.neo4j.driver.types.Relationship;
 import org.neo4j.springframework.data.config.AbstractReactiveNeo4jConfig;
+import org.neo4j.springframework.data.integration.reactive.repositories.ReactivePersonRepository;
+import org.neo4j.springframework.data.integration.reactive.repositories.ReactiveThingRepository;
 import org.neo4j.springframework.data.integration.shared.*;
+import org.neo4j.springframework.data.repository.ReactiveNeo4jRepository;
 import org.neo4j.springframework.data.repository.config.EnableReactiveNeo4jRepositories;
+import org.neo4j.springframework.data.repository.query.Query;
 import org.neo4j.springframework.data.test.Neo4jIntegrationTest;
 import org.neo4j.springframework.data.test.Neo4jExtension.*;
 import org.neo4j.springframework.data.types.CartesianPoint2d;
@@ -69,6 +73,8 @@ import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.repository.query.Param;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.reactive.TransactionalOperator;
@@ -1883,8 +1889,54 @@ class ReactiveRepositoryIT {
 		}
 	}
 
+	interface BidirectionalStartRepository extends ReactiveNeo4jRepository<BidirectionalStart, Long> {
+	}
+
+	interface BidirectionalEndRepository extends ReactiveNeo4jRepository<BidirectionalEnd, Long> {
+	}
+
+	interface ImmutablePersonRepository extends ReactiveNeo4jRepository<ImmutablePerson, String> {
+	}
+
+	interface ReactiveDeepRelationshipRepository extends ReactiveNeo4jRepository<DeepRelationships.Type1, Long> {
+	}
+
+	interface ReactiveLoopingRelationshipRepository
+		extends ReactiveNeo4jRepository<DeepRelationships.LoopingType1, Long> {
+	}
+
+	interface ReactiveMultipleLabelRepository
+		extends ReactiveNeo4jRepository<MultipleLabels.MultipleLabelsEntity, Long> {
+	}
+
+	interface ReactiveMultipleLabelWithAssignedIdRepository
+		extends ReactiveNeo4jRepository<MultipleLabels.MultipleLabelsEntityWithAssignedId, Long> {
+	}
+
+	interface ReactivePersonWithRelationshipWithPropertiesRepository
+		extends ReactiveNeo4jRepository<PersonWithRelationshipWithProperties, Long> {
+
+		@Query("MATCH (p:PersonWithRelationshipWithProperties)-[l:LIKES]->(h:Hobby) return p, collect(l), collect(h)")
+		Mono<PersonWithRelationshipWithProperties> loadFromCustomQuery(@Param("id") Long id);
+	}
+
+	interface ReactivePetRepository extends ReactiveNeo4jRepository<Pet, Long> {
+	}
+
+	interface ReactiveRelationshipRepository extends ReactiveNeo4jRepository<PersonWithRelationship, Long> {
+
+		@Query("MATCH (n:PersonWithRelationship{name:'Freddie'}) "
+			+ "OPTIONAL MATCH (n)-[r1:Has]->(p:Pet) WITH n, collect(r1) as petRels, collect(p) as pets "
+			+ "OPTIONAL MATCH (n)-[r2:Has]->(h:Hobby) "
+			+ "return n, petRels, pets, collect(r2) as hobbyRels, collect(h) as hobbies")
+		Mono<PersonWithRelationship> getPersonWithRelationshipsViaQuery();
+	}
+
+	interface ReactiveSimilarThingRepository extends ReactiveCrudRepository<SimilarThing, Long> {
+	}
+
 	@Configuration
-	@EnableReactiveNeo4jRepositories
+	@EnableReactiveNeo4jRepositories(considerNestedRepositories = true)
 	@EnableTransactionManagement
 	static class Config extends AbstractReactiveNeo4jConfig {
 
