@@ -583,14 +583,15 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#faq">8. Frequently Asked Questions</a>
 <ul class="sectlevel2">
 <li><a href="#neo4j4.0supportsmultipledatabases-howcaniusethem">8.1. Neo4j 4.0 supports multiple databases - How can I use them?</a></li>
-<li><a href="#doineedtouseneo4jspecificannotations">8.2. Do I need to use Neo4j specific annotations?</a></li>
-<li><a href="#howdoiuseassignedids">8.3. How do I use assigned ids?</a></li>
-<li><a href="#howdoiuseexternallygeneratedids">8.4. How do I use externally generated ids?</a></li>
-<li><a href="#template-support">8.5. Do I have to create repositories for each domain class?</a></li>
-<li><a href="#howdoispecifyparametersincustomqueries">8.6. How do I specify parameters in custom queries?</a></li>
-<li><a href="#howdoiusespringexpressionlanguageincustomqueries">8.7. How do I use Spring Expression Language in custom queries?</a></li>
-<li><a href="#howdoiauditentities">8.8. How do I audit entities?</a></li>
-<li><a href="#howdoiusefindbyexample">8.9. How do I use "Find by example"?</a></li>
+<li><a href="#doineedspecificconfigurationsothattransactionsworkseemleswithaneo4jcausalcluster">8.2. Do I need specific configuration so that transactions work seemles with a Neo4j Causal Cluster?</a></li>
+<li><a href="#doineedtouseneo4jspecificannotations">8.3. Do I need to use Neo4j specific annotations?</a></li>
+<li><a href="#howdoiuseassignedids">8.4. How do I use assigned ids?</a></li>
+<li><a href="#howdoiuseexternallygeneratedids">8.5. How do I use externally generated ids?</a></li>
+<li><a href="#template-support">8.6. Do I have to create repositories for each domain class?</a></li>
+<li><a href="#howdoispecifyparametersincustomqueries">8.7. How do I specify parameters in custom queries?</a></li>
+<li><a href="#howdoiusespringexpressionlanguageincustomqueries">8.8. How do I use Spring Expression Language in custom queries?</a></li>
+<li><a href="#howdoiauditentities">8.9. How do I audit entities?</a></li>
+<li><a href="#howdoiusefindbyexample">8.10. How do I use "Find by example"?</a></li>
 </ul>
 </li>
 <li><a href="#appendix">9. Appendix</a>
@@ -4843,7 +4844,15 @@ Be careful that you don&#8217;t mix up entities retrieved from one database with
 </div>
 </div>
 <div class="sect2">
-<h3 id="doineedtouseneo4jspecificannotations"><a class="anchor" href="#doineedtouseneo4jspecificannotations"></a>8.2. Do I need to use Neo4j specific annotations?</h3>
+<h3 id="doineedspecificconfigurationsothattransactionsworkseemleswithaneo4jcausalcluster"><a class="anchor" href="#doineedspecificconfigurationsothattransactionsworkseemleswithaneo4jcausalcluster"></a>8.2. Do I need specific configuration so that transactions work seemles with a Neo4j Causal Cluster?</h3>
+<div class="paragraph">
+<p>No, you don&#8217;t.
+SDN/RX uses Neo4j Causal Cluster bookmarks internally without any configuration on your side required.
+Transactions in the same thread or the same reactive stream following each other will be able to read their previously changed values as you would expect.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="doineedtouseneo4jspecificannotations"><a class="anchor" href="#doineedtouseneo4jspecificannotations"></a>8.3. Do I need to use Neo4j specific annotations?</h3>
 <div class="paragraph">
 <p>No.
 You are free to use the following, equivalent Spring Data annotations:</p>
@@ -4880,14 +4889,14 @@ You are free to use the following, equivalent Spring Data annotations:</p>
 </table>
 </div>
 <div class="sect2">
-<h3 id="howdoiuseassignedids"><a class="anchor" href="#howdoiuseassignedids"></a>8.3. How do I use assigned ids?</h3>
+<h3 id="howdoiuseassignedids"><a class="anchor" href="#howdoiuseassignedids"></a>8.4. How do I use assigned ids?</h3>
 <div class="paragraph">
 <p>Just <code>@Id</code> without <code>@GeneratedValue</code> and fill your id attribute via a constructor parameter or a setter or <em>wither</em>.
 See this <a href="https://medium.com/neo4j/neo4j-ogm-and-spring-data-neo4j-a55a866df68c">blog post</a> for some general remarks about finding good ids.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="howdoiuseexternallygeneratedids"><a class="anchor" href="#howdoiuseexternallygeneratedids"></a>8.4. How do I use externally generated ids?</h3>
+<h3 id="howdoiuseexternallygeneratedids"><a class="anchor" href="#howdoiuseexternallygeneratedids"></a>8.5. How do I use externally generated ids?</h3>
 <div class="paragraph">
 <p>We provide the interface <code>org.neo4j.springframework.data.core.schema.IdGenerator</code>.
 Implement it anyway you want and configure your implementation like this:</p>
@@ -4936,7 +4945,7 @@ Setters are not required on non-final fields for the id.
 </div>
 </div>
 <div class="sect2">
-<h3 id="template-support"><a class="anchor" href="#template-support"></a>8.5. Do I have to create repositories for each domain class?</h3>
+<h3 id="template-support"><a class="anchor" href="#template-support"></a>8.6. Do I have to create repositories for each domain class?</h3>
 <div class="paragraph">
 <p>No.
 Have a look at the <a href="#sdn-rx-building-blocks">SDN/RX building blocks</a> and
@@ -5028,7 +5037,7 @@ find the <code>Neo4jTemplate</code> respectively the <code>ReactiveNeo4jTemplate
 </div>
 </div>
 <div class="sect2">
-<h3 id="howdoispecifyparametersincustomqueries"><a class="anchor" href="#howdoispecifyparametersincustomqueries"></a>8.6. How do I specify parameters in custom queries?</h3>
+<h3 id="howdoispecifyparametersincustomqueries"><a class="anchor" href="#howdoispecifyparametersincustomqueries"></a>8.7. How do I specify parameters in custom queries?</h3>
 <div class="paragraph">
 <p>You do this exactly the same way as in a standard Cypher query issued in the Neo4j Browser or the Cypher-Shell,
 with the <code>$</code> syntax (from Neo4j 4.0 on upwards, the old <code>{foo}</code> syntax for Cypher parameters has been removed from the database);</p>
@@ -5069,7 +5078,7 @@ You need to compile your Java 8+ project with <code>-parameters</code> to make n
 </div>
 </div>
 <div class="sect2">
-<h3 id="howdoiusespringexpressionlanguageincustomqueries"><a class="anchor" href="#howdoiusespringexpressionlanguageincustomqueries"></a>8.7. How do I use Spring Expression Language in custom queries?</h3>
+<h3 id="howdoiusespringexpressionlanguageincustomqueries"><a class="anchor" href="#howdoiusespringexpressionlanguageincustomqueries"></a>8.8. How do I use Spring Expression Language in custom queries?</h3>
 <div class="paragraph">
 <p><a href="https://docs.spring.io/spring/docs/current/spring-framework-reference/core.html#expressions">Spring Expression Language (SpEL)</a> can be used in custom queries inside <code>:#{}</code>.
 This is the standard Spring Data way of defining a block of text inside a query that undergoes SpEL evaluation.</p>
@@ -5095,7 +5104,7 @@ The SpEL block ends with <code>}</code>.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="howdoiauditentities"><a class="anchor" href="#howdoiauditentities"></a>8.8. How do I audit entities?</h3>
+<h3 id="howdoiauditentities"><a class="anchor" href="#howdoiauditentities"></a>8.9. How do I audit entities?</h3>
 <div class="paragraph">
 <p>All Spring Data annotations are supported.
 Those are</p>
@@ -5118,7 +5127,7 @@ Those are</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="howdoiusefindbyexample"><a class="anchor" href="#howdoiusefindbyexample"></a>8.9. How do I use "Find by example"?</h3>
+<h3 id="howdoiusefindbyexample"><a class="anchor" href="#howdoiusefindbyexample"></a>8.10. How do I use "Find by example"?</h3>
 <div class="paragraph">
 <p>"Find by example" is a new feature in SDN/RX.
 You instantiate an entity or use an existing one.
@@ -6317,6 +6326,14 @@ Those new properties might change in the future again when SDN/RX and the driver
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.neo4j.ogm.annotation.Relationship</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.neo4j.springframework.data.core.schema.Relationship</code></p></td>
 </tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.springframework.data.neo4j.annotation.EnableBookmarkManagement</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No replacement, not needed</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>org.springframework.data.neo4j.annotation.UseBookmark</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No replacement, not needed</p></td>
+</tr>
 </tbody>
 </table>
 <div class="admonitionblock note">
@@ -6331,6 +6348,18 @@ Several Neo4j-OGM annotations have not yet a corresponding annotation in SDN/RX,
 </td>
 </tr>
 </table>
+</div>
+<div class="sect4">
+<h5 id="bookmarkmanagement"><a class="anchor" href="#bookmarkmanagement"></a>Bookmarkmanagement</h5>
+<div class="paragraph">
+<p>Both <code>@EnableBookmarkManagement</code> and <code>@UseBookmark</code> as well as the <code>org.springframework.data.neo4j.bookmark.BookmarkManager</code>
+interface and it&#8217;s only implementation <code>org.springframework.data.neo4j.bookmark.CaffeineBookmarkManager</code> are gone and are
+not needed anymore.</p>
+</div>
+<div class="paragraph">
+<p>SDN/RX uses Bookmarks for all transactions, without configuration.
+You can remove the bean declaration of <code>CaffeineBookmarkManager</code> as well as the the dependency to <code>com.github.ben-manes.caffeine:caffeine</code>.</p>
+</div>
 </div>
 </div>
 </div>
@@ -6749,7 +6778,7 @@ $ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:ana
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-03-11 08:42:36 UTC
+Last updated 2020-03-13 10:42:52 UTC
 </div>
 </div>
 </body>
