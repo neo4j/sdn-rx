@@ -58,6 +58,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  * <p>
  * While it does not integrate against a real database (multi-database is an enterprise feature), it is still an integration
  * test due to the high integration with Spring framework code.
+ *
+ * @author Michael J. Simons
  */
 @ExtendWith(SpringExtension.class)
 class TransactionManagerMixedDatabasesTest {
@@ -67,24 +69,17 @@ class TransactionManagerMixedDatabasesTest {
 
 	private final Driver driver;
 
-	private final Neo4jClient neo4jClient;
-
 	private final TransactionTemplate transactionTemplate;
 
-	private final PersonRepository repository;
-
 	@Autowired
-	TransactionManagerMixedDatabasesTest(Driver driver, Neo4jClient neo4jClient,
-		Neo4jTransactionManager neo4jTransactionManager,
-		PersonRepository repository) {
+	TransactionManagerMixedDatabasesTest(Driver driver, Neo4jTransactionManager neo4jTransactionManager) {
+
 		this.driver = driver;
-		this.neo4jClient = neo4jClient;
 		this.transactionTemplate = new TransactionTemplate(neo4jTransactionManager);
-		this.repository = repository;
 	}
 
 	@Test
-	void withoutActiveTransactions() {
+	void withoutActiveTransactions(@Autowired Neo4jClient neo4jClient) {
 
 		Optional<Long> numberOfNodes =
 			neo4jClient.query(TEST_QUERY).in(DATABASE_NAME).fetchAs(Long.class).one();
@@ -94,7 +89,7 @@ class TransactionManagerMixedDatabasesTest {
 
 	@Transactional
 	@Test
-	void usingTheSameDatabaseDeclarative() {
+	void usingTheSameDatabaseDeclarative(@Autowired Neo4jClient neo4jClient) {
 
 		Optional<Long> numberOfNodes = neo4jClient.query(TEST_QUERY).fetchAs(Long.class).one();
 
@@ -102,7 +97,8 @@ class TransactionManagerMixedDatabasesTest {
 	}
 
 	@Test
-	void usingSameDatabaseExplicitTx() {
+	void usingSameDatabaseExplicitTx(@Autowired Neo4jClient neo4jClient) {
+
 		Neo4jTransactionManager otherTransactionManger = new Neo4jTransactionManager(driver, DatabaseSelectionProvider
 			.createStaticDatabaseSelectionProvider(DATABASE_NAME));
 		TransactionTemplate otherTransactionTemplate = new TransactionTemplate(otherTransactionManger);
@@ -114,7 +110,7 @@ class TransactionManagerMixedDatabasesTest {
 
 	@Test
 	@Transactional
-	void usingAnotherDatabaseDeclarative() {
+	void usingAnotherDatabaseDeclarative(@Autowired Neo4jClient neo4jClient) {
 
 		assertThatIllegalStateException().isThrownBy(
 			() -> neo4jClient.query("MATCH (n) RETURN COUNT(n)").in(DATABASE_NAME).fetchAs(Long.class).one())
@@ -123,7 +119,7 @@ class TransactionManagerMixedDatabasesTest {
 	}
 
 	@Test
-	void usingAnotherDatabaseExplicitTx() {
+	void usingAnotherDatabaseExplicitTx(@Autowired Neo4jClient neo4jClient) {
 
 		assertThatIllegalStateException().isThrownBy(
 			() -> transactionTemplate.execute(
@@ -132,7 +128,7 @@ class TransactionManagerMixedDatabasesTest {
 	}
 
 	@Test
-	void usingAnotherDatabaseDeclarativeFromRepo() {
+	void usingAnotherDatabaseDeclarativeFromRepo(@Autowired PersonRepository repository) {
 
 		Neo4jTransactionManager otherTransactionManger = new Neo4jTransactionManager(driver, DatabaseSelectionProvider
 			.createStaticDatabaseSelectionProvider(DATABASE_NAME));
