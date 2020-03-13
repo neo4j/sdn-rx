@@ -36,13 +36,10 @@ import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Config;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
-import org.neo4j.junit.jupiter.causal_cluster.NeedsCausalCluster;
 import org.neo4j.junit.jupiter.causal_cluster.Neo4jUri;
 import org.neo4j.springframework.data.config.AbstractNeo4jConfig;
 import org.neo4j.springframework.data.core.Neo4jClient;
@@ -50,10 +47,10 @@ import org.neo4j.springframework.data.integration.shared.ThingWithGeneratedId;
 import org.neo4j.springframework.data.integration.shared.ThingWithSequence;
 import org.neo4j.springframework.data.repository.Neo4jRepository;
 import org.neo4j.springframework.data.repository.config.EnableNeo4jRepositories;
+import org.neo4j.springframework.data.test.CausalClusterIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,9 +60,7 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * @author Michael J. Simons
  */
-@ExtendWith(SpringExtension.class)
-@NeedsCausalCluster(password = "secret", startupTimeOutInMillis = 600_000L)
-@EnabledIfEnvironmentVariable(named = "SDN_RX_NEO4J_ACCEPT_COMMERCIAL_EDITION", matches = "yes")
+@CausalClusterIntegrationTest
 class CausalClusterLoadTestIT {
 
 	@Neo4jUri
@@ -142,6 +137,7 @@ class CausalClusterLoadTestIT {
 
 		@Bean
 		public Driver driver() {
+
 			Driver driver = GraphDatabase.driver(neo4jUri, AuthTokens.basic("neo4j", "secret"),
 				Config.builder().withConnectionTimeout(2, TimeUnit.MINUTES).build());
 			driver.verifyConnectivity();
