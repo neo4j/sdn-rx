@@ -41,7 +41,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@NeedsCausalCluster
+@NeedsCausalCluster(password = "secret", startupTimeOutInMillis = 600_000L)
 @ExtendWith(SpringExtension.class)
 @Tag("CausalClusterRequired")
 @EnabledIfEnvironmentVariable(named = "SDN_RX_NEO4J_ACCEPT_COMMERCIAL_EDITION", matches = "yes")
