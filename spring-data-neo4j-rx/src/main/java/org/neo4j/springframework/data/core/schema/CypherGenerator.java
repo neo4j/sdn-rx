@@ -24,10 +24,9 @@ import static org.neo4j.springframework.data.core.schema.RelationshipDescription
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
@@ -65,7 +64,7 @@ public enum CypherGenerator {
 	private static final String RELATIONSHIP_NAME = "relProps";
 
 	// for now the query depth is a hard static limit
-	private static final int RELATIONSHIP_DEPTH_LIMIT = 5;
+	private static final int RELATIONSHIP_DEPTH_LIMIT = 2;
 
 	/**
 	 * @param nodeDescription The node description for which a match clause should be generated
@@ -331,14 +330,14 @@ public enum CypherGenerator {
 		Predicate<String> includeField = s -> inputProperties == null || inputProperties.isEmpty()
 			|| inputProperties.contains(s);
 
-		Set<RelationshipDescription> processedRelationships = new HashSet<>();
+		List<RelationshipDescription> processedRelationships = new ArrayList<>();
 
 		return projectPropertiesAndRelationships(nodeDescription, NAME_OF_ROOT_NODE, includeField,
 			processedRelationships, new ConcurrentHashMap<>());
 	}
 
 	private MapProjection projectAllPropertiesAndRelationships(NodeDescription<?> nodeDescription, String nodeName,
-		Set<RelationshipDescription> processedRelationships, Map<RelationshipDescription, Integer> depthMap) {
+		List<RelationshipDescription> processedRelationships, Map<RelationshipDescription, Integer> depthMap) {
 
 		Predicate<String> includeAllFields = (field) -> true;
 		return projectPropertiesAndRelationships(nodeDescription, nodeName, includeAllFields, processedRelationships,
@@ -348,15 +347,13 @@ public enum CypherGenerator {
 	private MapProjection projectPropertiesAndRelationships(NodeDescription<?> nodeDescription,
 		String nodeName,
 		Predicate<String> includeProperty,
-		Set<RelationshipDescription> processedRelationships,
+		List<RelationshipDescription> processedRelationships,
 		Map<RelationshipDescription, Integer> depthMap) {
-
-		Collection<RelationshipDescription> relationships = nodeDescription.getRelationships();
 
 		List<Object> contentOfProjection = new ArrayList<>();
 		contentOfProjection.addAll(projectNodeProperties(nodeDescription, nodeName, includeProperty));
 		contentOfProjection.addAll(
-			generateListsOf(relationships, nodeName, includeProperty, processedRelationships, depthMap)
+			generateListsOfRelationships(nodeDescription, nodeName, includeProperty, processedRelationships, depthMap)
 		);
 
 		return Cypher.anyNode(nodeName).project(contentOfProjection);
@@ -382,19 +379,15 @@ public enum CypherGenerator {
 		return nodePropertiesProjection;
 	}
 
-	private List<Object> generateListsOf(Collection<RelationshipDescription> relationships,
+	private List<Object> generateListsOfRelationships(NodeDescription<?> nodeDescription,
 		String nameOfStartNode, Predicate<String> includeField,
-		Set<RelationshipDescription> processedRelationships,
+		List<RelationshipDescription> processedRelationships,
 		Map<RelationshipDescription, Integer> depthMap) {
 
 		List<Object> generatedLists = new ArrayList<>();
 
+		Collection<RelationshipDescription> relationships = nodeDescription.getRelationships();
 		for (RelationshipDescription relationshipDescription : relationships) {
-
-			if (currentRelationshipDepth(relationshipDescription, depthMap) > RELATIONSHIP_DEPTH_LIMIT) {
-				return generatedLists;
-			}
-			increaseRelationshipDepth(relationshipDescription, depthMap);
 
 			String fieldName = relationshipDescription.getFieldName();
 			if (!includeField.test(fieldName)) {
@@ -406,6 +399,10 @@ public enum CypherGenerator {
 			if (!nameOfStartNode.equals(NAME_OF_ROOT_NODE) && relationshipDescription.hasRelationshipObverse()
 				&& processedRelationships.contains(relationshipDescription.getRelationshipObverse())) {
 				continue;
+			}
+
+			if (Collections.frequency(processedRelationships, relationshipDescription) > RELATIONSHIP_DEPTH_LIMIT) {
+				return generatedLists;
 			}
 
 			String relationshipType = relationshipDescription.getType();
@@ -431,7 +428,7 @@ public enum CypherGenerator {
 				generatedLists.add(listBasedOn(relationship)
 					.returning(
 						projectAllPropertiesAndRelationships(endNodeDescription,
-							relationshipFieldName, processedRelationships, depthMap)
+							relationshipFieldName, new ArrayList<>(processedRelationships), depthMap)
 							.and(NAME_OF_RELATIONSHIP_TYPE, Functions.type(relationship))));
 			} else {
 				Relationship relationship = relationshipDescription.isOutgoing()
@@ -439,7 +436,7 @@ public enum CypherGenerator {
 					: startNode.relationshipFrom(endNode, relationshipType);
 
 				MapProjection mapProjection = projectAllPropertiesAndRelationships(endNodeDescription,
-					relationshipFieldName, processedRelationships, depthMap);
+					relationshipFieldName, new ArrayList<>(processedRelationships), depthMap);
 
 				if (relationshipDescription.hasRelationshipProperties()) {
 					relationship = relationship.named(RelationshipDescription.NAME_OF_RELATIONSHIP);

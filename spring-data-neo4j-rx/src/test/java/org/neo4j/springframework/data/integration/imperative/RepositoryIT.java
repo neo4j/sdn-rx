@@ -332,8 +332,8 @@ class RepositoryIT {
 
 		// check the magical virtual limit of 5 of same type relationships
 		DeepRelationships.Type2 type2 = type1.nextType;
-		assertThat(type2.sameType.sameType.sameType.sameType.sameType).isNotNull();
-		assertThat(type2.sameType.sameType.sameType.sameType.sameType.sameType).isNull();
+		assertThat(type2.sameType.sameType.sameType).isNotNull();
+		assertThat(type2.sameType.sameType.sameType.sameType).isNull();
 
 	}
 
@@ -369,11 +369,7 @@ class RepositoryIT {
 		assertThat(iteration2).isNotNull();
 		DeepRelationships.LoopingType1 iteration3 = iteration2.nextType.nextType.nextType;
 		assertThat(iteration3).isNotNull();
-		DeepRelationships.LoopingType1 iteration4 = iteration3.nextType.nextType.nextType;
-		assertThat(iteration4).isNotNull();
-		DeepRelationships.LoopingType1 iteration5 = iteration4.nextType.nextType.nextType;
-		assertThat(iteration5).isNotNull();
-		assertThat(iteration5.nextType).isNull();
+		assertThat(iteration3.nextType).isNull();
 
 	}
 
