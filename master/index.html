@@ -1608,7 +1608,20 @@ In such a case, the type of the relationship to the other domain class is given 
 </div>
 </div>
 <div class="sect3">
-<h4 id="acompleteexample"><a class="anchor" href="#acompleteexample"></a>5.1.6. A complete example</h4>
+<h4 id="relationshipquerylimit"><a class="anchor" href="#relationshipquerylimit"></a>5.1.6. Relationship query limit</h4>
+<div class="paragraph">
+<p>In general there is no limitation of relationships / hops for creating the queries.
+SDN/RX parses the whole reachable graph from your modelled nodes.
+It is possible to have self-referencing entities and self-referencing concrete instances.</p>
+</div>
+<div class="paragraph">
+<p>If these entities or instances for a cycle we have a strict limit of <strong>2</strong> repetitions of walking the same path through the graph.
+E.g. You model a social network of <code>(:Person)-[:HAS_FRIEND]&#8594;(:Person)-[:HAS_FRIEND]&#8230;&#8203;</code> you will only get the friends of the second degree.
+If you need a more specific mapping for your domain we advise you to use custom queries.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="acompleteexample"><a class="anchor" href="#acompleteexample"></a>5.1.7. A complete example</h4>
 <div class="paragraph">
 <p>Putting all those together, we can create a simple domain.
 We use movies and people with different roles:</p>
@@ -6778,7 +6791,7 @@ $ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:ana
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-03-19 07:17:47 UTC
+Last updated 2020-03-20 15:13:52 UTC
 </div>
 </div>
 </body>
