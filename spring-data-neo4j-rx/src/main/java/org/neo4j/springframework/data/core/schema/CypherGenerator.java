@@ -26,8 +26,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 import org.apiguardian.api.API;
@@ -63,7 +61,6 @@ public enum CypherGenerator {
 
 	private static final String RELATIONSHIP_NAME = "relProps";
 
-	// for now the query depth is a hard static limit
 	private static final int RELATIONSHIP_DEPTH_LIMIT = 2;
 
 	/**
@@ -333,34 +330,37 @@ public enum CypherGenerator {
 		List<RelationshipDescription> processedRelationships = new ArrayList<>();
 
 		return projectPropertiesAndRelationships(nodeDescription, NAME_OF_ROOT_NODE, includeField,
-			processedRelationships, new ConcurrentHashMap<>());
+			processedRelationships);
 	}
 
 	private MapProjection projectAllPropertiesAndRelationships(NodeDescription<?> nodeDescription, String nodeName,
-		List<RelationshipDescription> processedRelationships, Map<RelationshipDescription, Integer> depthMap) {
+		List<RelationshipDescription> processedRelationships) {
 
 		Predicate<String> includeAllFields = (field) -> true;
-		return projectPropertiesAndRelationships(nodeDescription, nodeName, includeAllFields, processedRelationships,
-			depthMap);
+		return projectPropertiesAndRelationships(nodeDescription, nodeName, includeAllFields, processedRelationships);
 	}
 
 	private MapProjection projectPropertiesAndRelationships(NodeDescription<?> nodeDescription,
 		String nodeName,
 		Predicate<String> includeProperty,
-		List<RelationshipDescription> processedRelationships,
-		Map<RelationshipDescription, Integer> depthMap) {
+		List<RelationshipDescription> processedRelationships) {
 
 		List<Object> contentOfProjection = new ArrayList<>();
 		contentOfProjection.addAll(projectNodeProperties(nodeDescription, nodeName, includeProperty));
 		contentOfProjection.addAll(
-			generateListsOfRelationships(nodeDescription, nodeName, includeProperty, processedRelationships, depthMap)
+			generateListsFor(nodeDescription.getRelationships(), nodeName, includeProperty, processedRelationships)
 		);
 
 		return Cypher.anyNode(nodeName).project(contentOfProjection);
 	}
 
+	/**
+	 * Creates a list of objects that represents a very basic of {@code MapEntry<String, Object>} with the exception that
+	 * this list can also contain two "keys" in a row. The {@link MapProjection} will take care to handle them as
+	 * self-reflecting fields. Example with self-reflection and explicit value: {@code n {.id, name: n.name}}.
+	 */
 	private List<Object> projectNodeProperties(NodeDescription<?> nodeDescription, String nodeName,
-		Predicate<String> includeField) {
+			Predicate<String> includeField) {
 
 		List<Object> nodePropertiesProjection = new ArrayList<>();
 		for (GraphPropertyDescription property : nodeDescription.getGraphProperties()) {
@@ -379,14 +379,15 @@ public enum CypherGenerator {
 		return nodePropertiesProjection;
 	}
 
-	private List<Object> generateListsOfRelationships(NodeDescription<?> nodeDescription,
-		String nameOfStartNode, Predicate<String> includeField,
-		List<RelationshipDescription> processedRelationships,
-		Map<RelationshipDescription, Integer> depthMap) {
+	/**
+	 * @see org.neo4j.springframework.data.core.schema.CypherGenerator#projectNodeProperties
+	 */
+	private List<Object> generateListsFor(Collection<RelationshipDescription> relationships,
+		String nodeName, Predicate<String> includeField,
+		List<RelationshipDescription> processedRelationships) {
 
-		List<Object> generatedLists = new ArrayList<>();
+		List<Object> mapProjectionLists = new ArrayList<>();
 
-		Collection<RelationshipDescription> relationships = nodeDescription.getRelationships();
 		for (RelationshipDescription relationshipDescription : relationships) {
 
 			String fieldName = relationshipDescription.getFieldName();
@@ -396,71 +397,73 @@ public enum CypherGenerator {
 
 			// if we already processed the other way before, do not try to jump in the infinite loop
 			// unless it is a root node relationship
-			if (!nameOfStartNode.equals(NAME_OF_ROOT_NODE) && relationshipDescription.hasRelationshipObverse()
+			if (!nodeName.equals(NAME_OF_ROOT_NODE) && relationshipDescription.hasRelationshipObverse()
 				&& processedRelationships.contains(relationshipDescription.getRelationshipObverse())) {
 				continue;
 			}
 
 			if (Collections.frequency(processedRelationships, relationshipDescription) > RELATIONSHIP_DEPTH_LIMIT) {
-				return generatedLists;
+				return mapProjectionLists;
 			}
 
-			String relationshipType = relationshipDescription.getType();
-			String relationshipTargetName = relationshipDescription.generateRelatedNodesCollectionName();
-			String targetPrimaryLabel = relationshipDescription.getTarget().getPrimaryLabel();
-			String[] targetAdditionalLabels = relationshipDescription.getTarget().getAdditionalLabels();
-
-			Node startNode = anyNode(nameOfStartNode);
-			String relationshipFieldName = concatFieldName(nameOfStartNode, fieldName);
-			Node endNode = node(targetPrimaryLabel, targetAdditionalLabels).named(relationshipFieldName);
-			NodeDescription<?> endNodeDescription = relationshipDescription.getTarget();
-
-			processedRelationships.add(relationshipDescription);
-
-			if (relationshipDescription.isDynamic()) {
-				Relationship relationship = relationshipDescription
-					.isOutgoing()
-					? startNode.relationshipTo(endNode)
-					: startNode.relationshipFrom(endNode);
-				relationship = relationship.named(relationshipTargetName);
-
-				generatedLists.add(relationshipTargetName);
-				generatedLists.add(listBasedOn(relationship)
-					.returning(
-						projectAllPropertiesAndRelationships(endNodeDescription,
-							relationshipFieldName, new ArrayList<>(processedRelationships), depthMap)
-							.and(NAME_OF_RELATIONSHIP_TYPE, Functions.type(relationship))));
-			} else {
-				Relationship relationship = relationshipDescription.isOutgoing()
-					? startNode.relationshipTo(endNode, relationshipType)
-					: startNode.relationshipFrom(endNode, relationshipType);
-
-				MapProjection mapProjection = projectAllPropertiesAndRelationships(endNodeDescription,
-					relationshipFieldName, new ArrayList<>(processedRelationships), depthMap);
-
-				if (relationshipDescription.hasRelationshipProperties()) {
-					relationship = relationship.named(RelationshipDescription.NAME_OF_RELATIONSHIP);
-					mapProjection = mapProjection.and(relationship);
-				}
-
-				generatedLists.add(relationshipTargetName);
-				generatedLists.add(listBasedOn(relationship)
-					.returning(mapProjection));
-			}
+			generateListFor(relationshipDescription, nodeName, processedRelationships, fieldName, mapProjectionLists);
 		}
 
-		return generatedLists;
+		return mapProjectionLists;
 	}
 
-	private int currentRelationshipDepth(RelationshipDescription relationshipDescription, Map<RelationshipDescription, Integer> depthMap) {
-		return depthMap
-			.getOrDefault(relationshipDescription, 1);
+	private void generateListFor(RelationshipDescription relationshipDescription, String nodeName,
+		List<RelationshipDescription> processedRelationships, String fieldName, List<Object> mapProjectionLists) {
+
+		String relationshipType = relationshipDescription.getType();
+		String relationshipTargetName = relationshipDescription.generateRelatedNodesCollectionName();
+		String targetPrimaryLabel = relationshipDescription.getTarget().getPrimaryLabel();
+		String[] targetAdditionalLabels = relationshipDescription.getTarget().getAdditionalLabels();
+
+		Node startNode = anyNode(nodeName);
+		String relationshipFieldName = concatFieldName(nodeName, fieldName);
+		Node endNode = node(targetPrimaryLabel, targetAdditionalLabels).named(relationshipFieldName);
+		NodeDescription<?> endNodeDescription = relationshipDescription.getTarget();
+
+		processedRelationships.add(relationshipDescription);
+
+		if (relationshipDescription.isDynamic()) {
+			Relationship relationship = relationshipDescription
+				.isOutgoing()
+				? startNode.relationshipTo(endNode)
+				: startNode.relationshipFrom(endNode);
+			relationship = relationship.named(relationshipTargetName);
+
+			addMapProjection(relationshipTargetName,
+				listBasedOn(relationship)
+					.returning(
+						projectAllPropertiesAndRelationships(endNodeDescription,
+							relationshipFieldName, new ArrayList<>(processedRelationships))
+							.and(NAME_OF_RELATIONSHIP_TYPE, Functions.type(relationship))),
+				mapProjectionLists);
+
+		} else {
+			Relationship relationship = relationshipDescription.isOutgoing()
+				? startNode.relationshipTo(endNode, relationshipType)
+				: startNode.relationshipFrom(endNode, relationshipType);
+
+			MapProjection mapProjection = projectAllPropertiesAndRelationships(endNodeDescription,
+				relationshipFieldName, new ArrayList<>(processedRelationships));
+
+			if (relationshipDescription.hasRelationshipProperties()) {
+				relationship = relationship.named(RelationshipDescription.NAME_OF_RELATIONSHIP);
+				mapProjection = mapProjection.and(relationship);
+			}
+
+			addMapProjection(relationshipTargetName,
+				listBasedOn(relationship).returning(mapProjection),
+				mapProjectionLists);
+		}
 	}
 
-	private void increaseRelationshipDepth(RelationshipDescription relationshipDescription, Map<RelationshipDescription, Integer> depthMap) {
-		int newDepth = currentRelationshipDepth(relationshipDescription, depthMap) + 1;
-
-		depthMap.put(relationshipDescription, newDepth);
+	private void addMapProjection(String name, Object projection, List<Object> projectionList) {
+		projectionList.add(name);
+		projectionList.add(projection);
 	}
 
 	@NotNull

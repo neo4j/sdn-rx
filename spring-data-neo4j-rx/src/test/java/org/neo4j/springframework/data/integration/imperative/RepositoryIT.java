@@ -330,7 +330,7 @@ class RepositoryIT {
 		// ensures that the virtual limit for same relationships does not affect distinct relationships
 		assertThat(type1.nextType.nextType.nextType.nextType.nextType.nextType).isNotNull();
 
-		// check the magical virtual limit of 5 of same type relationships
+		// assert that same type relationships not cause stack overflow
 		DeepRelationships.Type2 type2 = type1.nextType;
 		assertThat(type2.sameType.sameType.sameType).isNotNull();
 		assertThat(type2.sameType.sameType.sameType.sameType).isNull();
