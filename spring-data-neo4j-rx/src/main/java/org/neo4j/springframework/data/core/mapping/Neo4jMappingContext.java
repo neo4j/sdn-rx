@@ -24,12 +24,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.logging.LogFactory;
 import org.apiguardian.api.API;
 import org.neo4j.driver.Driver;
 import org.neo4j.springframework.data.core.convert.Neo4jConversions;
 import org.neo4j.springframework.data.core.convert.Neo4jConverter;
 import org.neo4j.springframework.data.core.convert.Neo4jSimpleTypes;
 import org.neo4j.springframework.data.core.schema.IdGenerator;
+import org.neo4j.springframework.data.core.schema.Node;
 import org.neo4j.springframework.data.core.schema.NodeDescription;
 import org.neo4j.springframework.data.core.schema.Schema;
 import org.springframework.beans.BeanUtils;
@@ -37,6 +39,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.log.LogAccessor;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.context.AbstractMappingContext;
 import org.springframework.data.mapping.model.Property;
@@ -55,6 +58,8 @@ import org.springframework.lang.Nullable;
 @API(status = API.Status.INTERNAL, since = "1.0")
 public final class Neo4jMappingContext
 	extends AbstractMappingContext<Neo4jPersistentEntity<?>, Neo4jPersistentProperty> implements Schema {
+
+	private static final LogAccessor log = new LogAccessor(LogFactory.getLog(Neo4jMappingContext.class));
 
 	/**
 	 * A map of fallback id generators, that have not been added to the application context
@@ -115,6 +120,16 @@ public final class Neo4jMappingContext
 			throw new MappingException(
 				String.format(Locale.ENGLISH, "The schema already contains description %s under the primary label %s",
 					newEntity, label.orElse("n/a")));
+		}
+
+		if (typeInformation.getType().getSuperclass().isAnnotationPresent(Node.class)) {
+			Class<T> moreConcreteClass = typeInformation.getType();
+			Class<? super T> baseClass = moreConcreteClass.getSuperclass();
+			String warningMessage = "Discovered @Node-annotated %s as superclass of %s. "
+				+ "Please note that labels will not get inherited.";
+
+			log.warn(
+				String.format(Locale.ENGLISH, warningMessage, baseClass, typeInformation.getType()));
 		}
 
 		NodeDescription<?> existingDescription = this.getNodeDescription(newEntity.getUnderlyingClass());

@@ -20,6 +20,11 @@ package org.neo4j.springframework.data.core.mapping;
 
 import static org.assertj.core.api.Assertions.*;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -27,6 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
 import org.neo4j.springframework.data.core.schema.GeneratedValue;
 import org.neo4j.springframework.data.core.schema.GraphPropertyDescription;
@@ -170,6 +176,31 @@ public class Neo4jMappingContextTest {
 		assertThat(associations).containsOnly("bikes");
 	}
 
+	@Test
+	void shouldWarnIfConcreteClassExtendsNodeAnnotatedBaseClass() {
+
+		// LoggerFactory needs a FQN here because checkstyle does not like the import
+		Logger logger = (Logger) org.slf4j.LoggerFactory.getLogger(Neo4jMappingContext.class);
+		ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
+		logger.addAppender(logAppender);
+		logAppender.start();
+
+		Neo4jMappingContext schema = new Neo4jMappingContext();
+		schema.getPersistentEntity(ConcreteClass.class);
+
+		String expectedMessage = "Discovered @Node-annotated class "
+				+ "org.neo4j.springframework.data.core.mapping.Neo4jMappingContextTest$InvalidBaseClass "
+				+ "as superclass of class org.neo4j.springframework.data.core.mapping.Neo4jMappingContextTest$ConcreteClass. "
+				+ "Please note that labels will not get inherited.";
+
+		assertThat(logAppender.list).extracting(ILoggingEvent::getMessage, ILoggingEvent::getLevel)
+			.containsExactly(Tuple.tuple(expectedMessage, Level.WARN));
+
+		logAppender.stop();
+		logger.detachAppender(logAppender);
+
+	}
+
 	static class DummyIdGenerator implements IdGenerator<Void> {
 
 		@Override
@@ -240,5 +271,15 @@ public class Neo4jMappingContextTest {
 
 		@Id @GeneratedValue
 		private String id;
+	}
+
+	@Node
+	static class InvalidBaseClass {
+		@Id
+		private Long id;
+	}
+
+	static class ConcreteClass extends InvalidBaseClass {
+
 	}
 }
