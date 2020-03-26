@@ -6,7 +6,7 @@
 :artifactId: spring-data-neo4j-rx
 :artifactIdStarter: spring-data-neo4j-rx-spring-boot-starter
 
-:neo4j-version: 4.0.0
+:neo4j-version: 4.0.2
 :spring-boot-version: 2.2.6.RELEASE
 :spring-data-neo4j-rx-version: 1.0.0-beta04
 // end::properties[]

@@ -18,19 +18,25 @@
  */
 package org.neo4j.springframework.data.examples.spring_boot;
 
+// tag::testing.reactivedataneo4jtest[]
+
 import static org.assertj.core.api.Assertions.*;
 
 import reactor.test.StepVerifier;
 
+// end::testing.reactivedataneo4jtest[]
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
+// tag::testing.reactivedataneo4jtest[]
 import org.junit.jupiter.api.Test;
+// end::testing.reactivedataneo4jtest[]
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
+// tag::testing.reactivedataneo4jtest[]
 import org.neo4j.springframework.boot.test.autoconfigure.data.ReactiveDataNeo4jTest;
 import org.neo4j.springframework.data.examples.spring_boot.domain.MovieRepository;
 import org.neo4j.springframework.data.examples.spring_boot.domain.PersonRepository;
@@ -41,10 +47,13 @@ import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+// end::testing.reactivedataneo4jtest[]
+
 /**
  * @author Michael J. Simons
  * @author Gerrit Meier
  */
+// tag::testing.reactivedataneo4jtest[]
 @Testcontainers
 @ReactiveDataNeo4jTest
 class RepositoryIT {
@@ -59,6 +68,7 @@ class RepositoryIT {
 		registry.add("org.neo4j.driver.authentication.password", neo4jContainer::getAdminPassword);
 	}
 
+	// end::testing.reactivedataneo4jtest[]
 	@BeforeEach
 	void setup(@Autowired Driver driver) throws IOException {
 		try (BufferedReader moviesReader = new BufferedReader(
@@ -70,6 +80,7 @@ class RepositoryIT {
 		}
 	}
 
+	// tag::testing.reactivedataneo4jtest[]
 	@Test
 	void loadAllPersonsFromGraph(@Autowired PersonRepository personRepository) {
 		int expectedPersonCount = 133;
@@ -77,6 +88,8 @@ class RepositoryIT {
 			.expectNextCount(expectedPersonCount)
 			.verifyComplete();
 	}
+
+	// end::testing.reactivedataneo4jtest[]
 
 	@Test
 	void findPersonByName(@Autowired PersonRepository personRepository) {
@@ -106,4 +119,7 @@ class RepositoryIT {
 			})
 			.verifyComplete();
 	}
+
+	// tag::testing.reactivedataneo4jtest[]
 }
+// end::testing.reactivedataneo4jtest[]
