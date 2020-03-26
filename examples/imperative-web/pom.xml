@@ -43,7 +43,7 @@
 		<maven-surefire-plugin.version>3.0.0-M3</maven-surefire-plugin.version>
 		<neo4j.version>3.5.11</neo4j.version>
 		<spring-data-neo4j-rx.version>${revision}${sha1}${changelist}</spring-data-neo4j-rx.version>
-		<testcontainers.version>1.10.7</testcontainers.version>
+		<testcontainers.version>1.13.0</testcontainers.version>
 	</properties>
 
 	<dependencies>
