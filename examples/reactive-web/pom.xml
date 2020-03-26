@@ -61,6 +61,12 @@
 			<artifactId>spring-data-neo4j-rx-spring-boot-test-autoconfigure</artifactId>
 			<version>${spring-data-neo4j-rx.version}</version>
 			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<artifactId>neo4j-harness</artifactId>
+					<groupId>org.neo4j.test</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -184,7 +190,7 @@
 				</property>
 			</activation>
 			<properties>
-				<changelist>-beta03</changelist>
+				<changelist>-SNAPSHOT</changelist>
 			</properties>
 		</profile>
 	</profiles>

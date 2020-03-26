@@ -18,61 +18,42 @@
  */
 package org.neo4j.springframework.data.examples.spring_boot;
 
+// tag::faq.template-reactive[]
+
 import reactor.test.StepVerifier;
 
-import java.util.Optional;
-
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.neo4j.driver.springframework.boot.test.autoconfigure.Neo4jTestHarnessAutoConfiguration;
-import org.neo4j.springframework.boot.test.autoconfigure.data.AutoConfigureDataNeo4j;
+import org.neo4j.springframework.boot.test.autoconfigure.data.ReactiveDataNeo4jTest;
 import org.neo4j.springframework.data.core.ReactiveNeo4jTemplate;
 import org.neo4j.springframework.data.examples.spring_boot.domain.MovieEntity;
 import org.neo4j.springframework.data.examples.spring_boot.domain.PersonEntity;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.util.TestPropertyValues;
-import org.springframework.context.ApplicationContextInitializer;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-// tag::faq.template-reactive[]
-// end::faq.template-reactive[]
-// tag::faq.template-reactive[]
 // end::faq.template-reactive[]
 
 /**
  * @author Michael J. Simons
  */
+// tag::faq.template-reactive[]
 @Testcontainers
-@EnabledIfEnvironmentVariable(named = ReactiveTemplateTest.SYS_PROPERTY_NEO4J_VERSION, matches = "4\\.0.*")
-@ExtendWith(SpringExtension.class)
-@EnableAutoConfiguration(exclude = Neo4jTestHarnessAutoConfiguration.class)
-@AutoConfigureDataNeo4j
-@ContextConfiguration(initializers = ReactiveTemplateTest.Initializer.class)
-	// tag::faq.template-reactive[]
+@ReactiveDataNeo4jTest
 class ReactiveTemplateTest {
 
-	// end::faq.template-reactive[]
-
-	private static final String SYS_PROPERTY_NEO4J_ACCEPT_COMMERCIAL_EDITION = "SDN_RX_NEO4J_ACCEPT_COMMERCIAL_EDITION";
-	private static final String SYS_PROPERTY_NEO4J_REPOSITORY = "SDN_RX_NEO4J_REPOSITORY";
-	protected static final String SYS_PROPERTY_NEO4J_VERSION = "SDN_RX_NEO4J_VERSION";
-
 	@Container
-	private static Neo4jContainer<?> neo4jContainer =
-		new Neo4jContainer<>(
-			Optional.ofNullable(System.getenv(SYS_PROPERTY_NEO4J_REPOSITORY)).orElse("neo4j") + ":" + Optional
-				.ofNullable(System.getenv(SYS_PROPERTY_NEO4J_VERSION)).orElse("4.0.0"))
-			.withEnv("NEO4J_ACCEPT_LICENSE_AGREEMENT",
-				Optional.ofNullable(System.getenv(SYS_PROPERTY_NEO4J_ACCEPT_COMMERCIAL_EDITION)).orElse("no"));
+	private static Neo4jContainer<?> neo4jContainer = new Neo4jContainer<>("neo4j:4.0");
 
-	// tag::faq.template-reactive[]
+	@DynamicPropertySource
+	static void neo4jProperties(DynamicPropertyRegistry registry) {
+		registry.add("org.neo4j.driver.uri", neo4jContainer::getBoltUrl);
+		registry.add("org.neo4j.driver.authentication.username", () -> "neo4j");
+		registry.add("org.neo4j.driver.authentication.password", neo4jContainer::getAdminPassword);
+	}
+
 	@Test
 	void shouldSaveAndReadEntities(@Autowired ReactiveNeo4jTemplate neo4jTemplate) {
 
@@ -100,17 +81,5 @@ class ReactiveTemplateTest {
 			.expectNext(2L)
 			.verifyComplete();
 	}
-	// end::faq.template-reactive[]
-
-	static class Initializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
-		public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
-			TestPropertyValues.of(
-				"org.neo4j.driver.uri=" + neo4jContainer.getBoltUrl(),
-				"org.neo4j.driver.authentication.username=neo4j",
-				"org.neo4j.driver.authentication.password=" + neo4jContainer.getAdminPassword()
-			).applyTo(configurableApplicationContext.getEnvironment());
-		}
-	}
-	// tag::faq.template-reactive[]
 }
 // end::faq.template-reactive[]
