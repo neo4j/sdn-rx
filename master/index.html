@@ -1529,8 +1529,11 @@ one node in the graph with at least the primary label will be written.
 Vice versa, all nodes with the primary label will be mapped to the instances of the annotated class.</p>
 </div>
 <div class="paragraph">
-<p>The <code>@Node</code> annotation is inherited from super-types and interfaces.
-It is not supported to annotate your domain objects at every inheritance level.</p>
+<p>The <code>@Node</code> annotation is not inherited from super-types and interfaces.
+You can however annotate your domain classes individually at every inheritance level.
+This allows polymorphic queries: You can pass in base or intermediate classes and retrieve the correct, concrete instance for your nodes.
+This is only supported for abstract bases annotated with <code>@Node</code>.
+The labels defined on such a class will be used as additional labels together with the labels of the concrete implementations.</p>
 </div>
 </div>
 <div class="sect3">
@@ -6791,7 +6794,7 @@ $ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:ana
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-03-23 10:59:10 UTC
+Last updated 2020-03-27 22:08:00 UTC
 </div>
 </div>
 </body>
