@@ -575,26 +575,32 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#core.extensions">6.8. Spring Data Extensions</a></li>
 </ul>
 </li>
-<li><a href="#auditing">7. Auditing</a>
+<li><a href="#testing">7. Testing</a>
 <ul class="sectlevel2">
-<li><a href="#auditing.basics">7.1. Basics</a></li>
+<li><a href="#dataneo4jtest">7.1. <code>@DataNeo4jTest</code></a></li>
+<li><a href="#reactivedataneo4jtest">7.2. <code>@ReactiveDataNeo4jTest</code></a></li>
 </ul>
 </li>
-<li><a href="#faq">8. Frequently Asked Questions</a>
+<li><a href="#auditing">8. Auditing</a>
 <ul class="sectlevel2">
-<li><a href="#neo4j4.0supportsmultipledatabases-howcaniusethem">8.1. Neo4j 4.0 supports multiple databases - How can I use them?</a></li>
-<li><a href="#doineedspecificconfigurationsothattransactionsworkseemleswithaneo4jcausalcluster">8.2. Do I need specific configuration so that transactions work seemles with a Neo4j Causal Cluster?</a></li>
-<li><a href="#doineedtouseneo4jspecificannotations">8.3. Do I need to use Neo4j specific annotations?</a></li>
-<li><a href="#howdoiuseassignedids">8.4. How do I use assigned ids?</a></li>
-<li><a href="#howdoiuseexternallygeneratedids">8.5. How do I use externally generated ids?</a></li>
-<li><a href="#template-support">8.6. Do I have to create repositories for each domain class?</a></li>
-<li><a href="#howdoispecifyparametersincustomqueries">8.7. How do I specify parameters in custom queries?</a></li>
-<li><a href="#howdoiusespringexpressionlanguageincustomqueries">8.8. How do I use Spring Expression Language in custom queries?</a></li>
-<li><a href="#howdoiauditentities">8.9. How do I audit entities?</a></li>
-<li><a href="#howdoiusefindbyexample">8.10. How do I use "Find by example"?</a></li>
+<li><a href="#auditing.basics">8.1. Basics</a></li>
 </ul>
 </li>
-<li><a href="#appendix">9. Appendix</a>
+<li><a href="#faq">9. Frequently Asked Questions</a>
+<ul class="sectlevel2">
+<li><a href="#neo4j4.0supportsmultipledatabases-howcaniusethem">9.1. Neo4j 4.0 supports multiple databases - How can I use them?</a></li>
+<li><a href="#doineedspecificconfigurationsothattransactionsworkseemleswithaneo4jcausalcluster">9.2. Do I need specific configuration so that transactions work seemles with a Neo4j Causal Cluster?</a></li>
+<li><a href="#doineedtouseneo4jspecificannotations">9.3. Do I need to use Neo4j specific annotations?</a></li>
+<li><a href="#howdoiuseassignedids">9.4. How do I use assigned ids?</a></li>
+<li><a href="#howdoiuseexternallygeneratedids">9.5. How do I use externally generated ids?</a></li>
+<li><a href="#template-support">9.6. Do I have to create repositories for each domain class?</a></li>
+<li><a href="#howdoispecifyparametersincustomqueries">9.7. How do I specify parameters in custom queries?</a></li>
+<li><a href="#howdoiusespringexpressionlanguageincustomqueries">9.8. How do I use Spring Expression Language in custom queries?</a></li>
+<li><a href="#howdoiauditentities">9.9. How do I audit entities?</a></li>
+<li><a href="#howdoiusefindbyexample">9.10. How do I use "Find by example"?</a></li>
+</ul>
+</li>
+<li><a href="#appendix">10. Appendix</a>
 <ul class="sectlevel2">
 <li><a href="#conversions">Conversions</a></li>
 <li><a href="#repository-query-keywords">Repository query keywords</a></li>
@@ -974,7 +980,7 @@ as it comes for free with every Neo4j instance.</p>
 <div id="start-docker-neo4j" class="listingblock">
 <div class="title">Listing 1. Start a local Neo4j instance inside Docker.</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="console">docker run --publish=7474:7474 --publish=7687:7687 -e 'NEO4J_AUTH=neo4j/secret' neo4j:4.0.0</code></pre>
+<pre class="CodeRay highlight"><code data-lang="console">docker run --publish=7474:7474 --publish=7687:7687 -e 'NEO4J_AUTH=neo4j/secret' neo4j:4.0.2</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1020,7 +1026,7 @@ Don&#8217;t choose Spring Data Neo4j here, as it will get you the previous gener
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="bash">curl https://start.spring.io/starter.tgz \
   -d dependencies=webflux,actuator \
-  -d bootVersion=2.2.4.RELEASE \
+  -d bootVersion=2.2.6.RELEASE \
   -d baseDir=Neo4jSpringBootExample \
   -d name=Neo4j%20SpringBoot%20Example | tar -xzvf -</code></pre>
 </div>
@@ -1054,7 +1060,7 @@ As this starter is not yet on the initializer, you will have to add the followin
 <pre class="CodeRay highlight"><code data-lang="bash">curl https://start.spring.io/starter.tgz \
   -d dependencies=webflux,actuator \
   -d type=gradle-project \
-  -d bootVersion=2.2.4.RELEASE \
+  -d bootVersion=2.2.6.RELEASE \
   -d baseDir=Neo4jSpringBootExampleGradle \
   -d name=Neo4j%20SpringBoot%20Example | tar -xzvf -</code></pre>
 </div>
@@ -1066,7 +1072,7 @@ As this starter is not yet on the initializer, you will have to add the followin
 <div class="title">Listing 5. Inclusion of the spring-data-neo4j-rx-spring-boot-starter in a Gradle project</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
-    compile <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j.springframework.data:spring-data-neo4j-rx-spring-boot-starter:1.0.0-beta04</span><span class="delimiter">'</span></span>
+    implementation <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j.springframework.data:spring-data-neo4j-rx-spring-boot-starter:1.0.0-beta04</span><span class="delimiter">'</span></span>
 }</code></pre>
 </div>
 </div>
@@ -1345,13 +1351,8 @@ From a performance point of view, there is no penalty.</p>
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">reactor.core.publisher.Flux</span>;
 <span class="keyword">import</span> <span class="include">reactor.core.publisher.Mono</span>;
 
-<span class="keyword">import</span> <span class="include">java.util.List</span>;
-<span class="keyword">import</span> <span class="include">java.util.Map</span>;
-
 <span class="keyword">import</span> <span class="include">org.neo4j.springframework.data.examples.spring_boot.domain.MovieEntity</span>;
 <span class="keyword">import</span> <span class="include">org.neo4j.springframework.data.examples.spring_boot.domain.MovieRepository</span>;
-<span class="keyword">import</span> <span class="include">org.neo4j.springframework.data.examples.spring_boot.domain.MovieService</span>;
-<span class="keyword">import</span> <span class="include">org.neo4j.springframework.data.examples.spring_boot.support.D3JSGraphElement</span>;
 <span class="keyword">import</span> <span class="include">org.springframework.http.MediaType</span>;
 <span class="keyword">import</span> <span class="include">org.springframework.web.bind.annotation.DeleteMapping</span>;
 <span class="keyword">import</span> <span class="include">org.springframework.web.bind.annotation.GetMapping</span>;
@@ -1368,12 +1369,8 @@ From a performance point of view, there is no penalty.</p>
 
         <span class="directive">private</span> <span class="directive">final</span> MovieRepository movieRepository;
 
-        <span class="directive">private</span> <span class="directive">final</span> MovieService movieService;
-
-        <span class="directive">public</span> MovieController(MovieRepository movieRepository,
-                MovieService movieService) {
+        <span class="directive">public</span> MovieController(MovieRepository movieRepository) {
                 <span class="local-variable">this</span>.movieRepository = movieRepository;
-                <span class="local-variable">this</span>.movieService = movieService;
         }
 
         <span class="annotation">@PutMapping</span>
@@ -1491,7 +1488,7 @@ The initial value is zero which is bumped automatically on every update.</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>Have a look at <a href="#auditing">Chapter 7</a> for all annotations regarding auditing support.</p>
+<p>Have a look at <a href="#auditing">Chapter 8</a> for all annotations regarding auditing support.</p>
 </div>
 </div>
 </div>
@@ -4685,16 +4682,329 @@ The infrastructure eventually selects the appropriate repository to handle the o
 </div>
 </div>
 <div class="sect1">
-<h2 id="auditing"><a class="anchor" href="#auditing"></a>7. Auditing</h2>
+<h2 id="testing"><a class="anchor" href="#testing"></a>7. Testing</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>We offer <code>org.neo4j.springframework.boot.test.autoconfigure.data.DataNeo4jTest</code> and <code>org.neo4j.springframework.boot.test.autoconfigure.data.ReactiveDataNeo4jTest</code>
+inside an additional module under the following coordinates:
+<code>org.neo4j.springframework.data:spring-data-neo4j-rx-spring-boot-test-autoconfigure</code>.
+Include the following dependency in your project setup</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 10. spring-data-neo4j-rx-spring-boot-test-autoconfigure for Maven</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
+    <span class="tag">&lt;groupId&gt;</span>org.neo4j.springframework.data<span class="tag">&lt;/groupId&gt;</span>
+    <span class="tag">&lt;artifactId&gt;</span>spring-data-neo4j-rx-spring-boot-test-autoconfigure<span class="tag">&lt;/artifactId&gt;</span>
+    <span class="tag">&lt;version&gt;</span>1.0.0-beta04<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;scope&gt;</span>test<span class="tag">&lt;/scope&gt;</span>
+<span class="tag">&lt;/dependency&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Or with Gradle</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 11. spring-data-neo4j-rx-spring-boot-test-autoconfigure for Gradle</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
+    testImplementation <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j.springframework.data:spring-data-neo4j-rx-spring-boot-test-autoconfigure:1.0.0-beta04</span><span class="delimiter">'</span></span>
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Both <code>@DataNeo4jTest</code> and <code>@ReactiveDataNeo4jTest</code> are Spring Boot <a href="https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-testing">test slices</a>.
+By default, they provide the Neo4j test harness through the transitive dependency of <a href="https://github.com/neo4j/neo4j-java-driver-spring-boot-starter/tree/master/neo4j-java-driver-test-harness-spring-boot-autoconfigure">neo4j-java-driver-test-harness-spring-boot-autoconfigure</a>.
+Both slices provide all the necessary infrastructure for tests using Neo4j: A driver bean, a transaction manager, a client, a template and declared repositories,
+in their imperative or reactive variants.
+<code>@DataNeo4jTest</code> provides both variants if reactive repositories are enabled while <code>@ReactiveDataNeo4jTest</code> provides only reactive infrastructure.</p>
+</div>
+<div class="paragraph">
+<p>The dependencies include the Neo4j test harness in version 3.5.x by default. Thus, reactive database access and multiple databases cannot be tested out of the box.
+The reason for doing this is simple: Spring Data&#8217;s JDK baseline is JDK 8. The Neo4j test harness in version 4 requires JDK 11+, so we cannot make it the default.</p>
+</div>
+<div class="paragraph">
+<p>Here are the available options.
+Both test slices include <code>@ExtendWith(SpringExtension.class)</code> so that they run automatically with JUnit 5 (JUnit Jupiter).</p>
+</div>
+<div class="sect2">
+<h3 id="dataneo4jtest"><a class="anchor" href="#dataneo4jtest"></a>7.1. <code>@DataNeo4jTest</code></h3>
+<div class="paragraph">
+<p><code>@DataNeo4jTest</code> provides both imperative and reactive infrastructure by default.
+If you annotate a test with it the test becomes <code>@Transactional</code>.</p>
+</div>
+<div class="paragraph">
+<p><code>@Transactional</code> in Spring tests always means imperative transactional, as declarative transactions needs the return type of a method to decide whether the imperative <code>PlatformTransactionManager</code> or the reactive <code>ReactiveTransactionManager</code> kicks in.
+This is the reason you cannot use <code>@DataNeo4jTest</code> with setting <code>spring.data.neo4j.repositories.type</code> to <code>reactive</code> as this disables imperative infrastructure.</p>
+</div>
+<div class="sect3">
+<h4 id="withneo4jtestharness"><a class="anchor" href="#withneo4jtestharness"></a>7.1.1. With Neo4j test harness</h4>
+<div class="paragraph">
+<p>This is the default.
+See the <a href="#imperative-template-example">imperative template example test</a>.
+This class uses the included Neo4j test harness 3.5 by default.</p>
+</div>
+<div id="dataneo4jtest-template-example" class="listingblock">
+<div class="title">Listing 12. TemplateExampleTest.java</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="annotation">@DataNeo4jTest</span>
+<span class="directive">public</span> <span class="type">class</span> <span class="class">TemplateExampleTest</span> {
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="withneo4j4.0testharness"><a class="anchor" href="#withneo4j4.0testharness"></a>7.1.2. With Neo4j 4.0 test harness</h4>
+<div class="paragraph">
+<p>Include the following dependency in your project setup</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 13. Neo4j 4.0 test harness for Maven</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
+    <span class="tag">&lt;groupId&gt;</span>org.neo4j.test<span class="tag">&lt;/groupId&gt;</span>
+    <span class="tag">&lt;artifactId&gt;</span>neo4j-harness<span class="tag">&lt;/artifactId&gt;</span>
+    <span class="tag">&lt;version&gt;</span>4.0.2<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;scope&gt;</span>test<span class="tag">&lt;/scope&gt;</span>
+<span class="tag">&lt;/dependency&gt;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Or if you like Gradle better:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 14. Neo4j 4.0 test harness for Gradle</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
+    testImplementation <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j.test:neo4j-harness:4.0.2</span><span class="delimiter">'</span></span>
+}</code></pre>
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+The test setup doesn&#8217;t change. <code>@DataNeo4jTest</code> is enough.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>This setup works with both imperative and reactive infrastructure.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="withtestcontainers"><a class="anchor" href="#withtestcontainers"></a>7.1.3. With Testcontainers</h4>
+<div class="paragraph">
+<p>Bring in the required dependencies:</p>
+</div>
+<div id="testcontainers-dependencies" class="listingblock">
+<div class="title">Listing 15. Dependencies for Testcontainers</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
+        <span class="tag">&lt;groupId&gt;</span>org.neo4j.springframework.data<span class="tag">&lt;/groupId&gt;</span>
+        <span class="tag">&lt;artifactId&gt;</span>spring-data-neo4j-rx-spring-boot-test-autoconfigure<span class="tag">&lt;/artifactId&gt;</span>
+        <span class="tag">&lt;version&gt;</span>{spring-data-neo4j-rx-version}<span class="tag">&lt;/version&gt;</span>
+        <span class="tag">&lt;scope&gt;</span>test<span class="tag">&lt;/scope&gt;</span>
+        <span class="tag">&lt;exclusions&gt;</span>
+                <span class="tag">&lt;exclusion&gt;</span> <i class="conum" data-value="1"></i><b>(1)</b>
+                        <span class="tag">&lt;groupId&gt;</span>org.neo4j.test<span class="tag">&lt;/groupId&gt;</span>
+                        <span class="tag">&lt;artifactId&gt;</span>neo4j-harness<span class="tag">&lt;/artifactId&gt;</span>
+                <span class="tag">&lt;/exclusion&gt;</span>
+        <span class="tag">&lt;/exclusions&gt;</span>
+<span class="tag">&lt;/dependency&gt;</span>
+<span class="tag">&lt;dependency&gt;</span>
+        <span class="tag">&lt;groupId&gt;</span>org.testcontainers<span class="tag">&lt;/groupId&gt;</span>
+        <span class="tag">&lt;artifactId&gt;</span>junit-jupiter<span class="tag">&lt;/artifactId&gt;</span>
+        <span class="tag">&lt;version&gt;</span>1.13.0<span class="tag">&lt;/version&gt;</span>
+        <span class="tag">&lt;scope&gt;</span>test<span class="tag">&lt;/scope&gt;</span>
+<span class="tag">&lt;/dependency&gt;</span>
+<span class="tag">&lt;dependency&gt;</span>
+        <span class="tag">&lt;groupId&gt;</span>org.testcontainers<span class="tag">&lt;/groupId&gt;</span>
+        <span class="tag">&lt;artifactId&gt;</span>neo4j<span class="tag">&lt;/artifactId&gt;</span>
+        <span class="tag">&lt;version&gt;</span>1.13.0<span class="tag">&lt;/version&gt;</span>
+        <span class="tag">&lt;scope&gt;</span>test<span class="tag">&lt;/scope&gt;</span>
+<span class="tag">&lt;/dependency&gt;</span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Be aware of this exclusion. If you don&#8217;t exclude that dependency, it will have
+precedence over any manual configuration of the Neo4j URL.</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>As of Spring Framework 5.2.5, the TestContext framework provides support for dynamic property sources via the <code>@DynamicPropertySource</code> annotation.
+This annotation can be used in integration tests that need to add properties with dynamic values.
+For more information, have a look at the <a href="https://docs.spring.io/spring-framework/docs/current/spring-framework-reference/testing.html#testcontext-ctx-management-dynamic-property-sources">Spring Framework reference</a>.</p>
+</div>
+<div class="paragraph">
+<p>A <code>@DataNeo4jTest</code> using <code>@DynamicPropertySource</code> together with Testcontainers looks like this:</p>
+</div>
+<div id="configure-your-container-source" class="listingblock">
+<div class="title">Listing 16. Configure your Neo4j URLs dynamically in a Spring Boot Test</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">org.neo4j.springframework.boot.test.autoconfigure.data.DataNeo4jTest</span>;
+
+<span class="keyword">import</span> <span class="include">org.springframework.test.context.DynamicPropertyRegistry</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.context.DynamicPropertySource</span>;
+
+<span class="keyword">import</span> <span class="include">org.testcontainers.containers.Neo4jContainer</span>;
+<span class="keyword">import</span> <span class="include">org.testcontainers.junit.jupiter.Container</span>;
+<span class="keyword">import</span> <span class="include">org.testcontainers.junit.jupiter.Testcontainers</span>;
+
+<span class="annotation">@Testcontainers</span>
+<span class="annotation">@DataNeo4jTest</span>
+<span class="type">class</span> <span class="class">ExampleTest</span> {
+
+    <span class="annotation">@Container</span>
+    <span class="directive">private</span> <span class="directive">static</span> Neo4jContainer&lt;?&gt; neo4jContainer = <span class="keyword">new</span> Neo4jContainer&lt;&gt;(<span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j:4.0</span><span class="delimiter">&quot;</span></span>);
+
+    <span class="annotation">@DynamicPropertySource</span>
+    <span class="directive">static</span> <span class="type">void</span> neo4jProperties(DynamicPropertyRegistry registry) {
+        registry.add(<span class="string"><span class="delimiter">&quot;</span><span class="content">org.neo4j.driver.uri</span><span class="delimiter">&quot;</span></span>, neo4jContainer::getBoltUrl);
+        registry.add(<span class="string"><span class="delimiter">&quot;</span><span class="content">org.neo4j.driver.authentication.username</span><span class="delimiter">&quot;</span></span>, () -&gt; <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
+        registry.add(<span class="string"><span class="delimiter">&quot;</span><span class="content">org.neo4j.driver.authentication.password</span><span class="delimiter">&quot;</span></span>, neo4jContainer::getAdminPassword);
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>An alternative to this approach in older versions of Spring Boot and the Spring Framework is an initializer that looks like this:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 17. Alternative injection of dynamic properties prior to Spring Boot 2.2.6</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="annotation">@Testcontainers</span>
+<span class="annotation">@ContextConfiguration</span>(initializers = PriorToBoot226Test.Initializer.class)
+<span class="annotation">@DataNeo4jTest</span>
+<span class="type">class</span> <span class="class">PriorToBoot226Test</span> {
+
+    <span class="annotation">@Container</span>
+    <span class="directive">private</span> <span class="directive">static</span> Neo4jContainer&lt;?&gt; neo4jContainer = <span class="keyword">new</span> Neo4jContainer&lt;&gt;(<span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j:4.0</span><span class="delimiter">&quot;</span></span>);
+
+    <span class="directive">static</span> <span class="type">class</span> <span class="class">Initializer</span> <span class="directive">implements</span> ApplicationContextInitializer&lt;ConfigurableApplicationContext&gt; {
+        <span class="directive">public</span> <span class="type">void</span> initialize(ConfigurableApplicationContext configurableApplicationContext) {
+            TestPropertyValues.of(
+                <span class="string"><span class="delimiter">&quot;</span><span class="content">org.neo4j.driver.uri=</span><span class="delimiter">&quot;</span></span> + neo4jContainer.getBoltUrl(),
+                <span class="string"><span class="delimiter">&quot;</span><span class="content">org.neo4j.driver.authentication.username=neo4j</span><span class="delimiter">&quot;</span></span>,
+                <span class="string"><span class="delimiter">&quot;</span><span class="content">org.neo4j.driver.authentication.password=</span><span class="delimiter">&quot;</span></span> + neo4jContainer.getAdminPassword()
+            ).applyTo(configurableApplicationContext.getEnvironment());
+        }
+    }
+}</code></pre>
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>If you dont want to exclude <code>org.neo4j.test:neo4j-harness</code> as advised in <a href="#testcontainers-dependencies">Listing 15</a>, you can manually exclude
+the <code>Neo4jTestHarnessAutoConfiguration.class</code> from the test slice like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">org.neo4j.driver.springframework.boot.test.autoconfigure.Neo4jTestHarnessAutoConfiguration</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.springframework.boot.test.autoconfigure.data.DataNeo4jTest</span>;
+
+<span class="keyword">import</span> <span class="include">org.testcontainers.junit.jupiter.Testcontainers</span>;
+
+<span class="annotation">@Testcontainers</span>
+<span class="annotation">@DataNeo4jTest</span>(excludeAutoConfiguration = Neo4jTestHarnessAutoConfiguration.class)
+<span class="directive">public</span> <span class="type">class</span> <span class="class">TemplateExampleTest</span> {
+    <span class="comment">// Configuration of Neo4j connection as above.</span>
+}</code></pre>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="reactivedataneo4jtest"><a class="anchor" href="#reactivedataneo4jtest"></a>7.2. <code>@ReactiveDataNeo4jTest</code></h3>
+<div class="paragraph">
+<p>Everything said about <code>@DataNeo4jTest</code> applies to <code>@ReactiveDataNeo4jTest</code> as well.
+However, <code>@ReactiveDataNeo4jTest</code> enables reactive infrastructure only and is not meta-annotated with <code>@Transactional</code>,
+thus it doesn&#8217;t depend on a <code>PlatformTransactionManager</code>.</p>
+</div>
+<div class="paragraph">
+<p><code>@ReactiveDataNeo4jTest</code> also checks whether the Neo4j instance configured is capable of handling reactive connections.</p>
+</div>
+<div class="paragraph">
+<p>Our recommendation is to use it together with Testcontainers and exclude the Neo4j test harness dependency.</p>
+</div>
+<div class="paragraph">
+<p>A typical example would look like this:</p>
+</div>
+<div id="reactivedataneo4jtest-repository-example" class="listingblock">
+<div class="title">Listing 18. RepositoryIT.java</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">static</span> <span class="include">org.assertj.core.api.Assertions</span>.*;
+
+<span class="keyword">import</span> <span class="include">reactor.test.StepVerifier</span>;
+
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Test</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.springframework.boot.test.autoconfigure.data.ReactiveDataNeo4jTest</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.springframework.data.examples.spring_boot.domain.MovieRepository</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.springframework.data.examples.spring_boot.domain.PersonRepository</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.beans.factory.annotation.Autowired</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.context.DynamicPropertyRegistry</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.context.DynamicPropertySource</span>;
+<span class="keyword">import</span> <span class="include">org.testcontainers.containers.Neo4jContainer</span>;
+<span class="keyword">import</span> <span class="include">org.testcontainers.junit.jupiter.Container</span>;
+<span class="keyword">import</span> <span class="include">org.testcontainers.junit.jupiter.Testcontainers</span>;
+
+<span class="annotation">@Testcontainers</span>
+<span class="annotation">@ReactiveDataNeo4jTest</span>
+<span class="type">class</span> <span class="class">RepositoryIT</span> {
+
+        <span class="annotation">@Container</span>
+        <span class="directive">private</span> <span class="directive">static</span> Neo4jContainer&lt;?&gt; neo4jContainer = <span class="keyword">new</span> Neo4jContainer&lt;&gt;(<span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j:4.0</span><span class="delimiter">&quot;</span></span>);
+
+        <span class="annotation">@DynamicPropertySource</span>
+        <span class="directive">static</span> <span class="type">void</span> neo4jProperties(DynamicPropertyRegistry registry) {
+                registry.add(<span class="string"><span class="delimiter">&quot;</span><span class="content">org.neo4j.driver.uri</span><span class="delimiter">&quot;</span></span>, neo4jContainer::getBoltUrl);
+                registry.add(<span class="string"><span class="delimiter">&quot;</span><span class="content">org.neo4j.driver.authentication.username</span><span class="delimiter">&quot;</span></span>, () -&gt; <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
+                registry.add(<span class="string"><span class="delimiter">&quot;</span><span class="content">org.neo4j.driver.authentication.password</span><span class="delimiter">&quot;</span></span>, neo4jContainer::getAdminPassword);
+        }
+
+        <span class="annotation">@Test</span>
+        <span class="type">void</span> loadAllPersonsFromGraph(<span class="annotation">@Autowired</span> PersonRepository personRepository) {
+                <span class="type">int</span> expectedPersonCount = <span class="integer">133</span>;
+                StepVerifier.create(personRepository.findAll())
+                        .expectNextCount(expectedPersonCount)
+                        .verifyComplete();
+        }
+
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="auditing"><a class="anchor" href="#auditing"></a>8. Auditing</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="auditing.basics"><a class="anchor" href="#auditing.basics"></a>7.1. Basics</h3>
+<h3 id="auditing.basics"><a class="anchor" href="#auditing.basics"></a>8.1. Basics</h3>
 <div class="paragraph">
 <p>Spring Data provides sophisticated support to transparently keep track of who created or changed an entity and when the change happened.
 To benefit from that functionality, you have to equip your entity classes with auditing metadata that can be defined either using annotations or by implementing an interface.</p>
 </div>
 <div class="sect3">
-<h4 id="auditing.annotations"><a class="anchor" href="#auditing.annotations"></a>7.1.1. Annotation-based Auditing Metadata</h4>
+<h4 id="auditing.annotations"><a class="anchor" href="#auditing.annotations"></a>8.1.1. Annotation-based Auditing Metadata</h4>
 <div class="paragraph">
 <p>We provide <code>@CreatedBy</code> and <code>@LastModifiedBy</code> to capture the user who created or modified the entity as well as <code>@CreatedDate</code> and <code>@LastModifiedDate</code> to capture when the change happened.</p>
 </div>
@@ -4723,7 +5033,7 @@ The annotations capturing when changes were made can be used on properties of ty
 </div>
 </div>
 <div class="sect3">
-<h4 id="auditing.interfaces"><a class="anchor" href="#auditing.interfaces"></a>7.1.2. Interface-based Auditing Metadata</h4>
+<h4 id="auditing.interfaces"><a class="anchor" href="#auditing.interfaces"></a>8.1.2. Interface-based Auditing Metadata</h4>
 <div class="paragraph">
 <p>In case you do not want to use annotations to define auditing metadata, you can let your domain class implement the <code>Auditable</code> interface.
 It exposes setter methods for all of the auditing properties.</p>
@@ -4735,7 +5045,7 @@ Usually, the annotation-based way of defining auditing metadata is preferred as 
 </div>
 </div>
 <div class="sect3">
-<h4 id="auditing.auditor-aware"><a class="anchor" href="#auditing.auditor-aware"></a>7.1.3. <code>AuditorAware</code></h4>
+<h4 id="auditing.auditor-aware"><a class="anchor" href="#auditing.auditor-aware"></a>8.1.3. <code>AuditorAware</code></h4>
 <div class="paragraph">
 <p>In case you use either <code>@CreatedBy</code> or <code>@LastModifiedBy</code>, the auditing infrastructure somehow needs to become aware of the current principal.
 To do so, we provide an <code>AuditorAware&lt;T&gt;</code> SPI interface that you have to implement to tell the infrastructure who the current user or system interacting with the application is.
@@ -4774,13 +5084,13 @@ We assume here that you are exposing the domain user through the <code>UserDetai
 </div>
 </div>
 <div class="sect1">
-<h2 id="faq"><a class="anchor" href="#faq"></a>8. Frequently Asked Questions</h2>
+<h2 id="faq"><a class="anchor" href="#faq"></a>9. Frequently Asked Questions</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Here are a couple of more frequently asked question in addition to the ones in the <a href="#what-is-sdn-rx">preface</a>.</p>
 </div>
 <div class="sect2">
-<h3 id="neo4j4.0supportsmultipledatabases-howcaniusethem"><a class="anchor" href="#neo4j4.0supportsmultipledatabases-howcaniusethem"></a>8.1. Neo4j 4.0 supports multiple databases - How can I use them?</h3>
+<h3 id="neo4j4.0supportsmultipledatabases-howcaniusethem"><a class="anchor" href="#neo4j4.0supportsmultipledatabases-howcaniusethem"></a>9.1. Neo4j 4.0 supports multiple databases - How can I use them?</h3>
 <div class="paragraph">
 <p>You can either statically configure the database name or run your own database name provider.
 Bear in mind that SDN/RX will not create the databases for you.
@@ -4788,7 +5098,7 @@ You can do this with the help of a <a href="https://github.com/michael-simons/ne
 or of course with a simple script upfront.</p>
 </div>
 <div class="sect3">
-<h4 id="staticallyconfigured"><a class="anchor" href="#staticallyconfigured"></a>8.1.1. Statically configured</h4>
+<h4 id="staticallyconfigured"><a class="anchor" href="#staticallyconfigured"></a>9.1.1. Statically configured</h4>
 <div class="paragraph">
 <p>Configure the database name to use in your Spring Boot configuration like this
 (The same property applies of course for YML or environment based configuration, with Spring Boots conventions applied):</p>
@@ -4804,7 +5114,7 @@ and by the <code>ReactiveNeo4jTemplate</code> respectively <code>Neo4jTemplate</
 </div>
 </div>
 <div class="sect3">
-<h4 id="dynamicallyconfigured"><a class="anchor" href="#dynamicallyconfigured"></a>8.1.2. Dynamically configured</h4>
+<h4 id="dynamicallyconfigured"><a class="anchor" href="#dynamicallyconfigured"></a>9.1.2. Dynamically configured</h4>
 <div class="paragraph">
 <p>Provide a bean with the type <code>Neo4jDatabaseNameProvider</code> or <code>ReactiveDatabaseSelectionProvider</code> depending on the type of your Spring application.</p>
 </div>
@@ -4813,7 +5123,7 @@ and by the <code>ReactiveNeo4jTemplate</code> respectively <code>Neo4jTemplate</
 Here is a working example for an imperative application secured with Spring Security:</p>
 </div>
 <div id="faq.databaseSelectionProvider" class="listingblock">
-<div class="title">Listing 10. Neo4jConfig.java</div>
+<div class="title">Listing 19. Neo4jConfig.java</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">org.neo4j.springframework.data.core.DatabaseSelection</span>;
 <span class="keyword">import</span> <span class="include">org.neo4j.springframework.data.core.DatabaseSelectionProvider</span>;
@@ -4860,7 +5170,7 @@ Be careful that you don&#8217;t mix up entities retrieved from one database with
 </div>
 </div>
 <div class="sect2">
-<h3 id="doineedspecificconfigurationsothattransactionsworkseemleswithaneo4jcausalcluster"><a class="anchor" href="#doineedspecificconfigurationsothattransactionsworkseemleswithaneo4jcausalcluster"></a>8.2. Do I need specific configuration so that transactions work seemles with a Neo4j Causal Cluster?</h3>
+<h3 id="doineedspecificconfigurationsothattransactionsworkseemleswithaneo4jcausalcluster"><a class="anchor" href="#doineedspecificconfigurationsothattransactionsworkseemleswithaneo4jcausalcluster"></a>9.2. Do I need specific configuration so that transactions work seemles with a Neo4j Causal Cluster?</h3>
 <div class="paragraph">
 <p>No, you don&#8217;t.
 SDN/RX uses Neo4j Causal Cluster bookmarks internally without any configuration on your side required.
@@ -4868,7 +5178,7 @@ Transactions in the same thread or the same reactive stream following each other
 </div>
 </div>
 <div class="sect2">
-<h3 id="doineedtouseneo4jspecificannotations"><a class="anchor" href="#doineedtouseneo4jspecificannotations"></a>8.3. Do I need to use Neo4j specific annotations?</h3>
+<h3 id="doineedtouseneo4jspecificannotations"><a class="anchor" href="#doineedtouseneo4jspecificannotations"></a>9.3. Do I need to use Neo4j specific annotations?</h3>
 <div class="paragraph">
 <p>No.
 You are free to use the following, equivalent Spring Data annotations:</p>
@@ -4905,20 +5215,20 @@ You are free to use the following, equivalent Spring Data annotations:</p>
 </table>
 </div>
 <div class="sect2">
-<h3 id="howdoiuseassignedids"><a class="anchor" href="#howdoiuseassignedids"></a>8.4. How do I use assigned ids?</h3>
+<h3 id="howdoiuseassignedids"><a class="anchor" href="#howdoiuseassignedids"></a>9.4. How do I use assigned ids?</h3>
 <div class="paragraph">
 <p>Just <code>@Id</code> without <code>@GeneratedValue</code> and fill your id attribute via a constructor parameter or a setter or <em>wither</em>.
 See this <a href="https://medium.com/neo4j/neo4j-ogm-and-spring-data-neo4j-a55a866df68c">blog post</a> for some general remarks about finding good ids.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="howdoiuseexternallygeneratedids"><a class="anchor" href="#howdoiuseexternallygeneratedids"></a>8.5. How do I use externally generated ids?</h3>
+<h3 id="howdoiuseexternallygeneratedids"><a class="anchor" href="#howdoiuseexternallygeneratedids"></a>9.5. How do I use externally generated ids?</h3>
 <div class="paragraph">
 <p>We provide the interface <code>org.neo4j.springframework.data.core.schema.IdGenerator</code>.
 Implement it anyway you want and configure your implementation like this:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 11. ThingWithGeneratedId.java</div>
+<div class="title">Listing 20. ThingWithGeneratedId.java</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="annotation">@Node</span>
 <span class="directive">public</span> <span class="type">class</span> <span class="class">ThingWithGeneratedId</span> {
@@ -4933,7 +5243,7 @@ Implement it anyway you want and configure your implementation like this:</p>
 You can however use a string as well:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 12. ThingWithIdGeneratedByBean.java</div>
+<div class="title">Listing 21. ThingWithIdGeneratedByBean.java</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="annotation">@Node</span>
 <span class="directive">public</span> <span class="type">class</span> <span class="class">ThingWithIdGeneratedByBean</span> {
@@ -4961,7 +5271,7 @@ Setters are not required on non-final fields for the id.
 </div>
 </div>
 <div class="sect2">
-<h3 id="template-support"><a class="anchor" href="#template-support"></a>8.6. Do I have to create repositories for each domain class?</h3>
+<h3 id="template-support"><a class="anchor" href="#template-support"></a>9.6. Do I have to create repositories for each domain class?</h3>
 <div class="paragraph">
 <p>No.
 Have a look at the <a href="#sdn-rx-building-blocks">SDN/RX building blocks</a> and
@@ -4974,7 +5284,7 @@ find the <code>Neo4jTemplate</code> respectively the <code>ReactiveNeo4jTemplate
 <p>This is our canonical movie example with the imperative template:</p>
 </div>
 <div id="imperative-template-example" class="listingblock">
-<div class="title">Listing 13. TemplateExampleTest.java</div>
+<div class="title">Listing 22. TemplateExampleTest.java</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">static</span> <span class="include">org.assertj.core.api.Assertions</span>.*;
 
@@ -4989,7 +5299,6 @@ find the <code>Neo4jTemplate</code> respectively the <code>ReactiveNeo4jTemplate
 
 <span class="annotation">@DataNeo4jTest</span>
 <span class="directive">public</span> <span class="type">class</span> <span class="class">TemplateExampleTest</span> {
-
         <span class="annotation">@Test</span>
         <span class="type">void</span> shouldSaveAndReadEntities(<span class="annotation">@Autowired</span> Neo4jTemplate neo4jTemplate) {
 
@@ -5017,9 +5326,35 @@ find the <code>Neo4jTemplate</code> respectively the <code>ReactiveNeo4jTemplate
 <p>And here is the reactive version, omitting the setup for brevity:</p>
 </div>
 <div id="reactive-template-example" class="listingblock">
-<div class="title">Listing 14. TemplateExampleTest.java</div>
+<div class="title">Listing 23. ReactiveTemplateExampleTest.java</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java"><span class="type">class</span> <span class="class">ReactiveTemplateTest</span> {
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">reactor.test.StepVerifier</span>;
+
+<span class="keyword">import</span> <span class="include">org.junit.jupiter.api.Test</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.springframework.boot.test.autoconfigure.data.ReactiveDataNeo4jTest</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.springframework.data.core.ReactiveNeo4jTemplate</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.springframework.data.examples.spring_boot.domain.MovieEntity</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.springframework.data.examples.spring_boot.domain.PersonEntity</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.beans.factory.annotation.Autowired</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.context.DynamicPropertyRegistry</span>;
+<span class="keyword">import</span> <span class="include">org.springframework.test.context.DynamicPropertySource</span>;
+<span class="keyword">import</span> <span class="include">org.testcontainers.containers.Neo4jContainer</span>;
+<span class="keyword">import</span> <span class="include">org.testcontainers.junit.jupiter.Container</span>;
+<span class="keyword">import</span> <span class="include">org.testcontainers.junit.jupiter.Testcontainers</span>;
+
+<span class="annotation">@Testcontainers</span>
+<span class="annotation">@ReactiveDataNeo4jTest</span>
+<span class="type">class</span> <span class="class">ReactiveTemplateExampleTest</span> {
+
+        <span class="annotation">@Container</span>
+        <span class="directive">private</span> <span class="directive">static</span> Neo4jContainer&lt;?&gt; neo4jContainer = <span class="keyword">new</span> Neo4jContainer&lt;&gt;(<span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j:4.0</span><span class="delimiter">&quot;</span></span>);
+
+        <span class="annotation">@DynamicPropertySource</span>
+        <span class="directive">static</span> <span class="type">void</span> neo4jProperties(DynamicPropertyRegistry registry) {
+                registry.add(<span class="string"><span class="delimiter">&quot;</span><span class="content">org.neo4j.driver.uri</span><span class="delimiter">&quot;</span></span>, neo4jContainer::getBoltUrl);
+                registry.add(<span class="string"><span class="delimiter">&quot;</span><span class="content">org.neo4j.driver.authentication.username</span><span class="delimiter">&quot;</span></span>, () -&gt; <span class="string"><span class="delimiter">&quot;</span><span class="content">neo4j</span><span class="delimiter">&quot;</span></span>);
+                registry.add(<span class="string"><span class="delimiter">&quot;</span><span class="content">org.neo4j.driver.authentication.password</span><span class="delimiter">&quot;</span></span>, neo4jContainer::getAdminPassword);
+        }
 
         <span class="annotation">@Test</span>
         <span class="type">void</span> shouldSaveAndReadEntities(<span class="annotation">@Autowired</span> ReactiveNeo4jTemplate neo4jTemplate) {
@@ -5053,13 +5388,13 @@ find the <code>Neo4jTemplate</code> respectively the <code>ReactiveNeo4jTemplate
 </div>
 </div>
 <div class="sect2">
-<h3 id="howdoispecifyparametersincustomqueries"><a class="anchor" href="#howdoispecifyparametersincustomqueries"></a>8.7. How do I specify parameters in custom queries?</h3>
+<h3 id="howdoispecifyparametersincustomqueries"><a class="anchor" href="#howdoispecifyparametersincustomqueries"></a>9.7. How do I specify parameters in custom queries?</h3>
 <div class="paragraph">
 <p>You do this exactly the same way as in a standard Cypher query issued in the Neo4j Browser or the Cypher-Shell,
 with the <code>$</code> syntax (from Neo4j 4.0 on upwards, the old <code>{foo}</code> syntax for Cypher parameters has been removed from the database);</p>
 </div>
 <div id="custom-queries-with-parameters" class="listingblock">
-<div class="title">Listing 15. ARepository.java</div>
+<div class="title">Listing 24. ARepository.java</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="directive">public</span> <span class="type">interface</span> <span class="class">ARepository</span> <span class="directive">extends</span> Neo4jRepository&lt;AnAggregateRoot, <span class="predefined-type">String</span>&gt; {
 
@@ -5094,7 +5429,7 @@ You need to compile your Java 8+ project with <code>-parameters</code> to make n
 </div>
 </div>
 <div class="sect2">
-<h3 id="howdoiusespringexpressionlanguageincustomqueries"><a class="anchor" href="#howdoiusespringexpressionlanguageincustomqueries"></a>8.8. How do I use Spring Expression Language in custom queries?</h3>
+<h3 id="howdoiusespringexpressionlanguageincustomqueries"><a class="anchor" href="#howdoiusespringexpressionlanguageincustomqueries"></a>9.8. How do I use Spring Expression Language in custom queries?</h3>
 <div class="paragraph">
 <p><a href="https://docs.spring.io/spring/docs/current/spring-framework-reference/core.html#expressions">Spring Expression Language (SpEL)</a> can be used in custom queries inside <code>:#{}</code>.
 This is the standard Spring Data way of defining a block of text inside a query that undergoes SpEL evaluation.</p>
@@ -5103,7 +5438,7 @@ This is the standard Spring Data way of defining a block of text inside a query 
 <p>The following example basically defines the same query as above, but uses a <code>WHERE</code> clause to avoid even more curly braces:</p>
 </div>
 <div id="custom-queries-with-spel" class="listingblock">
-<div class="title">Listing 16. ARepository.java</div>
+<div class="title">Listing 25. ARepository.java</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="directive">public</span> <span class="type">interface</span> <span class="class">ARepository</span> <span class="directive">extends</span> Neo4jRepository&lt;AnAggregateRoot, <span class="predefined-type">String</span>&gt; {
 
@@ -5120,7 +5455,7 @@ The SpEL block ends with <code>}</code>.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="howdoiauditentities"><a class="anchor" href="#howdoiauditentities"></a>8.9. How do I audit entities?</h3>
+<h3 id="howdoiauditentities"><a class="anchor" href="#howdoiauditentities"></a>9.9. How do I audit entities?</h3>
 <div class="paragraph">
 <p>All Spring Data annotations are supported.
 Those are</p>
@@ -5143,16 +5478,16 @@ Those are</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="howdoiusefindbyexample"><a class="anchor" href="#howdoiusefindbyexample"></a>8.10. How do I use "Find by example"?</h3>
+<h3 id="howdoiusefindbyexample"><a class="anchor" href="#howdoiusefindbyexample"></a>9.10. How do I use "Find by example"?</h3>
 <div class="paragraph">
 <p>"Find by example" is a new feature in SDN/RX.
 You instantiate an entity or use an existing one.
 With this instance you create an <code>org.springframework.data.domain.Example</code>.
 If your repository extends <code>org.neo4j.springframework.data.repository.Neo4jRepository</code> or <code>org.neo4j.springframework.data.repository.ReactiveNeo4jRepository</code>,
-you can immediately use the available <code>findBy</code> methods taking in an example, like shown in <a href="#find-by-example-example">Listing 17</a></p>
+you can immediately use the available <code>findBy</code> methods taking in an example, like shown in <a href="#find-by-example-example">Listing 26</a></p>
 </div>
 <div id="find-by-example-example" class="listingblock">
-<div class="title">Listing 17. findByExample in Action</div>
+<div class="title">Listing 26. findByExample in Action</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">Example&lt;MovieEntity&gt; movieExample = Example.of(<span class="keyword">new</span> MovieEntity(<span class="string"><span class="delimiter">&quot;</span><span class="content">The Matrix</span><span class="delimiter">&quot;</span></span>, <span class="predefined-constant">null</span>));
 Flux&lt;MovieEntity&gt; movies = <span class="local-variable">this</span>.movieRepository.findAll(movieExample);
@@ -5173,7 +5508,7 @@ movies = <span class="local-variable">this</span>.movieRepository.findAll(movieE
 </div>
 </div>
 <div class="sect1">
-<h2 id="appendix"><a class="anchor" href="#appendix"></a>9. Appendix</h2>
+<h2 id="appendix"><a class="anchor" href="#appendix"></a>10. Appendix</h2>
 <div class="sectionbody">
 <div class="sect2">
 <h3 id="conversions"><a class="anchor" href="#conversions"></a>Conversions</h3>
@@ -5732,7 +6067,7 @@ The publisher can only be subscribed once.</p>
 <p>As with most things in SDN/RX, both clients depend on a configured driver instance.</p>
 </div>
 <div id="neo4j-client-create-imperative-client" class="listingblock">
-<div class="title">Listing 18. Creating an instance of the imperative Neo4j client</div>
+<div class="title">Listing 27. Creating an instance of the imperative Neo4j client</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">org.neo4j.driver.AuthTokens</span>;
 <span class="keyword">import</span> <span class="include">org.neo4j.driver.Driver</span>;
@@ -5756,7 +6091,7 @@ The publisher can only be subscribed once.</p>
 <p>The driver can only open a reactive session against a 4.0 database and will fail with an exception on any lower version.</p>
 </div>
 <div id="neo4j-client-create-reactive-client" class="listingblock">
-<div class="title">Listing 19. Creating an instance of the reactive Neo4j client</div>
+<div class="title">Listing 28. Creating an instance of the reactive Neo4j client</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">org.neo4j.driver.AuthTokens</span>;
 <span class="keyword">import</span> <span class="include">org.neo4j.driver.Driver</span>;
@@ -5803,10 +6138,10 @@ and you usually don&#8217;t have to configure your own instance.</p>
 <p>The Neo4j client is well prepared to be used with the multidatabase features of Neo4j 4.0.
 The client uses the default database unless you specify otherwise.
 The fluent API of the client allows to specify the target database exactly once, after the declaration of the query to execute.
-<a href="#neo4j-client-reactive-selecting-the-target-database">Listing 20</a> demonstrates it with the reactive client:</p>
+<a href="#neo4j-client-reactive-selecting-the-target-database">Listing 29</a> demonstrates it with the reactive client:</p>
 </div>
 <div id="neo4j-client-reactive-selecting-the-target-database" class="listingblock">
-<div class="title">Listing 20. Selecting the target database</div>
+<div class="title">Listing 29. Selecting the target database</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">Flux&lt;<span class="predefined-type">Map</span>&lt;<span class="predefined-type">String</span>, <span class="predefined-type">Object</span>&gt;&gt; allActors = client
         .query(<span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (p:Person) RETURN p</span><span class="delimiter">&quot;</span></span>)
@@ -5832,7 +6167,7 @@ A query can be defined by a plain <code>String</code> or a <code>Supplier&lt;Str
 The supplier will be evaluated as late as possible and can be provided by any query builder.</p>
 </div>
 <div id="neo4j-client-specifying-queries" class="listingblock">
-<div class="title">Listing 21. Specifying a query</div>
+<div class="title">Listing 30. Specifying a query</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">Mono&lt;<span class="predefined-type">Map</span>&lt;<span class="predefined-type">String</span>, <span class="predefined-type">Object</span>&gt;&gt; firstActor = client
         .query(() -&gt; <span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (p:Person) RETURN p</span><span class="delimiter">&quot;</span></span>)
@@ -5871,7 +6206,7 @@ while the reactive client returns <code>Mono&lt;T&gt;</code> and <code>Flux&lt;T
 <p>If you don&#8217;t expect any results from your query, than use <code>run()</code> after specificity the query.</p>
 </div>
 <div id="neo4j-client-reactive-get-result-summaries" class="listingblock">
-<div class="title">Listing 22. Retrieving result summaries in a reactive way</div>
+<div class="title">Listing 31. Retrieving result summaries in a reactive way</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">Mono&lt;ResultSummary&gt; summary = reactiveClient
     .query(<span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (m:Movie) where m.title = 'Aeon Flux' DETACH DELETE m</span><span class="delimiter">&quot;</span></span>)
@@ -5896,7 +6231,7 @@ summary
 <p>Please take a moment to compare both listings and understand the difference when the actual query is triggered.</p>
 </div>
 <div id="neo4j-client-imperative-get-result-summaries" class="listingblock">
-<div class="title">Listing 23. Retrieving result summaries in a imperative way</div>
+<div class="title">Listing 32. Retrieving result summaries in a imperative way</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">ResultSummary resultSummary = imperativeClient
         .query(<span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (m:Movie) where m.title = 'Aeon Flux' DETACH DELETE m</span><span class="delimiter">&quot;</span></span>)
@@ -5940,7 +6275,7 @@ However the client prevents you from using a parameter name twice.
 Please have a look at the <a href="https://neo4j.com/docs/driver-manual/current/cypher-values/#driver-neo4j-type-system">drivers manual</a>, to see which simple types are understood.</p>
 </div>
 <div id="neo4j-client-mapping-simple-types" class="listingblock">
-<div class="title">Listing 24. Mapping simple types</div>
+<div class="title">Listing 33. Mapping simple types</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="predefined-type">Map</span>&lt;<span class="predefined-type">String</span>, <span class="predefined-type">Object</span>&gt; parameters = <span class="keyword">new</span> <span class="predefined-type">HashMap</span>&lt;&gt;();
 parameters.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Li.*</span><span class="delimiter">&quot;</span></span>);
@@ -5975,11 +6310,11 @@ Flux&lt;<span class="predefined-type">Map</span>&lt;<span class="predefined-type
 <p>SDN/RX does a lot of complex mapping and it uses the same API that you can use from the client.</p>
 </div>
 <div class="paragraph">
-<p>You can provide a <code>Function&lt;T, Map&lt;String, Object&gt;&gt;</code> for any given domain object like an owner of bicycles in <a href="#neo4j-client-domain-example">Listing 25</a>
+<p>You can provide a <code>Function&lt;T, Map&lt;String, Object&gt;&gt;</code> for any given domain object like an owner of bicycles in <a href="#neo4j-client-domain-example">Listing 34</a>
 to the Neo4j Client to map those domain objects to parameters the driver can understand.</p>
 </div>
 <div id="neo4j-client-domain-example" class="listingblock">
-<div class="title">Listing 25. Example of a domain type</div>
+<div class="title">Listing 34. Example of a domain type</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="directive">public</span> <span class="type">class</span> <span class="class">Director</span> {
 
@@ -6016,10 +6351,10 @@ to the Neo4j Client to map those domain objects to parameters the driver can und
 </div>
 </div>
 <div class="paragraph">
-<p>The mapping function has to fill in all named parameters that might occur in the query like <a href="#neo4j-client-binder">Listing 26</a> shows:</p>
+<p>The mapping function has to fill in all named parameters that might occur in the query like <a href="#neo4j-client-binder">Listing 35</a> shows:</p>
 </div>
 <div id="neo4j-client-binder" class="listingblock">
-<div class="title">Listing 26. Using a mapping function for binding domain objects</div>
+<div class="title">Listing 35. Using a mapping function for binding domain objects</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">Director joseph = <span class="keyword">new</span> Director(<span class="string"><span class="delimiter">&quot;</span><span class="content">Joseph Kosinski</span><span class="delimiter">&quot;</span></span>,
         <span class="predefined-type">Arrays</span>.asList(<span class="keyword">new</span> Movie(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tron Legacy</span><span class="delimiter">&quot;</span></span>), <span class="keyword">new</span> Movie(<span class="string"><span class="delimiter">&quot;</span><span class="content">Top Gun: Maverick</span><span class="delimiter">&quot;</span></span>)));
@@ -6061,7 +6396,7 @@ Those maps corresponds exactly with the records that a query might have produced
 <p>In addition, you can plugin your own <code>BiFunction&lt;TypeSystem, Record, T&gt;</code> through <code>fetchAs</code> to reproduce your domain object.</p>
 </div>
 <div id="neo4j-client-reader" class="listingblock">
-<div class="title">Listing 27. Using a mapping function for reading domain objects</div>
+<div class="title">Listing 36. Using a mapping function for reading domain objects</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">Mono&lt;Director&gt; lily = client
     .query(<span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>
@@ -6092,7 +6427,7 @@ The interaction after the delegation is slightly different with the imperative a
 Returning an empty optional is ok.</p>
 </div>
 <div id="neo4j-client-imperative-delegating" class="listingblock">
-<div class="title">Listing 28. Delegate database interaction to an imperative <code>StatementRunner</code></div>
+<div class="title">Listing 37. Delegate database interaction to an imperative <code>StatementRunner</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">Optional&lt;<span class="predefined-type">Long</span>&gt; result = client
     .delegateTo((StatementRunner runner) -&gt; {
@@ -6117,7 +6452,7 @@ Returning an empty optional is ok.</p>
 <p>The reactive version receives a <code>RxStatementRunner</code>.</p>
 </div>
 <div id="neo4j-client-reactive-delegating" class="listingblock">
-<div class="title">Listing 29. Delegate database interaction to a reactive <code>RxStatementRunner</code></div>
+<div class="title">Listing 38. Delegate database interaction to a reactive <code>RxStatementRunner</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">Mono&lt;<span class="predefined-type">Integer</span>&gt; result = client
     .delegateTo((RxStatementRunner runner) -&gt;
@@ -6137,7 +6472,7 @@ Returning an empty optional is ok.</p>
 </table>
 </div>
 <div class="paragraph">
-<p>Note that in both <a href="#neo4j-client-imperative-delegating">Listing 28</a> and <a href="#neo4j-client-reactive-delegating">Listing 29</a> the types of the runner have only been stated to provide more clarity to reader of this manual.</p>
+<p>Note that in both <a href="#neo4j-client-imperative-delegating">Listing 37</a> and <a href="#neo4j-client-reactive-delegating">Listing 38</a> the types of the runner have only been stated to provide more clarity to reader of this manual.</p>
 </div>
 </div>
 </div>
@@ -6258,7 +6593,7 @@ You can keep your existing URL.</p>
 <li>
 <p>Configuring SDN/RX through a <code>org.neo4j.ogm.config.Configuration</code> bean is not supported, instead of, all configuration of the driver goes through <a href="https://github.com/neo4j/neo4j-java-driver-spring-boot-starter">our new starter</a>.
 Any of <a href="https://github.com/neo4j/neo4j-java-driver-spring-boot-starter/blob/master/docs/configuration-options.adoc">those properties</a> can be configured through standard Spring Boot means.
-You will especially have to adapt the properties for the url and authentication, see <a href="#migrating-auth">Listing 30</a></p>
+You will especially have to adapt the properties for the url and authentication, see <a href="#migrating-auth">Listing 39</a></p>
 </li>
 </ul>
 </div>
@@ -6278,7 +6613,7 @@ You cannot configure SDN/RX through XML.
 </table>
 </div>
 <div id="migrating-auth" class="listingblock">
-<div class="title">Listing 30. Old and new properties compared</div>
+<div class="title">Listing 39. Old and new properties compared</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="properties"># Old
 spring.data.neo4j.embedded.enabled=false # No longer support
@@ -6441,7 +6776,7 @@ We don&#8217;t want to lose them as users right from the start.</p>
 <p>All builds require a local copy of the the project:</p>
 </div>
 <div id="checkout-sdn-rx" class="listingblock">
-<div class="title">Listing 31. Clone SDN/RX</div>
+<div class="title">Listing 40. Clone SDN/RX</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ git clone git@github.com:neo4j/sdn-rx.git</code></pre>
 </div>
@@ -6451,7 +6786,7 @@ We don&#8217;t want to lose them as users right from the start.</p>
 The output should be similar:</p>
 </div>
 <div id="verify-jdk" class="listingblock">
-<div class="title">Listing 32. Verify your JDK</div>
+<div class="title">Listing 41. Verify your JDK</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ java -version
 java version &quot;12.0.1&quot; 2019-04-16
@@ -6471,7 +6806,7 @@ In short, Docker is a tool that helps you running lightweight software images us
 <p>Our build uses <a href="https://www.testcontainers.org/modules/databases/neo4j/">Testcontainers Neo4j</a> to bring up a database instance.</p>
 </div>
 <div id="build-default-bash" class="listingblock">
-<div class="title">Listing 33. Build with default settings on Linux / macOS</div>
+<div class="title">Listing 42. Build with default settings on Linux / macOS</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ ./mvnw clean verify
 [INFO] Scanning for projects...
@@ -6507,7 +6842,7 @@ In short, Docker is a tool that helps you running lightweight software images us
 <p>On a Windows machine, use</p>
 </div>
 <div id="build-default-windows" class="listingblock">
-<div class="title">Listing 34. Build with default settings on Windows</div>
+<div class="title">Listing 43. Build with default settings on Windows</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ mvnw.cmd clean verify</code></pre>
 </div>
@@ -6526,7 +6861,7 @@ As a consequence, tests requiring a reactive capable database, are skipped, as t
 <p>The image version to use can be configured through an environmental variable like this:</p>
 </div>
 <div id="build-other-image" class="listingblock">
-<div class="title">Listing 35. Build using a different Neo4j Docker image</div>
+<div class="title">Listing 44. Build using a different Neo4j Docker image</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ SDN_RX_NEO4J_VERSION=3.5.11-enterprise SDN_RX_NEO4J_ACCEPT_COMMERCIAL_EDITION=yes ./mvnw clean verify</code></pre>
 </div>
@@ -6570,7 +6905,7 @@ change the default password from <code>neo4j</code> to something of your liking.
 <p>After that, you can run a complete build by specifying the local <code>bolt</code> URL:</p>
 </div>
 <div id="build-using-locally-running-database" class="listingblock">
-<div class="title">Listing 36. Build using a locally running database</div>
+<div class="title">Listing 45. Build using a locally running database</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ SDN_RX_NEO4J_URL=bolt://localhost:7687 SDN_RX_NEO4J_PASSWORD=secret ./mvnw clean verify</code></pre>
 </div>
@@ -6678,7 +7013,7 @@ To keep things both clear and concise, we restrict the usage of those annotation
 and annotations.</p>
 </div>
 <div id="api:api-guardian-usage" class="listingblock constraint">
-<div class="title">Listing 37. @API Guardian annotations must not be used on fields</div>
+<div class="title">Listing 46. @API Guardian annotations must not be used on fields</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (c:Java) - [:ANNOTATED_BY] -&gt; (a) - [:OF_TYPE] -&gt; (t:Type {fqn: 'org.apiguardian.api.API'}),
       (p) - [:DECLARES] -&gt; (c)
@@ -6690,7 +7025,7 @@ RETURN p.fqn, c.name</code></pre>
 <p>Public interfaces, classes or annotations are either part of internal or public API and have a status.</p>
 </div>
 <div id="api:api-guardian-api-concept" class="listingblock concept">
-<div class="title">Listing 38. Define which Java artifacts are part of internal or public API</div>
+<div class="title">Listing 47. Define which Java artifacts are part of internal or public API</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (c:Java) - [:ANNOTATED_BY] -&gt; (a) - [:OF_TYPE] -&gt; (t:Type {fqn: 'org.apiguardian.api.API'}),
       (a) - [:HAS] -&gt; ({name: 'status'}) - [:IS] -&gt; (s)
@@ -6713,7 +7048,7 @@ RETURN c,a</code></pre>
 <p>See ADR-003.</p>
 </div>
 <div id="api:internal" class="listingblock constraint">
-<div class="title">Listing 39. Non abstract, public classes that are only part of internal API must be final</div>
+<div class="title">Listing 48. Non abstract, public classes that are only part of internal API must be final</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (c:Class) - [:IS_PART_OF] -&gt; (:Api {type: 'Internal'})
 WHERE c.visibility = 'public'
@@ -6730,7 +7065,7 @@ RETURN c.name</code></pre>
 <p>The following naming conventions are used throughout the project:</p>
 </div>
 <div id="naming:TypeNameMustBeginWithGroupId" class="listingblock constraint">
-<div class="title">Listing 40. All Java types must be located in packages that start with <code>org.neo4j.springframework.data</code>.</div>
+<div class="title">Listing 49. All Java types must be located in packages that start with <code>org.neo4j.springframework.data</code>.</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH
   (project:Maven:Project)-[:CREATES]-&gt;(:Artifact)-[:CONTAINS]-&gt;(type:Type)
@@ -6747,7 +7082,7 @@ RETURN
 <p>Most of the time, the package structure under <code>org.neo4j.springframework.data</code> should reflect the main building parts.</p>
 </div>
 <div id="structure:mapping" class="listingblock constraint">
-<div class="title">Listing 41. The mapping package must not depend on any other SDN/RX packages than <code>schema</code> and <code>convert</code></div>
+<div class="title">Listing 50. The mapping package must not depend on any other SDN/RX packages than <code>schema</code> and <code>convert</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (a:Main:Artifact)
 OPTIONAL MATCH (a) -[:CONTAINS]-&gt; (s:Package) WHERE s.fqn in ['org.neo4j.springframework.data.core.schema', 'org.neo4j.springframework.data.core.convert']
@@ -6767,7 +7102,7 @@ To access the database, please build the project as described above.
 When the build finishes, execute the following command:</p>
 </div>
 <div id="start-jqassistant" class="listingblock">
-<div class="title">Listing 42. Start jQAssistant</div>
+<div class="title">Listing 51. Start jQAssistant</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:server</code></pre>
 </div>
@@ -6779,7 +7114,7 @@ When the build finishes, execute the following command:</p>
 <p>The scanning and analyzing can be triggered individually, without going through the full verify again:</p>
 </div>
 <div id="scan-with-jqassistant" class="listingblock">
-<div class="title">Listing 43. Manually scan and analyze the main project</div>
+<div class="title">Listing 52. Manually scan and analyze the main project</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:scan@jqassistant-scan
 $ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:analyze@jqassistant-analyze</code></pre>
@@ -6794,7 +7129,7 @@ $ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:ana
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-03-30 08:33:55 UTC
+Last updated 2020-03-30 09:08:32 UTC
 </div>
 </div>
 </body>
