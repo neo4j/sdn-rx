@@ -35,20 +35,22 @@ in their imperative or reactive variants.
 The dependencies include the Neo4j test harness in version 3.5.x by default. Thus, reactive database access and multiple databases cannot be tested out of the box.
 The reason for doing this is simple: Spring Data's JDK baseline is JDK 8. The Neo4j test harness in version 4 requires JDK 11+, so we cannot make it the default.
 
-Here are the available options. Both test slices include `@ExtendWith(SpringExtension.class)` so that they run automatically with JUnit 5 (JUnit Jupiter).
+Here are the available options.
+Both test slices include `@ExtendWith(SpringExtension.class)` so that they run automatically with JUnit 5 (JUnit Jupiter).
 
 [[dataneo4jtest]]
 == `@DataNeo4jTest`
 
 `@DataNeo4jTest` provides both imperative and reactive infrastructure by default.
-If you annotate at test with it the test becomes `@Transactional`.
+If you annotate a test with it the test becomes `@Transactional`.
 
-`@Transactional` in Spring Tests always means imperative transactional, as declarative transactions needs the return type of a method to decide whether the imperative `PlatformTransactionManager` or the reactive `ReactiveTransactionManager` kicks in.
+`@Transactional` in Spring tests always means imperative transactional, as declarative transactions needs the return type of a method to decide whether the imperative `PlatformTransactionManager` or the reactive `ReactiveTransactionManager` kicks in.
 This is the reason you cannot use `@DataNeo4jTest` with setting `spring.data.neo4j.repositories.type` to `reactive` as this disables imperative infrastructure.
 
 === With Neo4j test harness
 
-This is the default. See the <<imperative-template-example, imperative template example test>>.
+This is the default.
+See the <<imperative-template-example, imperative template example test>>.
 This class uses the included Neo4j test harness 3.5 by default.
 
 [source,java]
@@ -186,8 +188,8 @@ class PriorToBoot226Test {
 
 [IMPORTANT]
 ====
-If you dont want to exclude `org.neo4j.test:neo4j-harness`  as advised in <<testcontainers-dependencies>>, you can manually exclude
-the `Neo4jTestHarnessAutoConfiguration.class`  from the test slice like this:
+If you dont want to exclude `org.neo4j.test:neo4j-harness` as advised in <<testcontainers-dependencies>>, you can manually exclude
+the `Neo4jTestHarnessAutoConfiguration.class` from the test slice like this:
 
 [source,java]
 ----
