@@ -3,7 +3,8 @@
 
 We offer `org.neo4j.springframework.boot.test.autoconfigure.data.DataNeo4jTest` and `org.neo4j.springframework.boot.test.autoconfigure.data.ReactiveDataNeo4jTest`
 inside an additional module under the following coordinates:
-`org.neo4j.springframework.data:spring-data-neo4j-rx-spring-boot-test-autoconfigure`. Include the following dependency in your project setup
+`org.neo4j.springframework.data:spring-data-neo4j-rx-spring-boot-test-autoconfigure`.
+Include the following dependency in your project setup
 
 [source,xml,subs="verbatim,attributes"]
 .spring-data-neo4j-rx-spring-boot-test-autoconfigure for Maven
@@ -28,7 +29,7 @@ dependencies {
 
 Both `@DataNeo4jTest` and `@ReactiveDataNeo4jTest` are Spring Boot https://docs.spring.io/spring-boot/docs/current/reference/html/spring-boot-features.html#boot-features-testing[test slices].
 By default, they provide the Neo4j test harness through the transitive dependency of https://github.com/neo4j/neo4j-java-driver-spring-boot-starter/tree/master/neo4j-java-driver-test-harness-spring-boot-autoconfigure[neo4j-java-driver-test-harness-spring-boot-autoconfigure].
-Both slices provides all the necessary infrastructure for tests using Neo4j: A driver bean, a transaction manager, a client, a template and declared repositories,
+Both slices provide all the necessary infrastructure for tests using Neo4j: A driver bean, a transaction manager, a client, a template and declared repositories,
 in their imperative or reactive variants.
 `@DataNeo4jTest` provides both variants if reactive repositories are enabled while `@ReactiveDataNeo4jTest` provides only reactive infrastructure.
 
