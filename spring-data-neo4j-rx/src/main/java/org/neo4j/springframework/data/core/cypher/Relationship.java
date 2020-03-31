@@ -19,6 +19,7 @@
 package org.neo4j.springframework.data.core.cypher;
 
 import static java.util.stream.Collectors.*;
+import static org.apiguardian.api.API.Status.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -36,9 +37,9 @@ import org.springframework.util.Assert;
  * @author Philipp Tölle
  * @since 1.0
  */
-@API(status = API.Status.INTERNAL, since = "1.0")
+@API(status = EXPERIMENTAL, since = "1.0")
 public final class Relationship implements
-	PatternElement, Named, Expression, MapEntry,
+	PatternElement, Named,
 	ExposesRelationships<RelationshipChain> {
 
 	/**
@@ -244,8 +245,6 @@ public final class Relationship implements
 	 * @return A map projection.
 	 */
 	public MapProjection project(Object... entries) {
-		return MapProjection.create(this.getSymbolicName()
-				.orElseThrow(() -> new IllegalStateException("Cannot project a relationship without a symbolic name.")),
-			entries);
+		return MapProjection.create(this.getRequiredSymbolicName(), entries);
 	}
 }

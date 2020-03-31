@@ -18,6 +18,8 @@
  */
 package org.neo4j.springframework.data.core.cypher;
 
+import static org.apiguardian.api.API.Status.*;
+
 import java.util.Optional;
 
 import org.apiguardian.api.API;
@@ -34,7 +36,7 @@ import org.springframework.util.Assert;
  * @author Philipp Tölle
  * @since 1.0
  */
-@API(status = API.Status.INTERNAL, since = "1.0")
+@API(status = EXPERIMENTAL, since = "1.0")
 public final class RelationshipDetail implements Visitable {
 
 	/**

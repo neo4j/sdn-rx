@@ -18,6 +18,8 @@
  */
 package org.neo4j.springframework.data.core.cypher;
 
+import static org.apiguardian.api.API.Status.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +42,7 @@ import org.springframework.util.Assert;
  * @author Gerrit Meier
  * @since 1.0
  */
-@API(status = API.Status.INTERNAL, since = "1.0")
+@API(status = EXPERIMENTAL, since = "1.0")
 public final class Cypher {
 
 	/**

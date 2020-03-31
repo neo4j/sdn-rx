@@ -95,7 +95,7 @@ public enum CypherGenerator {
 		IdDescription idDescription = nodeDescription.getIdDescription();
 
 		List<Expression> expressions = new ArrayList<>();
-		expressions.add(rootNode);
+		expressions.add(rootNode.getSymbolicName().get());
 		if (idDescription.isInternallyGeneratedId()) {
 			expressions.add(Functions.id(rootNode).as(NAME_OF_INTERNAL_ID));
 		}
@@ -279,9 +279,9 @@ public enum CypherGenerator {
 				? relOutgoing
 				: relIncoming
 			)
-			.set(relationship.isOutgoing()
+			.set((relationship.isOutgoing()
 					? relOutgoing
-					: relIncoming,
+					: relIncoming).getSymbolicName().get(),
 				relationshipProperties
 			)
 			.build();
@@ -363,6 +363,7 @@ public enum CypherGenerator {
 			Predicate<String> includeField) {
 
 		List<Object> nodePropertiesProjection = new ArrayList<>();
+		Node node = anyNode(nodeName);
 		for (GraphPropertyDescription property : nodeDescription.getGraphPropertiesInHierarchy()) {
 			if (!includeField.test(property.getFieldName())) {
 				continue;
@@ -370,14 +371,14 @@ public enum CypherGenerator {
 
 			if (property.isInternalIdProperty()) {
 				nodePropertiesProjection.add(NAME_OF_INTERNAL_ID);
-				nodePropertiesProjection.add(Functions.id(Cypher.name(nodeName)));
+				nodePropertiesProjection.add(Functions.id(node));
 			} else {
 				nodePropertiesProjection.add(property.getPropertyName());
 			}
 		}
 
 		nodePropertiesProjection.add(NAME_OF_LABELS);
-		nodePropertiesProjection.add(Functions.labels(Cypher.name(nodeName)));
+		nodePropertiesProjection.add(Functions.labels(node));
 
 		return nodePropertiesProjection;
 	}
