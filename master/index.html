@@ -606,6 +606,7 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#repository-query-keywords">Repository query keywords</a></li>
 <li><a href="#repository-query-return-types">Repository query return types</a></li>
 <li><a href="#neo4j-client">Neo4jClient</a></li>
+<li><a href="#cypher-dsl">The Cypher-DSL</a></li>
 <li><a href="#Migrating">Migrating from SDN+OGM to SDN/RX</a></li>
 <li><a href="#building-sdn-rx">Building SDN/RX</a></li>
 </ul>
@@ -6478,6 +6479,323 @@ Returning an empty optional is ok.</p>
 </div>
 </div>
 <div class="sect2">
+<h3 id="cypher-dsl"><a class="anchor" href="#cypher-dsl"></a>The Cypher-DSL</h3>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+The Cypher-DSL is considered <em>EXPERIMENTAL</em> at the time of writing.
+         This means you can and should use it and that we are looking actively for feedback, issues and problems.
+         We will try to keep breaking changes to a minimum, but we reserve the right to modify public methods, parameters
+         and behaviour in case we need those changes for SDN/RX itself.
+         All public classes inside <code>org.neo4j.springframework.data.core.cypher</code> are annotated with <code>@API(status = EXPERIMENTAL, since = "1.0")</code>,
+         We will switching to stable some time after a 1.0 release.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect3">
+<h4 id="purpose"><a class="anchor" href="#purpose"></a>Purpose</h4>
+<div class="paragraph">
+<p>The Cypher-DSL has been developed with the needs of SDN/RX in mind:
+We wanted to avoid string concatenations in our query generation and decided do go with a builder approach, much like we
+find with <a href="https://www.jooq.org">jOOQ</a> or in the relational module of <a href="https://github.com/spring-projects/spring-data-jdbc/tree/1.1.6.RELEASE/spring-data-relational/src/main/java/org/springframework/data/relational/core/sql">Spring Data JDBC</a>, but for Cypher.</p>
+</div>
+<div class="paragraph">
+<p>What we don&#8217;t have - and don&#8217;t need for our mapping purpose - at the moment is a code generator that reads the database schema
+and generates static classes representing labels and relationship types.
+That is still up to the mapping framework (in our case SDN/RX).
+We however have a type safe API for Cypher that allows only generating valid Cypher constructs.</p>
+</div>
+<div class="paragraph">
+<p>We worked closely with the <a href="https://www.opencypher.org">OpenCypher spec</a> here and you find a lot of these concepts in the API.</p>
+</div>
+<div class="paragraph">
+<p>The Cypher-DSL can also be seen in the same area as the <a href="https://docs.spring.io/spring-data/mongodb/docs/current/api/org/springframework/data/mongodb/core/query/Criteria.html">Criteria API</a> of Spring Data Mongo.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="wheretouseit"><a class="anchor" href="#wheretouseit"></a>Where to use it</h4>
+<div class="paragraph">
+<p>The Cypher-DSL is publicly visible in the <code>Neo4jOperations</code> respectively <code>ReactiveNeo4jOperations</code>.
+Those are the basic interfaces implemented by the Neo4j templates of the same names (Read more about the templates <a href="#template-support">here</a>).</p>
+</div>
+<div class="paragraph">
+<p>Both the imperative and the reactive framework allow the retrieval and counting of entities with a <code>org.neo4j.springframework.data.core.cypher.Statement</code>,
+for example through <code>Neo4jTemplate#findAll(Statement, Class&lt;T&gt;)</code> and similar.</p>
+</div>
+<div class="paragraph">
+<p>An instance of a <code>org.neo4j.springframework.data.core.cypher.Statement</code> is provided at the end of query building step.</p>
+</div>
+<div class="paragraph">
+<p>A <code>Statement</code> represents an in-memory <a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">Abstract syntax tree</a> and can be
+transformed and rendered as such.</p>
+</div>
+<div class="paragraph">
+<p>We are still on a JDK 8 baseline and cannot hide our renderer in an internal module, marked as <code>@API(status = INTERNAL, since = "1.0")</code>.
+You can get an instance of the default renderer via <code>org.neo4j.springframework.data.core.cypher.renderer.Renderer#getDefaultRenderer()</code>
+and than use the <code>render</code> method to get a string representation of the statement.</p>
+</div>
+<div class="paragraph">
+<p>This string representation can be used with the <a href="#neo4j-client">Neo4jClient</a>.</p>
+</div>
+<div class="paragraph">
+<p>We do however give no guarantees to the render API until it is marked as <code>EXPERIMENTAL</code> or <code>STABLE</code>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="howtouseit"><a class="anchor" href="#howtouseit"></a>How to use it</h4>
+<div class="paragraph">
+<p>You use the Cypher-DSL as you would write Cypher:
+It allows to write down even complex Cypher queries from top to bottom in a type safe, compile time checked way.</p>
+</div>
+<div class="paragraph">
+<p>The examples to follow are using JDK 11.
+We find the <code>var</code> keyword especially appealing in such a DSL as the types returned by the DSL much less important than
+the further building methods they offer.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+The AST parts and intermediate build steps are immutable. That is, the methods create new intermediate steps.
+           For example, you cannot reuse an <code>ExposesLimit</code> step, but have to use the returned object from its <code>skip</code> method.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect4">
+<h5 id="examples"><a class="anchor" href="#examples"></a>Examples</h5>
+<div class="paragraph">
+<p>The following examples are 1:1 copies of the queries you will find in the Neo4j browser after running <code>:play movies</code>.</p>
+</div>
+<div class="paragraph">
+<p>They use the following imports:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 39. Imports needed for the examples to compile</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">static</span> <span class="include">org.assertj.core.api.Assertions</span>.*;
+<span class="keyword">import</span> <span class="include">static</span> <span class="include">org.neo4j.springframework.data.core.cypher.Conditions</span>.*;
+<span class="keyword">import</span> <span class="include">static</span> <span class="include">org.neo4j.springframework.data.core.cypher.Cypher</span>.*;
+<span class="keyword">import</span> <span class="include">static</span> <span class="include">org.neo4j.springframework.data.core.cypher.Functions</span>.*;
+
+<span class="keyword">import</span> <span class="include">org.neo4j.springframework.data.core.cypher.Cypher</span>;
+<span class="keyword">import</span> <span class="include">org.neo4j.springframework.data.core.cypher.renderer.Renderer</span>;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To match and return all the movie, build your statement like this:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 40. Simple match</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">var m = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Movie</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">m</span><span class="delimiter">&quot;</span></span>); <i class="conum" data-value="1"></i><b>(1)</b>
+var statement = Cypher.match(m) <i class="conum" data-value="2"></i><b>(2)</b>
+        .returning(m)
+        .build(); <i class="conum" data-value="3"></i><b>(3)</b>
+
+assertThat(cypherRenderer.render(statement))
+        .isEqualTo(<span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (m:`Movie`) RETURN m</span><span class="delimiter">&quot;</span></span>);</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Declare a variable storing your node labeled <code>Movie</code> and named <code>m</code>, so that you can</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>reuse it in both the match and the return part.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>The <code>build</code> method becomes only available when a compilable Cypher statement can be rendered.</td>
+</tr>
+</table>
+</div>
+<div class="sect5">
+<h6 id="find"><a class="anchor" href="#find"></a>Find</h6>
+<div class="paragraph">
+<p>Match all nodes with a given set of properties:</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 41. Find the actor named "Tom Hanks"&#8230;&#8203;</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">var tom = anyNode().named(<span class="string"><span class="delimiter">&quot;</span><span class="content">tom</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tom Hanks</span><span class="delimiter">&quot;</span></span>));
+var statement = Cypher
+        .match(tom).returning(tom)
+        .build();
+
+assertThat(cypherRenderer.render(statement))
+        .isEqualTo(<span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (tom {name: 'Tom Hanks'}) RETURN tom</span><span class="delimiter">&quot;</span></span>);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Limit the number of returned things and return only one attribute</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 42. Find 10 people&#8230;&#8203;</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">var people = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">people</span><span class="delimiter">&quot;</span></span>);
+statement = Cypher
+        .match(people)
+        .returning(people.property(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>))
+        .limit(<span class="integer">10</span>)
+        .build();
+
+assertThat(cypherRenderer.render(statement))
+        .isEqualTo(<span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (people:`Person`) RETURN people.name LIMIT 10</span><span class="delimiter">&quot;</span></span>);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Create complex conditions</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 43. Find movies released in the 1990s&#8230;&#8203;</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">var nineties = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Movie</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">nineties</span><span class="delimiter">&quot;</span></span>);
+var released = nineties.property(<span class="string"><span class="delimiter">&quot;</span><span class="content">released</span><span class="delimiter">&quot;</span></span>);
+statement = Cypher
+        .match(nineties)
+        .where(released.gte(literalOf(<span class="integer">1990</span>)).and(released.lt(literalOf(<span class="integer">2000</span>))))
+        .returning(nineties.property(<span class="string"><span class="delimiter">&quot;</span><span class="content">title</span><span class="delimiter">&quot;</span></span>))
+        .build();
+
+assertThat(cypherRenderer.render(statement))
+        .isEqualTo(
+                <span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (nineties:`Movie`) WHERE (nineties.released &gt;= 1990 AND nineties.released &lt; 2000) RETURN nineties.title</span><span class="delimiter">&quot;</span></span>);</code></pre>
+</div>
+</div>
+</div>
+<div class="sect5">
+<h6 id="query"><a class="anchor" href="#query"></a>Query</h6>
+<div class="paragraph">
+<p>Build relationships</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 44. List all Tom Hanks movies&#8230;&#8203;</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">var tom = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">tom</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tom Hanks</span><span class="delimiter">&quot;</span></span>));
+var tomHanksMovies = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">tomHanksMovies</span><span class="delimiter">&quot;</span></span>);
+var statement = Cypher
+        .match(tom.relationshipTo(tomHanksMovies, <span class="string"><span class="delimiter">&quot;</span><span class="content">ACTED_IN</span><span class="delimiter">&quot;</span></span>))
+        .returning(tom, tomHanksMovies)
+        .build();
+
+assertThat(cypherRenderer.render(statement))
+        .isEqualTo(
+                <span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (tom:`Person` {name: 'Tom Hanks'})-[:`ACTED_IN`]-&gt;(tomHanksMovies) RETURN tom, tomHanksMovies</span><span class="delimiter">&quot;</span></span>);</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Listing 45. Who directed "Cloud Atlas"?</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">var cloudAtlas = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">cloudAtlas</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">title</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Cloud Atlas</span><span class="delimiter">&quot;</span></span>));
+var directors = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">directors</span><span class="delimiter">&quot;</span></span>);
+statement = Cypher
+        .match(cloudAtlas.relationshipFrom(directors, <span class="string"><span class="delimiter">&quot;</span><span class="content">DIRECTED</span><span class="delimiter">&quot;</span></span>))
+        .returning(directors.property(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>))
+        .build();
+
+assertThat(cypherRenderer.render(statement))
+        .isEqualTo(<span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (cloudAtlas {title: 'Cloud Atlas'})&lt;-[:`DIRECTED`]-(directors) RETURN directors.name</span><span class="delimiter">&quot;</span></span>);</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Listing 46. Tom Hanks' co-actors&#8230;&#8203;</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">tom = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">tom</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tom Hanks</span><span class="delimiter">&quot;</span></span>));
+var movie = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">m</span><span class="delimiter">&quot;</span></span>);
+var coActors = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">coActors</span><span class="delimiter">&quot;</span></span>);
+var people = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">people</span><span class="delimiter">&quot;</span></span>);
+statement = Cypher
+        .match(tom.relationshipTo(movie, <span class="string"><span class="delimiter">&quot;</span><span class="content">ACTED_IN</span><span class="delimiter">&quot;</span></span>).relationshipFrom(coActors, <span class="string"><span class="delimiter">&quot;</span><span class="content">ACTED_IN</span><span class="delimiter">&quot;</span></span>))
+        .returning(coActors.property(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>))
+        .build();
+
+assertThat(cypherRenderer.render(statement))
+        .isEqualTo(
+                <span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (tom:`Person` {name: 'Tom Hanks'})-[:`ACTED_IN`]-&gt;(m)&lt;-[:`ACTED_IN`]-(coActors) RETURN coActors.name</span><span class="delimiter">&quot;</span></span>);</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Listing 47. How people are related to "Cloud Atlas"&#8230;&#8203;</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">cloudAtlas = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Movie</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">title</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Cloud Atlas</span><span class="delimiter">&quot;</span></span>));
+people = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">people</span><span class="delimiter">&quot;</span></span>);
+var relatedTo = people.relationshipBetween(cloudAtlas).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">relatedTo</span><span class="delimiter">&quot;</span></span>);
+statement = Cypher
+        .match(relatedTo)
+        .returning(people.property(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>), type(relatedTo), relatedTo.getRequiredSymbolicName())
+        .build();
+
+assertThat(cypherRenderer.render(statement))
+        .isEqualTo(
+                <span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (people:`Person`)-[relatedTo]-(:`Movie` {title: 'Cloud Atlas'}) RETURN people.name, type(relatedTo), relatedTo</span><span class="delimiter">&quot;</span></span>);</code></pre>
+</div>
+</div>
+</div>
+<div class="sect5">
+<h6 id="solve"><a class="anchor" href="#solve"></a>Solve</h6>
+<div class="listingblock">
+<div class="title">Listing 48. Movies and actors up to 4 "hops" away from Kevin Bacon</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">var bacon = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">bacon</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Kevin Bacon</span><span class="delimiter">&quot;</span></span>));
+var hollywood = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">hollywood</span><span class="delimiter">&quot;</span></span>);
+var statement = Cypher
+        .match(bacon.relationshipBetween(hollywood).length(<span class="integer">1</span>, <span class="integer">4</span>))
+        .returningDistinct(hollywood)
+        .build();
+
+assertThat(cypherRenderer.render(statement))
+        .isEqualTo(<span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (bacon:`Person` {name: 'Kevin Bacon'})-[*1..4]-(hollywood) RETURN DISTINCT hollywood</span><span class="delimiter">&quot;</span></span>);</code></pre>
+</div>
+</div>
+</div>
+<div class="sect5">
+<h6 id="recommend"><a class="anchor" href="#recommend"></a>Recommend</h6>
+<div class="listingblock">
+<div class="title">Listing 49. Extend Tom Hanks co-actors, to find co-co-actors who haven&#8217;t worked with Tom Hanks&#8230;&#8203;</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java">var tom = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">tom</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tom Hanks</span><span class="delimiter">&quot;</span></span>));
+var coActors = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">coActors</span><span class="delimiter">&quot;</span></span>);
+var cocoActors = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">cocoActors</span><span class="delimiter">&quot;</span></span>);
+var strength = count(asterisk()).as(<span class="string"><span class="delimiter">&quot;</span><span class="content">Strength</span><span class="delimiter">&quot;</span></span>);
+var statement = Cypher
+        .match(
+                tom.relationshipTo(anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">m</span><span class="delimiter">&quot;</span></span>), <span class="string"><span class="delimiter">&quot;</span><span class="content">ACTED_IN</span><span class="delimiter">&quot;</span></span>).relationshipFrom(coActors, <span class="string"><span class="delimiter">&quot;</span><span class="content">ACTED_IN</span><span class="delimiter">&quot;</span></span>),
+                coActors.relationshipTo(anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">m2</span><span class="delimiter">&quot;</span></span>), <span class="string"><span class="delimiter">&quot;</span><span class="content">ACTED_IN</span><span class="delimiter">&quot;</span></span>).relationshipFrom(cocoActors, <span class="string"><span class="delimiter">&quot;</span><span class="content">ACTED_IN</span><span class="delimiter">&quot;</span></span>)
+        )
+        .where(not(tom.relationshipTo(anyNode(), <span class="string"><span class="delimiter">&quot;</span><span class="content">ACTED_IN</span><span class="delimiter">&quot;</span></span>).relationshipFrom(cocoActors, <span class="string"><span class="delimiter">&quot;</span><span class="content">ACTED_IN</span><span class="delimiter">&quot;</span></span>)))
+        .and(tom.isNotEqualTo(cocoActors))
+        .returning(
+                cocoActors.property(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>).as(<span class="string"><span class="delimiter">&quot;</span><span class="content">Recommended</span><span class="delimiter">&quot;</span></span>),
+                strength
+        ).orderBy(strength.asName().descending())
+        .build();
+
+assertThat(cypherRenderer.render(statement))
+        .isEqualTo(<span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>
+                + <span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH </span><span class="delimiter">&quot;</span></span>
+                + <span class="string"><span class="delimiter">&quot;</span><span class="content">(tom:`Person` {name: 'Tom Hanks'})-[:`ACTED_IN`]-&gt;(m)&lt;-[:`ACTED_IN`]-(coActors), </span><span class="delimiter">&quot;</span></span>
+                + <span class="string"><span class="delimiter">&quot;</span><span class="content">(coActors)-[:`ACTED_IN`]-&gt;(m2)&lt;-[:`ACTED_IN`]-(cocoActors) </span><span class="delimiter">&quot;</span></span>
+                + <span class="string"><span class="delimiter">&quot;</span><span class="content">WHERE (NOT (tom)-[:`ACTED_IN`]-&gt;()&lt;-[:`ACTED_IN`]-(cocoActors) AND tom &lt;&gt; cocoActors) </span><span class="delimiter">&quot;</span></span>
+                + <span class="string"><span class="delimiter">&quot;</span><span class="content">RETURN cocoActors.name AS Recommended, count(*) AS Strength ORDER BY Strength DESC</span><span class="delimiter">&quot;</span></span>);</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
 <h3 id="Migrating"><a class="anchor" href="#Migrating"></a>Migrating from SDN+OGM to SDN/RX</h3>
 <div class="sect3">
 <h4 id="knownissueswithpastsdnogmmigrations"><a class="anchor" href="#knownissueswithpastsdnogmmigrations"></a>Known issues with past SDN+OGM migrations</h4>
@@ -6593,7 +6911,7 @@ You can keep your existing URL.</p>
 <li>
 <p>Configuring SDN/RX through a <code>org.neo4j.ogm.config.Configuration</code> bean is not supported, instead of, all configuration of the driver goes through <a href="https://github.com/neo4j/neo4j-java-driver-spring-boot-starter">our new starter</a>.
 Any of <a href="https://github.com/neo4j/neo4j-java-driver-spring-boot-starter/blob/master/docs/configuration-options.adoc">those properties</a> can be configured through standard Spring Boot means.
-You will especially have to adapt the properties for the url and authentication, see <a href="#migrating-auth">Listing 39</a></p>
+You will especially have to adapt the properties for the url and authentication, see <a href="#migrating-auth">Listing 50</a></p>
 </li>
 </ul>
 </div>
@@ -6613,7 +6931,7 @@ You cannot configure SDN/RX through XML.
 </table>
 </div>
 <div id="migrating-auth" class="listingblock">
-<div class="title">Listing 39. Old and new properties compared</div>
+<div class="title">Listing 50. Old and new properties compared</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="properties"># Old
 spring.data.neo4j.embedded.enabled=false # No longer support
@@ -6776,7 +7094,7 @@ We don&#8217;t want to lose them as users right from the start.</p>
 <p>All builds require a local copy of the the project:</p>
 </div>
 <div id="checkout-sdn-rx" class="listingblock">
-<div class="title">Listing 40. Clone SDN/RX</div>
+<div class="title">Listing 51. Clone SDN/RX</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ git clone git@github.com:neo4j/sdn-rx.git</code></pre>
 </div>
@@ -6786,7 +7104,7 @@ We don&#8217;t want to lose them as users right from the start.</p>
 The output should be similar:</p>
 </div>
 <div id="verify-jdk" class="listingblock">
-<div class="title">Listing 41. Verify your JDK</div>
+<div class="title">Listing 52. Verify your JDK</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ java -version
 java version &quot;12.0.1&quot; 2019-04-16
@@ -6806,7 +7124,7 @@ In short, Docker is a tool that helps you running lightweight software images us
 <p>Our build uses <a href="https://www.testcontainers.org/modules/databases/neo4j/">Testcontainers Neo4j</a> to bring up a database instance.</p>
 </div>
 <div id="build-default-bash" class="listingblock">
-<div class="title">Listing 42. Build with default settings on Linux / macOS</div>
+<div class="title">Listing 53. Build with default settings on Linux / macOS</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ ./mvnw clean verify
 [INFO] Scanning for projects...
@@ -6842,7 +7160,7 @@ In short, Docker is a tool that helps you running lightweight software images us
 <p>On a Windows machine, use</p>
 </div>
 <div id="build-default-windows" class="listingblock">
-<div class="title">Listing 43. Build with default settings on Windows</div>
+<div class="title">Listing 54. Build with default settings on Windows</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ mvnw.cmd clean verify</code></pre>
 </div>
@@ -6861,7 +7179,7 @@ As a consequence, tests requiring a reactive capable database, are skipped, as t
 <p>The image version to use can be configured through an environmental variable like this:</p>
 </div>
 <div id="build-other-image" class="listingblock">
-<div class="title">Listing 44. Build using a different Neo4j Docker image</div>
+<div class="title">Listing 55. Build using a different Neo4j Docker image</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ SDN_RX_NEO4J_VERSION=3.5.11-enterprise SDN_RX_NEO4J_ACCEPT_COMMERCIAL_EDITION=yes ./mvnw clean verify</code></pre>
 </div>
@@ -6905,7 +7223,7 @@ change the default password from <code>neo4j</code> to something of your liking.
 <p>After that, you can run a complete build by specifying the local <code>bolt</code> URL:</p>
 </div>
 <div id="build-using-locally-running-database" class="listingblock">
-<div class="title">Listing 45. Build using a locally running database</div>
+<div class="title">Listing 56. Build using a locally running database</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ SDN_RX_NEO4J_URL=bolt://localhost:7687 SDN_RX_NEO4J_PASSWORD=secret ./mvnw clean verify</code></pre>
 </div>
@@ -7013,7 +7331,7 @@ To keep things both clear and concise, we restrict the usage of those annotation
 and annotations.</p>
 </div>
 <div id="api:api-guardian-usage" class="listingblock constraint">
-<div class="title">Listing 46. @API Guardian annotations must not be used on fields</div>
+<div class="title">Listing 57. @API Guardian annotations must not be used on fields</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (c:Java) - [:ANNOTATED_BY] -&gt; (a) - [:OF_TYPE] -&gt; (t:Type {fqn: 'org.apiguardian.api.API'}),
       (p) - [:DECLARES] -&gt; (c)
@@ -7025,7 +7343,7 @@ RETURN p.fqn, c.name</code></pre>
 <p>Public interfaces, classes or annotations are either part of internal or public API and have a status.</p>
 </div>
 <div id="api:api-guardian-api-concept" class="listingblock concept">
-<div class="title">Listing 47. Define which Java artifacts are part of internal or public API</div>
+<div class="title">Listing 58. Define which Java artifacts are part of internal or public API</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (c:Java) - [:ANNOTATED_BY] -&gt; (a) - [:OF_TYPE] -&gt; (t:Type {fqn: 'org.apiguardian.api.API'}),
       (a) - [:HAS] -&gt; ({name: 'status'}) - [:IS] -&gt; (s)
@@ -7048,7 +7366,7 @@ RETURN c,a</code></pre>
 <p>See ADR-003.</p>
 </div>
 <div id="api:internal" class="listingblock constraint">
-<div class="title">Listing 48. Non abstract, public classes that are only part of internal API must be final</div>
+<div class="title">Listing 59. Non abstract, public classes that are only part of internal API must be final</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (c:Class) - [:IS_PART_OF] -&gt; (:Api {type: 'Internal'})
 WHERE c.visibility = 'public'
@@ -7065,7 +7383,7 @@ RETURN c.name</code></pre>
 <p>The following naming conventions are used throughout the project:</p>
 </div>
 <div id="naming:TypeNameMustBeginWithGroupId" class="listingblock constraint">
-<div class="title">Listing 49. All Java types must be located in packages that start with <code>org.neo4j.springframework.data</code>.</div>
+<div class="title">Listing 60. All Java types must be located in packages that start with <code>org.neo4j.springframework.data</code>.</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH
   (project:Maven:Project)-[:CREATES]-&gt;(:Artifact)-[:CONTAINS]-&gt;(type:Type)
@@ -7082,7 +7400,7 @@ RETURN
 <p>Most of the time, the package structure under <code>org.neo4j.springframework.data</code> should reflect the main building parts.</p>
 </div>
 <div id="structure:mapping" class="listingblock constraint">
-<div class="title">Listing 50. The mapping package must not depend on any other SDN/RX packages than <code>schema</code> and <code>convert</code></div>
+<div class="title">Listing 61. The mapping package must not depend on any other SDN/RX packages than <code>schema</code> and <code>convert</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (a:Main:Artifact)
 OPTIONAL MATCH (a) -[:CONTAINS]-&gt; (s:Package) WHERE s.fqn in ['org.neo4j.springframework.data.core.schema', 'org.neo4j.springframework.data.core.convert']
@@ -7102,7 +7420,7 @@ To access the database, please build the project as described above.
 When the build finishes, execute the following command:</p>
 </div>
 <div id="start-jqassistant" class="listingblock">
-<div class="title">Listing 51. Start jQAssistant</div>
+<div class="title">Listing 62. Start jQAssistant</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:server</code></pre>
 </div>
@@ -7114,7 +7432,7 @@ When the build finishes, execute the following command:</p>
 <p>The scanning and analyzing can be triggered individually, without going through the full verify again:</p>
 </div>
 <div id="scan-with-jqassistant" class="listingblock">
-<div class="title">Listing 52. Manually scan and analyze the main project</div>
+<div class="title">Listing 63. Manually scan and analyze the main project</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:scan@jqassistant-scan
 $ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:analyze@jqassistant-analyze</code></pre>
@@ -7129,7 +7447,7 @@ $ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:ana
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-04-01 08:30:47 UTC
+Last updated 2020-04-01 08:43:14 UTC
 </div>
 </div>
 </body>
