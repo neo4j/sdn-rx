@@ -20,6 +20,8 @@ package org.neo4j.springframework.data.core.cypher;
 
 import static org.apiguardian.api.API.Status.*;
 
+import java.util.Objects;
+
 import org.apiguardian.api.API;
 import org.springframework.lang.NonNull;
 import org.springframework.util.Assert;
@@ -39,20 +41,21 @@ import org.springframework.util.Assert;
 @API(status = EXPERIMENTAL, since = "1.0")
 public final class SymbolicName implements Expression {
 
-	private final String name;
+	private final String value;
 
 	static SymbolicName create(String name) {
 
+		Assert.hasText(name, "Name must not be empty.");
 		Assert.isTrue(Cypher.isIdentifier(name), "Name must be a valid identifier.");
 		return new SymbolicName(name);
 	}
 
-	private SymbolicName(String name) {
-		this.name = name;
+	private SymbolicName(String value) {
+		this.value = value;
 	}
 
-	public String getName() {
-		return name;
+	public String getValue() {
+		return value;
 	}
 
 	@NonNull
@@ -62,13 +65,30 @@ public final class SymbolicName implements Expression {
 		if (otherValue.isEmpty()) {
 			return this;
 		}
-		return SymbolicName.create(this.name + otherValue);
+		return SymbolicName.create(this.value + otherValue);
 	}
 
 	@Override
 	public String toString() {
 		return "SymbolicName{" +
-			"name='" + name + '\'' +
+			"name='" + value + '\'' +
 			'}';
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		SymbolicName that = (SymbolicName) o;
+		return value.equals(that.value);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(value);
 	}
 }
