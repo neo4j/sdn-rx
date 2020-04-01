@@ -104,6 +104,18 @@ public final class Node implements PatternElement, Named, ExposesRelationships<R
 	}
 
 	/**
+	 * Creates a copy of this node with a new symbolic name.
+	 *
+	 * @param newSymbolicName the new symbolic name.
+	 * @return The new node.
+	 */
+	public Node named(SymbolicName newSymbolicName) {
+
+		Assert.notNull(newSymbolicName, "Symbolic name is required.");
+		return new Node(newSymbolicName, properties, labels);
+	}
+
+	/**
 	 * Creates a a copy of this node with additional properties. Creates a node without properties when no properties
 	 * * are passed to this method.
 	 *

@@ -133,6 +133,18 @@ public final class Relationship implements
 	}
 
 	/**
+	 * Creates a copy of this relationship with a new symbolic name.
+	 *
+	 * @param newSymbolicName the new symbolic name.
+	 * @return The new relationship.
+	 */
+	public Relationship named(SymbolicName newSymbolicName) {
+
+		// Sanity check of newSymbolicName delegated to the details.
+		return new Relationship(this.left, this.details.named(newSymbolicName), this.right);
+	}
+
+	/**
 	 * Creates a new relationship with a new minimum length
 	 *
 	 * @param minimum the new minimum

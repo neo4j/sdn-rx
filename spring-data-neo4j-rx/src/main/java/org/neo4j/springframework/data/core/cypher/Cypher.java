@@ -90,6 +90,13 @@ public final class Cypher {
 	}
 
 	/**
+	 * @return A node matching any node with the symbolic the given {@code symbolicName}.
+	 */
+	public static Node anyNode(SymbolicName symbolicName) {
+		return Node.create().named(symbolicName);
+	}
+
+	/**
 	 * Dereferences a property for a symbolic name, most likely pointing to a property container like a node or a relationship.
 	 *
 	 * @param containerName The symbolic name of a property container

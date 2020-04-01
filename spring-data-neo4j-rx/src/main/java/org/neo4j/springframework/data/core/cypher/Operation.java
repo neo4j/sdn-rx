@@ -65,7 +65,7 @@ public final class Operation implements Expression {
 		Assert.notEmpty(nodeLabels, "The labels cannot be empty.");
 
 		List<NodeLabel> listOfNodeLabels = Arrays.stream(nodeLabels).map(NodeLabel::new).collect(toList());
-		return new Operation(op1.getSymbolicName().get(), operator, new NodeLabels(listOfNodeLabels));
+		return new Operation(op1.getRequiredSymbolicName(), operator, new NodeLabels(listOfNodeLabels));
 	}
 
 	private final Expression left;

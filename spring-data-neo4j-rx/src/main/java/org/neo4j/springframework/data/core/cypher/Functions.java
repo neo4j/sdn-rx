@@ -106,9 +106,8 @@ public final class Functions {
 	 * Creates a function invocation for the {@code count()} function.
 	 * See <a href="https://neo4j.com/docs/cypher-manual/current/functions/aggregating/#functions-count">count</a>.
 	 *
-	 * @param expression An expression describing the things to count. Can be a node, relationship, alias or
-	 *                   a symbolic name
-	 * @return A function call for {@code count()} for one node
+	 * @param expression An expression describing the things to count.
+	 * @return A function call for {@code count()} for an expression like {@link Cypher#asterisk()} etc.
 	 */
 	public static FunctionInvocation count(Expression expression) {
 

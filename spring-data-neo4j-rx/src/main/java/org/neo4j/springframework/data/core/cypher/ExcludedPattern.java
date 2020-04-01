@@ -24,17 +24,17 @@ import org.apiguardian.api.API;
 import org.neo4j.springframework.data.core.cypher.support.Visitor;
 
 /**
- * Used to create patterns filtered via {@literal not}.
+ * Used to create patterns excluded in a where clause via {@literal not}.
  *
  * @author Michael J. Simons
  * @since 1.0
  */
 @API(status = INTERNAL, since = "1.0")
-final class FilteredPattern implements Condition {
+final class ExcludedPattern implements Condition {
 
 	private final PatternElement patternElement;
 
-	FilteredPattern(PatternElement patternElement) {
+	ExcludedPattern(PatternElement patternElement) {
 		this.patternElement = patternElement;
 	}
 

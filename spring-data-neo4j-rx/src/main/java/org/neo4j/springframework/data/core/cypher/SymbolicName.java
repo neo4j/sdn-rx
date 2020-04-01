@@ -21,6 +21,7 @@ package org.neo4j.springframework.data.core.cypher;
 import static org.apiguardian.api.API.Status.*;
 
 import org.apiguardian.api.API;
+import org.springframework.lang.NonNull;
 import org.springframework.util.Assert;
 
 /**
@@ -52,6 +53,16 @@ public final class SymbolicName implements Expression {
 
 	public String getName() {
 		return name;
+	}
+
+	@NonNull
+	public SymbolicName concat(String otherValue) {
+
+		Assert.notNull(otherValue, "Value to concat must not be null.");
+		if (otherValue.isEmpty()) {
+			return this;
+		}
+		return SymbolicName.create(this.name + otherValue);
 	}
 
 	@Override

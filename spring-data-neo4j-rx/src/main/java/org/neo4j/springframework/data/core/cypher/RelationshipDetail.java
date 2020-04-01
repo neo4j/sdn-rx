@@ -75,8 +75,13 @@ public final class RelationshipDetail implements Visitable {
 	RelationshipDetail named(String newSymbolicName) {
 
 		Assert.hasText(newSymbolicName, "Symbolic name is required.");
-		return new RelationshipDetail(this.direction, SymbolicName.create(newSymbolicName), this.types, this.length,
-			this.properties);
+		return named(SymbolicName.create(newSymbolicName));
+	}
+
+	RelationshipDetail named(SymbolicName newSymbolicName) {
+
+		Assert.notNull(newSymbolicName, "Symbolic name is required.");
+		return new RelationshipDetail(this.direction, newSymbolicName, this.types, this.length, this.properties);
 	}
 
 	RelationshipDetail with(@Nullable Properties newProperties) {

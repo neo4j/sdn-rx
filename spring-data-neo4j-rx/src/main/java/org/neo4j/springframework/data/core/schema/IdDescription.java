@@ -19,7 +19,7 @@
 package org.neo4j.springframework.data.core.schema;
 
 import static org.neo4j.springframework.data.core.cypher.Cypher.*;
-import static org.neo4j.springframework.data.core.schema.NodeDescription.*;
+import static org.neo4j.springframework.data.core.schema.Constants.*;
 
 import java.util.Optional;
 

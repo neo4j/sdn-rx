@@ -127,7 +127,7 @@ public final class Conditions {
 	 public static Condition not(PatternElement patternElement) {
 
 		Assert.notNull(patternElement, "Pattern to negate must not be null.");
-		return new FilteredPattern(patternElement);
+		return new ExcludedPattern(patternElement);
 	}
 
 	/**
