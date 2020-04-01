@@ -219,7 +219,7 @@ class CypherIT {
 						.relationshipTo(bikeNode, "OWNS")
 						.relationshipTo(tripNode, "USED_ON").named("r2").min(1).properties(mapOf("when", literalOf("2019-04-16")))
 						.relationshipFrom(userNode, "WAS_ON").named("x").max(2).properties("whatever", literalOf("2020-04-16"))
-						.relationshipBetween(Cypher.node("SOMETHING")).named("y").length(2,3).properties(mapOf("idk", literalOf("2021-04-16")))
+						.relationshipBetween(Cypher.node("SOMETHING")).named("y").length(2, 3).properties(mapOf("idk", literalOf("2021-04-16")))
 					)
 					.where(userNode.property("name").matches(".*aName"))
 					.returning(bikeNode, userNode)
