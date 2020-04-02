@@ -170,7 +170,7 @@ public final class Functions {
 	 * <li><a href="https://neo4j.com/docs/cypher-manual/current/functions/scalar/#functions-size-of-pattern-expression">to a pattern expression</a></li>
 	 * </ul>
 	 *
-	 * @param pattern The relationship who's size is to be returned
+	 * @param pattern The pattern for which {@code size()} should be invoked.
 	 * @return A function call for {@code size()} for one pattern
 	 */
 	public static FunctionInvocation size(Relationship pattern) {
@@ -186,7 +186,7 @@ public final class Functions {
 	 * <li><a href="https://neo4j.com/docs/cypher-manual/current/functions/scalar/#functions-size-of-pattern-expression">to a pattern expression</a></li>
 	 * </ul>
 	 *
-	 * @param pattern The relationship who's size is to be returned
+	 * @param pattern The pattern for which {@code size()} should be invoked.
 	 * @return A function call for {@code size()} for a pattern
 	 */
 	public static FunctionInvocation size(RelationshipChain pattern) {
