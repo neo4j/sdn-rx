@@ -103,7 +103,7 @@ public final class CompoundCondition implements Condition {
 
 		if (condition instanceof CompoundCondition) {
 			CompoundCondition compoundCondition = (CompoundCondition) condition;
-			if (compoundCondition.operator == chainingOperator) {
+			if (this.operator == chainingOperator && chainingOperator == compoundCondition.operator) {
 				this.conditions.addAll(compoundCondition.conditions);
 			} else {
 				CompoundCondition inner = new CompoundCondition(chainingOperator);

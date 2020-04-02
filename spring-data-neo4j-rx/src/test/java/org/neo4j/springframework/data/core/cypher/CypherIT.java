@@ -767,6 +767,75 @@ class CypherIT {
 		}
 
 		@Test
+		void nestedConditions() {
+			Statement statement;
+
+			statement = Cypher.match(userNode)
+				.where(isTrue().or(isFalse()).and(isTrue()))
+				.returning(userNode)
+				.build();
+
+			assertThat(cypherRenderer.render(statement))
+				.isEqualTo("MATCH (u:`User`) WHERE ((true OR false) AND true) RETURN u");
+
+			statement = Cypher.match(userNode)
+				.where(isTrue().or(isFalse()).and(isTrue()))
+				.or(isFalse())
+				.returning(userNode)
+				.build();
+
+			assertThat(cypherRenderer.render(statement))
+				.isEqualTo(
+					"MATCH (u:`User`) WHERE (((true OR false) AND true) OR false) RETURN u");
+
+			statement = Cypher.match(userNode)
+				.where(isTrue().or(isFalse()).and(isTrue()))
+				.or(isFalse())
+				.and(isFalse())
+				.returning(userNode)
+				.build();
+
+			assertThat(cypherRenderer.render(statement))
+				.isEqualTo("MATCH (u:`User`) WHERE ((((true OR false) AND true) OR false) AND false) RETURN u");
+
+			statement = Cypher.match(userNode)
+				.where(isTrue().or(isFalse()).and(isTrue()))
+				.or(isFalse().and(isTrue()))
+				.returning(userNode)
+				.build();
+
+			assertThat(cypherRenderer.render(statement))
+				.isEqualTo("MATCH (u:`User`) WHERE ((true OR false) AND true OR (false AND true)) RETURN u");
+
+			statement = Cypher.match(userNode)
+				.where(isTrue().or(isFalse()).and(isTrue()))
+				.or(isFalse().and(isTrue()))
+				.and(isTrue())
+				.returning(userNode)
+				.build();
+
+			assertThat(cypherRenderer.render(statement))
+				.isEqualTo("MATCH (u:`User`) WHERE ((true OR false) AND true OR (false AND true) AND true) RETURN u");
+
+			statement = Cypher.match(userNode)
+				.where(isTrue().or(isFalse()).and(isTrue()))
+				.or(isFalse().or(isTrue()))
+				.returning(userNode)
+				.build();
+
+			assertThat(cypherRenderer.render(statement))
+				.isEqualTo("MATCH (u:`User`) WHERE ((true OR false) AND true OR (false OR true)) RETURN u");
+
+			statement = Cypher.match(userNode)
+				.where(isTrue().or(isFalse()).and(isTrue()).or(isFalse().or(isTrue())))
+				.returning(userNode)
+				.build();
+
+			assertThat(cypherRenderer.render(statement))
+				.isEqualTo("MATCH (u:`User`) WHERE ((true OR false) AND true OR (false OR true)) RETURN u");
+		}
+
+		@Test
 		void conditionsChainingXor() {
 			Statement statement = Cypher.match(userNode)
 				.where(
