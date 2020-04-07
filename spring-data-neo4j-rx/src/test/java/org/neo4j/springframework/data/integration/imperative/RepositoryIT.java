@@ -76,9 +76,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Range;
 import org.springframework.data.domain.Range.Bound;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.geo.Box;
 import org.springframework.data.geo.Circle;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Metrics;
+import org.springframework.data.geo.Polygon;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
@@ -2028,12 +2030,13 @@ class RepositoryIT {
 		assertThat(persons)
 			.containsExactly(person1);
 
-		persons = repository.findAllByPlaceNear(MINC, new Distance(200.0 / 1000.0, Metrics.KILOMETERS));
+		Distance distance = new Distance(200.0 / 1000.0, Metrics.KILOMETERS);
+		persons = repository.findAllByPlaceNear(MINC, distance);
 		assertThat(persons)
 			.hasSize(1)
 			.contains(person1);
 
-		persons = repository.findAllByPlaceNear(CLARION, new Distance(200.0 / 1000.0, Metrics.KILOMETERS));
+		persons = repository.findAllByPlaceNear(CLARION, distance);
 		assertThat(persons).isEmpty();
 
 		persons = repository.findAllByPlaceNear(MINC,
@@ -2057,12 +2060,45 @@ class RepositoryIT {
 			.hasSize(1)
 			.contains(person2);
 
-		persons = repository.findAllByPlaceWithin(new Circle(new org.springframework.data.geo.Point(MINC.x(), MINC.y()), new Distance(200.0 / 1000.0, Metrics.KILOMETERS)));
+		persons = repository.findAllByPlaceWithin(new Circle(new org.springframework.data.geo.Point(MINC.x(), MINC.y()), distance));
 		assertThat(persons)
 			.hasSize(1)
 			.contains(person1);
 
-		persons = repository.findAllByPlaceNear(CLARION, new Distance(200.0 / 1000.0, Metrics.KILOMETERS));
+		Box b = new Box(
+			new org.springframework.data.geo.Point(MINC.x() - distance.getValue(), MINC.y() - distance.getValue()),
+			new org.springframework.data.geo.Point(MINC.x() + distance.getValue(), MINC.y() + distance.getValue()));
+		persons = repository.findAllByPlaceWithin(b);
+		assertThat(persons)
+			.hasSize(1)
+			.contains(person1);
+
+		b = new Box(
+			new org.springframework.data.geo.Point(NEO4J_HQ.x(), NEO4J_HQ.y()),
+			new org.springframework.data.geo.Point(SFO.x(), SFO.y())
+		);
+		persons = repository.findAllByPlaceWithin(b);
+		assertThat(persons)
+			.hasSize(2);
+
+		Polygon p = new Polygon(
+			new org.springframework.data.geo.Point(12.993747, 55.6122746),
+			new org.springframework.data.geo.Point(12.9927492, 55.6110566),
+			new org.springframework.data.geo.Point(12.9953456, 55.6106688),
+			new org.springframework.data.geo.Point(12.9946482, 55.6110505),
+			new org.springframework.data.geo.Point(12.9959786, 55.6112748),
+			new org.springframework.data.geo.Point(12.9951847, 55.6122261),
+			new org.springframework.data.geo.Point(12.9942727, 55.6122382),
+			new org.springframework.data.geo.Point(12.9937685, 55.6122685),
+			new org.springframework.data.geo.Point(12.993747, 55.6122746)
+		);
+
+		persons = repository.findAllByPlaceWithin(p);
+		assertThat(persons)
+			.hasSize(1)
+			.contains(person1);
+
+		persons = repository.findAllByPlaceNear(CLARION, distance);
 		assertThat(persons).isEmpty();
 	}
 

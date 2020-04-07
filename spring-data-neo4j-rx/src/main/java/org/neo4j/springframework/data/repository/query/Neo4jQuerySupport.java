@@ -35,9 +35,11 @@ import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
 import org.neo4j.springframework.data.repository.query.Neo4jQueryMethod.Neo4jParameters;
 import org.springframework.core.log.LogAccessor;
 import org.springframework.data.domain.Range;
+import org.springframework.data.geo.Box;
 import org.springframework.data.geo.Circle;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Metrics;
+import org.springframework.data.geo.Polygon;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.ResultProcessor;
 import org.springframework.data.repository.query.ReturnedType;
@@ -142,6 +144,11 @@ abstract class Neo4jQuerySupport {
 			return convertCircle((Circle) parameter);
 		} else if (parameter instanceof Instant) {
 			return ((Instant) parameter).atOffset(ZoneOffset.UTC);
+		} else if (parameter instanceof Box) {
+			return convertBox((Box) parameter);
+		} else if (parameter instanceof Polygon) {
+			log.warn("A within condition for a box or a polygon only checks the bounding box of the polygon, so you might end up with more results than expected.");
+			return convertPolygon((Polygon) parameter);
 		}
 
 		// Good hook to check the NodeManager whether the thing is an entity and we replace the value with a known id.
@@ -161,6 +168,29 @@ abstract class Neo4jQuerySupport {
 		map.put("x", convertParameter(circle.getCenter().getX()));
 		map.put("y", convertParameter(circle.getCenter().getY()));
 		map.put("radius", convertParameter(calculateDistanceInMeter(circle.getRadius())));
+		return map;
+	}
+
+	private Map<String, Object> convertBox(Box box) {
+
+		BoundingBox boundingBox = BoundingBox.of(box);
+		return bondingBoxToMap(boundingBox);
+	}
+
+	private Map<String, Object> convertPolygon(Polygon polygon) {
+
+		BoundingBox boundingBox = BoundingBox.of(polygon);
+		return bondingBoxToMap(boundingBox);
+	}
+
+	private Map<String, Object> bondingBoxToMap(BoundingBox boundingBox) {
+		Map<String, Object> map = new HashMap<>();
+
+		map.put("llx", convertParameter(boundingBox.getLowerLeft().getX()));
+		map.put("lly", convertParameter(boundingBox.getLowerLeft().getY()));
+		map.put("urx", convertParameter(boundingBox.getUpperRight().getX()));
+		map.put("ury", convertParameter(boundingBox.getUpperRight().getY()));
+
 		return map;
 	}
 
