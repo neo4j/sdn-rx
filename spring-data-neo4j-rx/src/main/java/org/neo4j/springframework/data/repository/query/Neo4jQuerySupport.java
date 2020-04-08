@@ -176,6 +176,7 @@ abstract class Neo4jQuerySupport {
 	}
 
 	private Map<String, Object> convertBoundingBox(BoundingBox boundingBox) {
+
 		Map<String, Object> map = new HashMap<>();
 
 		map.put("llx", convertParameter(boundingBox.getLowerLeft().getX()));

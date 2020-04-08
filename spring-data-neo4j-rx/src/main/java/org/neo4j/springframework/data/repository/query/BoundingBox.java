@@ -45,15 +45,19 @@ public final class BoundingBox {
 	}
 
 	private static BoundingBox buildFrom(Iterable<Point> points) {
+
 		double minX = Double.POSITIVE_INFINITY;
-		double maxX = Double.NEGATIVE_INFINITY;
 		double minY = Double.POSITIVE_INFINITY;
+
+		double maxX = Double.NEGATIVE_INFINITY;
 		double maxY = Double.NEGATIVE_INFINITY;
 
 		for (Point point : points) {
+
 			minX = Math.min(point.getX(), minX);
-			maxX = Math.max(point.getX(), maxX);
 			minY = Math.min(point.getY(), minY);
+
+			maxX = Math.max(point.getX(), maxX);
 			maxY = Math.max(point.getY(), maxY);
 		}
 
