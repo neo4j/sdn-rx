@@ -32,14 +32,14 @@ import org.springframework.data.geo.Polygon;
  * @author Michael J. Simons
  * @since 1.0
  */
-final class BoundingBox {
+public final class BoundingBox {
 
-	static BoundingBox of(Polygon p) {
+	public static BoundingBox of(Polygon p) {
 
 		return buildFrom(p.getPoints());
 	}
 
-	static BoundingBox of(Box b) {
+	public static BoundingBox of(Box b) {
 
 		return buildFrom(Arrays.asList(b.getFirst(), b.getSecond()));
 	}

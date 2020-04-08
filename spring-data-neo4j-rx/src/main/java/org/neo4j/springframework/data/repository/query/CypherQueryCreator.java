@@ -358,7 +358,7 @@ final class CypherQueryCreator extends AbstractQueryCreator<QueryAndParameters, 
 			Expression distanceFunction = Functions
 				.distance(toCypherProperty(persistentProperty, false), referencePoint);
 			return distanceFunction.lte(createCypherParameter(area.nameOrIndex + ".radius", false));
-		} else if (area.hasValueOfType(Polygon.class) || area.hasValueOfType(Box.class)) {
+		} else if (area.hasValueOfType(BoundingBox.class) || area.hasValueOfType(Box.class)) {
 			Expression llx = createCypherParameter(area.nameOrIndex + ".llx", false);
 			Expression lly = createCypherParameter(area.nameOrIndex + ".lly", false);
 			Expression urx = createCypherParameter(area.nameOrIndex + ".urx", false);
@@ -368,8 +368,10 @@ final class CypherQueryCreator extends AbstractQueryCreator<QueryAndParameters, 
 			Expression y = Cypher.property(toCypherProperty(persistentProperty, false), "y");
 
 			return llx.lte(x).and(x.lte(urx)).and(lly.lte(y)).and(y.lte(ury));
+		} else if (area.hasValueOfType(Polygon.class)) {
+			throw new IllegalArgumentException(String.format("The WITHIN operation does not support a %s. You might want to pass a bounding box instead: %s.of(polygon).", Polygon.class, BoundingBox.class));
 		} else {
-			throw new IllegalArgumentException(String.format("The WITHIN operation requires an area of type %s, %s or %s.", Circle.class, Polygon.class, Box.class));
+			throw new IllegalArgumentException(String.format("The WITHIN operation requires an area of type %s or %s.", Circle.class, Box.class));
 		}
 	}
 

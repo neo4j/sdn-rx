@@ -34,6 +34,7 @@ import org.neo4j.springframework.data.integration.shared.PersonWithNoConstructor
 import org.neo4j.springframework.data.integration.shared.PersonWithWither;
 import org.neo4j.springframework.data.integration.shared.ThingWithGeneratedId;
 import org.neo4j.springframework.data.repository.Neo4jRepository;
+import org.neo4j.springframework.data.repository.query.BoundingBox;
 import org.neo4j.springframework.data.repository.query.Query;
 import org.neo4j.springframework.data.types.GeographicPoint2d;
 import org.springframework.data.domain.Page;
@@ -215,6 +216,8 @@ public interface PersonRepository extends Neo4jRepository<PersonWithAllConstruct
 	List<PersonWithAllConstructor> findAllByPlaceWithin(Circle circle);
 
 	List<PersonWithAllConstructor> findAllByPlaceWithin(Box box);
+
+	List<PersonWithAllConstructor> findAllByPlaceWithin(BoundingBox box);
 
 	List<PersonWithAllConstructor> findAllByPlaceWithin(Polygon polygon);
 
