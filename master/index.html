@@ -607,6 +607,7 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#repository-query-return-types">Repository query return types</a></li>
 <li><a href="#neo4j-client">Neo4jClient</a></li>
 <li><a href="#cypher-dsl">The Cypher-DSL</a></li>
+<li><a href="#query-creation">Query creation</a></li>
 <li><a href="#Migrating">Migrating from SDN+OGM to SDN/RX</a></li>
 <li><a href="#building-sdn-rx">Building SDN/RX</a></li>
 </ul>
@@ -6796,6 +6797,129 @@ assertThat(cypherRenderer.render(statement))
 </div>
 </div>
 <div class="sect2">
+<h3 id="query-creation"><a class="anchor" href="#query-creation"></a>Query creation</h3>
+<div class="paragraph">
+<p>This chapter is about the technical creation of queries when using SDN/RX&#8217;s abstraction layers.
+There will be some simplifications because we do not discuss every possible case but stick with the general idea behind it.</p>
+</div>
+<div class="sect3">
+<h4 id="save"><a class="anchor" href="#save"></a>Save</h4>
+<div class="paragraph">
+<p>Beside the <code>find/load</code> operations the <code>save</code> operation is one of the most used when working with data.
+A save operation call in general issues multiple statements against the database to ensure that the resulting graph model matches the given Java model.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>A union statement will get created that either creates a node, if the node&#8217;s identifier cannot be found, or updates the node&#8217;s property if the node itself exists.</p>
+<div class="paragraph">
+<p>(<code>OPTIONAL MATCH (hlp:Person) WHERE id(hlp) = $__id__ WITH hlp WHERE hlp IS NULL CREATE (n:Person) SET n = $__properties__ RETURN id(n) UNION MATCH (n) WHERE id(n) = $__id__ SET n = $__properties__ RETURN id(n)</code>)</p>
+</div>
+</li>
+<li>
+<p>If the entity is <strong>not</strong> new all relationships of the first found type at the domain model will get removed from the database.</p>
+<div class="paragraph">
+<p>(<code>MATCH (startNode)-[rel:Has]&#8594;(:Hobby) WHERE id(startNode) = $fromId DELETE rel</code>)</p>
+</div>
+</li>
+<li>
+<p>The related entity will get created in the same way as the root entity.</p>
+<div class="paragraph">
+<p>(<code>OPTIONAL MATCH (hlp:Hobby) WHERE id(hlp) = $__id__ WITH hlp WHERE hlp IS NULL CREATE (n:Hobby) SET n = $__properties__ RETURN id(n) UNION MATCH (n) WHERE id(n) = $__id__ SET n = $__properties__ RETURN id(n)</code>)</p>
+</div>
+</li>
+<li>
+<p>The relationship itself will get created</p>
+<div class="paragraph">
+<p>(<code>MATCH (startNode) WHERE id(startNode) = $fromId MATCH (endNode) WHERE id(endNode) = 631 MERGE (startNode)-[:Has]&#8594;(endNode)</code>)</p>
+</div>
+</li>
+<li>
+<p>If the related entity also has relationships to other entities, the same procedure as in 2. will get started.</p>
+</li>
+<li>
+<p>For the next defined relationship on the root entity start with 2. but replace <em>first</em> with <em>next</em>.</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+As you can see SDN/RX does its best to keep your graph model in sync with the Java world.
+      This is one of the reasons why we really advise you to not load, manipulate and save sub-graphs
+      as this might cause relationships to get removed from the database.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect4">
+<h5 id="multipleentities"><a class="anchor" href="#multipleentities"></a>Multiple entities</h5>
+<div class="paragraph">
+<p>The <code>save</code> operation is overloaded with the functionality for accepting multiple entities of the same type.
+If you are working with generated id values or make use of optimistic locking, every entity will result in a separate <code>CREATE</code> call.</p>
+</div>
+<div class="paragraph">
+<p>In other cases SDN/RX will create a parameter list with the entity information and provide it with a <code>MERGE</code> call.</p>
+</div>
+<div class="paragraph">
+<p><code>UNWIND $__entities__ AS entity MERGE (n:Person {customId: entity.$__id__}) SET n = entity.__properties__ RETURN collect(n.customId) AS $__ids__</code></p>
+</div>
+<div class="paragraph">
+<p>and the parameters look like</p>
+</div>
+<div class="paragraph">
+<p><code>:params {__entities__: [{__id__: 'aa', __properties__: {name: "PersonName", theId: "aa"}}, {__id__ 'bb', __properties__: {name: "AnotherPersonName", theId: "bb"}}]}</code></p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="load"><a class="anchor" href="#load"></a>Load</h4>
+<div class="paragraph">
+<p>The <code>load</code> documentation will not only show you how the <em>MATCH</em> part of the query looks like but also how the data gets returned.</p>
+</div>
+<div class="paragraph">
+<p>The simplest kind of load operation is a <code>findById</code> call.
+It will match all nodes with the label of the type you queried for and does a filter on the id value.</p>
+</div>
+<div class="paragraph">
+<p><code>MATCH (n:Person) WHERE id(n) = 1364</code></p>
+</div>
+<div class="paragraph">
+<p>If there is a custom id provided SDN/RX will use the property you have defined as the id.</p>
+</div>
+<div class="paragraph">
+<p><code>MATCH (n:Person) WHERE n.customId = 'anId'</code></p>
+</div>
+<div class="paragraph">
+<p>The data to return is defined as a <a href="https://neo4j.com/docs/cypher-manual/current/syntax/maps/#cypher-map-projection">map projection</a>.</p>
+</div>
+<div class="paragraph">
+<p><code>RETURN n{.first_name, .personNumber, __internalNeo4jId__: id(n), __nodeLabels__: labels(n)}</code></p>
+</div>
+<div class="paragraph">
+<p>As you can see there are two special fields in there: The <code>__internalNeo4jId__</code> and the <code>__nodeLabels__</code>.
+Both are critical when it comes to mapping the data to Java objects.
+The value of the <code>__internalNeo4jId__</code> is either <code>id(n)</code> or the provided custom id but in the mapping process one known field to refer to has to exist.
+The <code>__nodeLabels__</code> ensures that all defined labels on this node can be found and mapped.
+This is needed for situations when inheritance is used and you query not for the concrete classes or have relationships defined that only define a super-type.</p>
+</div>
+<div class="paragraph">
+<p>Talking about relationships: If you have defined relationships in your entity, they will get added to the returned map as <a href="https://neo4j.com/docs/cypher-manual/4.0/syntax/lists/#cypher-pattern-comprehension">pattern comprehensions</a>.
+The above return part will then look like:</p>
+</div>
+<div class="paragraph">
+<p><code>RETURN n{.first_name, &#8230;&#8203;, Person_Has_Hobby: [(n)-[:Has]&#8594;(n_hobbies:Hobby)|n_hobbies{__internalNeo4jId__: id(n_hobbies), .name, <em>nodeLabels</em>: labels(n_hobbies)}]}</code></p>
+</div>
+<div class="paragraph">
+<p>The map projection and pattern comprehension used by SDN/RX ensures that only the properties and relationships you have defined are getting queried.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
 <h3 id="Migrating"><a class="anchor" href="#Migrating"></a>Migrating from SDN+OGM to SDN/RX</h3>
 <div class="sect3">
 <h4 id="knownissueswithpastsdnogmmigrations"><a class="anchor" href="#knownissueswithpastsdnogmmigrations"></a>Known issues with past SDN+OGM migrations</h4>
@@ -7447,7 +7571,7 @@ $ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:ana
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-04-08 12:15:20 UTC
+Last updated 2020-04-14 11:13:19 UTC
 </div>
 </div>
 </body>
