@@ -2594,5 +2594,18 @@ class CypherIT {
 			assertThat(cypherRenderer.render(s))
 				.isEqualTo("MATCH (r:`Resume`)<-[:`HAS`]-(u:`User`) RETURN count(DISTINCT r) AS r");
 		}
+
+		@Test
+		void gh200() {
+			final Node r = node("Resume").named("r");
+
+			Statement s = match(r)
+				.with(r.getRequiredSymbolicName())
+				.returningDistinct(r.getRequiredSymbolicName())
+				.build();
+
+			assertThat(cypherRenderer.render(s))
+				.isEqualTo("MATCH (r:`Resume`) WITH r RETURN DISTINCT r");
+		}
 	}
 }
