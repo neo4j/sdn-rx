@@ -369,7 +369,7 @@ interface CinemaRepository extends Neo4jRepository<Cinema, Long> { // <1>
 ====
 Given repository will fetch only attributes required by projection interface from data.
 
-WARNING: Combining custom queries using `@Query` and projections is not supported out of the box. Instead, you need to change `RETURN` part of custom cypher query to comply with expected projection model.
+NOTE: When using custom query through annotation `@Query` and returning full node that has some domain mapped to it, you can still have repository method return projection instead of domain model.
 
 ==== Remodeling data
 
