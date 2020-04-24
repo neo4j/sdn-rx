@@ -46,7 +46,7 @@ import org.springframework.data.repository.query.QueryMethodEvaluationContextPro
  * @author Michael J. Simons
  * @since 1.0
  */
-public class ReactiveNeo4jRepositoryFactory extends ReactiveRepositoryFactorySupport {
+final class ReactiveNeo4jRepositoryFactory extends ReactiveRepositoryFactorySupport {
 
 	private final ReactiveNeo4jOperations neo4jOperations;
 

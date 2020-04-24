@@ -41,7 +41,7 @@ import org.springframework.lang.Nullable;
  * @since 1.0
  */
 @API(status = API.Status.INTERNAL, since = "1.0")
-public class ReactiveNeo4jRepositoryFactoryBean<T extends Repository<S, ID>, S, ID extends Serializable>
+public final class ReactiveNeo4jRepositoryFactoryBean<T extends Repository<S, ID>, S, ID extends Serializable>
 	extends TransactionalRepositoryFactoryBeanSupport<T, S, ID> {
 
 	private ReactiveNeo4jOperations neo4jOperations;
