@@ -218,6 +218,7 @@ class DefaultStatementBuilder
 	@Override
 	public OngoingReadingWithWhere where(Condition newCondition) {
 
+		Assert.notNull(newCondition, "The new condition must not be null.");
 		this.currentOngoingMatch.conditionBuilder.where(newCondition);
 		return this;
 	}
@@ -497,6 +498,7 @@ class DefaultStatementBuilder
 		@Override
 		public OrderableOngoingReadingAndWithWithWhere where(Condition newCondition) {
 
+			Assert.notNull(newCondition, "The new condition must not be null.");
 			conditionBuilder.where(newCondition);
 			return this;
 		}
