@@ -72,6 +72,4 @@ public final class ReactiveNeo4jRepositoryFactoryBean<T extends Repository<S, ID
 	protected RepositoryFactorySupport doCreateRepositoryFactory() {
 		return new ReactiveNeo4jRepositoryFactory(neo4jOperations, neo4jMappingContext);
 	}
-
-
 }
