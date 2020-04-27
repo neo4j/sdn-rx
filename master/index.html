@@ -5775,6 +5775,61 @@ Find the list of supported cypher types in the official drivers manual: <a href=
 </tr>
 </tbody>
 </table>
+<div class="sect3">
+<h4 id="customconversions"><a class="anchor" href="#customconversions"></a>Custom conversions</h4>
+<div class="paragraph">
+<p>If you prefer to work with your own types in the entities or as parameters for <code>@Query</code> annotated methods,
+you can define and provide a custom converter implementation.
+First you have to implement a <code>GenericConverter</code> and register the types your converter should handle.
+For entity property type converters you need to take care of converting your type to <strong>and</strong> from a Neo4j Java Driver <code>Value</code>.
+If your converter is supposed to work only with custom query methods in the repositories, it is sufficient
+to provide the one-way conversion to the <code>Value</code> type.</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 29. Example of a custom converter implementation</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="directive">public</span> <span class="type">class</span> <span class="class">MyCustomTypeConverter</span> <span class="directive">implements</span> GenericConverter {
+
+        <span class="annotation">@Override</span>
+        <span class="directive">public</span> <span class="predefined-type">Set</span>&lt;ConvertiblePair&gt; getConvertibleTypes() {
+                <span class="predefined-type">Set</span>&lt;ConvertiblePair&gt; convertiblePairs = <span class="keyword">new</span> <span class="predefined-type">HashSet</span>&lt;&gt;();
+                convertiblePairs.add(<span class="keyword">new</span> ConvertiblePair(MyCustomType.class, Value.class));
+                convertiblePairs.add(<span class="keyword">new</span> ConvertiblePair(Value.class, MyCustomType.class));
+                <span class="keyword">return</span> convertiblePairs;
+        }
+
+        <span class="annotation">@Override</span>
+        <span class="directive">public</span> <span class="predefined-type">Object</span> convert(<span class="predefined-type">Object</span> source, TypeDescriptor sourceType, TypeDescriptor targetType) {
+                <span class="keyword">if</span> (MyCustomType.class.isAssignableFrom(sourceType.getType())) {
+                        <span class="comment">// convert to Neo4j Driver Value</span>
+                        <span class="keyword">return</span> convertToNeo4jValue(source);
+                } <span class="keyword">else</span> {
+                        <span class="comment">// convert to MyCustomType</span>
+                        <span class="keyword">return</span> convertToMyCustomType(source);
+                }
+        }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To make SDN/RX aware of your converter, it has to be registered in the <code>Neo4jConversions</code>.
+To do this, you have to create a <code>@Bean</code> with the type <code>org.neo4j.springframework.data.core.convert.Neo4jConversions</code>.
+Otherwise, the <code>Neo4jConversions</code> will get created in the background with the internal default converters only.</p>
+</div>
+<div class="listingblock">
+<div class="title">Listing 30. Example of a custom converter implementation</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="annotation">@Bean</span>
+<span class="directive">public</span> Neo4jConversions neo4jConversions() {
+        <span class="predefined-type">Set</span>&lt;GenericConverter&gt; additionalConverters = <span class="predefined-type">Collections</span>.singleton(<span class="keyword">new</span> MyCustomTypeConverter());
+        <span class="keyword">return</span> <span class="keyword">new</span> Neo4jConversions(additionalConverters);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you need multiple converters in your application, you can add as many as you need in the <code>Neo4jConversions</code> constructor.</p>
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="repository-query-keywords"><a class="anchor" href="#repository-query-keywords"></a>Repository query keywords</h3>
@@ -6115,7 +6170,7 @@ The publisher can only be subscribed once.</p>
 <p>As with most things in SDN/RX, both clients depend on a configured driver instance.</p>
 </div>
 <div id="neo4j-client-create-imperative-client" class="listingblock">
-<div class="title">Listing 29. Creating an instance of the imperative Neo4j client</div>
+<div class="title">Listing 31. Creating an instance of the imperative Neo4j client</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">org.neo4j.driver.AuthTokens</span>;
 <span class="keyword">import</span> <span class="include">org.neo4j.driver.Driver</span>;
@@ -6139,7 +6194,7 @@ The publisher can only be subscribed once.</p>
 <p>The driver can only open a reactive session against a 4.0 database and will fail with an exception on any lower version.</p>
 </div>
 <div id="neo4j-client-create-reactive-client" class="listingblock">
-<div class="title">Listing 30. Creating an instance of the reactive Neo4j client</div>
+<div class="title">Listing 32. Creating an instance of the reactive Neo4j client</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">org.neo4j.driver.AuthTokens</span>;
 <span class="keyword">import</span> <span class="include">org.neo4j.driver.Driver</span>;
@@ -6186,10 +6241,10 @@ and you usually don&#8217;t have to configure your own instance.</p>
 <p>The Neo4j client is well prepared to be used with the multidatabase features of Neo4j 4.0.
 The client uses the default database unless you specify otherwise.
 The fluent API of the client allows to specify the target database exactly once, after the declaration of the query to execute.
-<a href="#neo4j-client-reactive-selecting-the-target-database">Listing 31</a> demonstrates it with the reactive client:</p>
+<a href="#neo4j-client-reactive-selecting-the-target-database">Listing 33</a> demonstrates it with the reactive client:</p>
 </div>
 <div id="neo4j-client-reactive-selecting-the-target-database" class="listingblock">
-<div class="title">Listing 31. Selecting the target database</div>
+<div class="title">Listing 33. Selecting the target database</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">Flux&lt;<span class="predefined-type">Map</span>&lt;<span class="predefined-type">String</span>, <span class="predefined-type">Object</span>&gt;&gt; allActors = client
         .query(<span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (p:Person) RETURN p</span><span class="delimiter">&quot;</span></span>)
@@ -6215,7 +6270,7 @@ A query can be defined by a plain <code>String</code> or a <code>Supplier&lt;Str
 The supplier will be evaluated as late as possible and can be provided by any query builder.</p>
 </div>
 <div id="neo4j-client-specifying-queries" class="listingblock">
-<div class="title">Listing 32. Specifying a query</div>
+<div class="title">Listing 34. Specifying a query</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">Mono&lt;<span class="predefined-type">Map</span>&lt;<span class="predefined-type">String</span>, <span class="predefined-type">Object</span>&gt;&gt; firstActor = client
         .query(() -&gt; <span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (p:Person) RETURN p</span><span class="delimiter">&quot;</span></span>)
@@ -6254,7 +6309,7 @@ while the reactive client returns <code>Mono&lt;T&gt;</code> and <code>Flux&lt;T
 <p>If you don&#8217;t expect any results from your query, than use <code>run()</code> after specificity the query.</p>
 </div>
 <div id="neo4j-client-reactive-get-result-summaries" class="listingblock">
-<div class="title">Listing 33. Retrieving result summaries in a reactive way</div>
+<div class="title">Listing 35. Retrieving result summaries in a reactive way</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">Mono&lt;ResultSummary&gt; summary = reactiveClient
     .query(<span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (m:Movie) where m.title = 'Aeon Flux' DETACH DELETE m</span><span class="delimiter">&quot;</span></span>)
@@ -6279,7 +6334,7 @@ summary
 <p>Please take a moment to compare both listings and understand the difference when the actual query is triggered.</p>
 </div>
 <div id="neo4j-client-imperative-get-result-summaries" class="listingblock">
-<div class="title">Listing 34. Retrieving result summaries in a imperative way</div>
+<div class="title">Listing 36. Retrieving result summaries in a imperative way</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">ResultSummary resultSummary = imperativeClient
         .query(<span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (m:Movie) where m.title = 'Aeon Flux' DETACH DELETE m</span><span class="delimiter">&quot;</span></span>)
@@ -6323,7 +6378,7 @@ However the client prevents you from using a parameter name twice.
 Please have a look at the <a href="https://neo4j.com/docs/driver-manual/current/cypher-values/#driver-neo4j-type-system">drivers manual</a>, to see which simple types are understood.</p>
 </div>
 <div id="neo4j-client-mapping-simple-types" class="listingblock">
-<div class="title">Listing 35. Mapping simple types</div>
+<div class="title">Listing 37. Mapping simple types</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="predefined-type">Map</span>&lt;<span class="predefined-type">String</span>, <span class="predefined-type">Object</span>&gt; parameters = <span class="keyword">new</span> <span class="predefined-type">HashMap</span>&lt;&gt;();
 parameters.put(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">Li.*</span><span class="delimiter">&quot;</span></span>);
@@ -6358,11 +6413,11 @@ Flux&lt;<span class="predefined-type">Map</span>&lt;<span class="predefined-type
 <p>SDN/RX does a lot of complex mapping and it uses the same API that you can use from the client.</p>
 </div>
 <div class="paragraph">
-<p>You can provide a <code>Function&lt;T, Map&lt;String, Object&gt;&gt;</code> for any given domain object like an owner of bicycles in <a href="#neo4j-client-domain-example">Listing 36</a>
+<p>You can provide a <code>Function&lt;T, Map&lt;String, Object&gt;&gt;</code> for any given domain object like an owner of bicycles in <a href="#neo4j-client-domain-example">Listing 38</a>
 to the Neo4j Client to map those domain objects to parameters the driver can understand.</p>
 </div>
 <div id="neo4j-client-domain-example" class="listingblock">
-<div class="title">Listing 36. Example of a domain type</div>
+<div class="title">Listing 38. Example of a domain type</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="directive">public</span> <span class="type">class</span> <span class="class">Director</span> {
 
@@ -6399,10 +6454,10 @@ to the Neo4j Client to map those domain objects to parameters the driver can und
 </div>
 </div>
 <div class="paragraph">
-<p>The mapping function has to fill in all named parameters that might occur in the query like <a href="#neo4j-client-binder">Listing 37</a> shows:</p>
+<p>The mapping function has to fill in all named parameters that might occur in the query like <a href="#neo4j-client-binder">Listing 39</a> shows:</p>
 </div>
 <div id="neo4j-client-binder" class="listingblock">
-<div class="title">Listing 37. Using a mapping function for binding domain objects</div>
+<div class="title">Listing 39. Using a mapping function for binding domain objects</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">Director joseph = <span class="keyword">new</span> Director(<span class="string"><span class="delimiter">&quot;</span><span class="content">Joseph Kosinski</span><span class="delimiter">&quot;</span></span>,
         <span class="predefined-type">Arrays</span>.asList(<span class="keyword">new</span> Movie(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tron Legacy</span><span class="delimiter">&quot;</span></span>), <span class="keyword">new</span> Movie(<span class="string"><span class="delimiter">&quot;</span><span class="content">Top Gun: Maverick</span><span class="delimiter">&quot;</span></span>)));
@@ -6444,7 +6499,7 @@ Those maps corresponds exactly with the records that a query might have produced
 <p>In addition, you can plugin your own <code>BiFunction&lt;TypeSystem, Record, T&gt;</code> through <code>fetchAs</code> to reproduce your domain object.</p>
 </div>
 <div id="neo4j-client-reader" class="listingblock">
-<div class="title">Listing 38. Using a mapping function for reading domain objects</div>
+<div class="title">Listing 40. Using a mapping function for reading domain objects</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">Mono&lt;Director&gt; lily = client
     .query(<span class="string"><span class="delimiter">&quot;</span><span class="delimiter">&quot;</span></span>
@@ -6475,7 +6530,7 @@ The interaction after the delegation is slightly different with the imperative a
 Returning an empty optional is ok.</p>
 </div>
 <div id="neo4j-client-imperative-delegating" class="listingblock">
-<div class="title">Listing 39. Delegate database interaction to an imperative <code>StatementRunner</code></div>
+<div class="title">Listing 41. Delegate database interaction to an imperative <code>StatementRunner</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">Optional&lt;<span class="predefined-type">Long</span>&gt; result = client
     .delegateTo((StatementRunner runner) -&gt; {
@@ -6500,7 +6555,7 @@ Returning an empty optional is ok.</p>
 <p>The reactive version receives a <code>RxStatementRunner</code>.</p>
 </div>
 <div id="neo4j-client-reactive-delegating" class="listingblock">
-<div class="title">Listing 40. Delegate database interaction to a reactive <code>RxStatementRunner</code></div>
+<div class="title">Listing 42. Delegate database interaction to a reactive <code>RxStatementRunner</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">Mono&lt;<span class="predefined-type">Integer</span>&gt; result = client
     .delegateTo((RxStatementRunner runner) -&gt;
@@ -6520,7 +6575,7 @@ Returning an empty optional is ok.</p>
 </table>
 </div>
 <div class="paragraph">
-<p>Note that in both <a href="#neo4j-client-imperative-delegating">Listing 39</a> and <a href="#neo4j-client-reactive-delegating">Listing 40</a> the types of the runner have only been stated to provide more clarity to reader of this manual.</p>
+<p>Note that in both <a href="#neo4j-client-imperative-delegating">Listing 41</a> and <a href="#neo4j-client-reactive-delegating">Listing 42</a> the types of the runner have only been stated to provide more clarity to reader of this manual.</p>
 </div>
 </div>
 </div>
@@ -6626,7 +6681,7 @@ The AST parts and intermediate build steps are immutable. That is, the methods c
 <p>They use the following imports:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 41. Imports needed for the examples to compile</div>
+<div class="title">Listing 43. Imports needed for the examples to compile</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java"><span class="keyword">import</span> <span class="include">static</span> <span class="include">org.assertj.core.api.Assertions</span>.*;
 <span class="keyword">import</span> <span class="include">static</span> <span class="include">org.neo4j.springframework.data.core.cypher.Conditions</span>.*;
@@ -6641,7 +6696,7 @@ The AST parts and intermediate build steps are immutable. That is, the methods c
 <p>To match and return all the movie, build your statement like this:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 42. Simple match</div>
+<div class="title">Listing 44. Simple match</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">var m = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Movie</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">m</span><span class="delimiter">&quot;</span></span>); <i class="conum" data-value="1"></i><b>(1)</b>
 var statement = Cypher.match(m) <i class="conum" data-value="2"></i><b>(2)</b>
@@ -6674,7 +6729,7 @@ assertThat(cypherRenderer.render(statement))
 <p>Match all nodes with a given set of properties:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 43. Find the actor named "Tom Hanks"&#8230;&#8203;</div>
+<div class="title">Listing 45. Find the actor named "Tom Hanks"&#8230;&#8203;</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">var tom = anyNode().named(<span class="string"><span class="delimiter">&quot;</span><span class="content">tom</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tom Hanks</span><span class="delimiter">&quot;</span></span>));
 var statement = Cypher
@@ -6689,7 +6744,7 @@ assertThat(cypherRenderer.render(statement))
 <p>Limit the number of returned things and return only one attribute</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 44. Find 10 people&#8230;&#8203;</div>
+<div class="title">Listing 46. Find 10 people&#8230;&#8203;</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">var people = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">people</span><span class="delimiter">&quot;</span></span>);
 statement = Cypher
@@ -6706,7 +6761,7 @@ assertThat(cypherRenderer.render(statement))
 <p>Create complex conditions</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 45. Find movies released in the 1990s&#8230;&#8203;</div>
+<div class="title">Listing 47. Find movies released in the 1990s&#8230;&#8203;</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">var nineties = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Movie</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">nineties</span><span class="delimiter">&quot;</span></span>);
 var released = nineties.property(<span class="string"><span class="delimiter">&quot;</span><span class="content">released</span><span class="delimiter">&quot;</span></span>);
@@ -6728,7 +6783,7 @@ assertThat(cypherRenderer.render(statement))
 <p>Build relationships</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 46. List all Tom Hanks movies&#8230;&#8203;</div>
+<div class="title">Listing 48. List all Tom Hanks movies&#8230;&#8203;</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">var tom = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">tom</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tom Hanks</span><span class="delimiter">&quot;</span></span>));
 var tomHanksMovies = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">tomHanksMovies</span><span class="delimiter">&quot;</span></span>);
@@ -6743,7 +6798,7 @@ assertThat(cypherRenderer.render(statement))
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 47. Who directed "Cloud Atlas"?</div>
+<div class="title">Listing 49. Who directed "Cloud Atlas"?</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">var cloudAtlas = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">cloudAtlas</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">title</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Cloud Atlas</span><span class="delimiter">&quot;</span></span>));
 var directors = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">directors</span><span class="delimiter">&quot;</span></span>);
@@ -6757,7 +6812,7 @@ assertThat(cypherRenderer.render(statement))
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 48. Tom Hanks' co-actors&#8230;&#8203;</div>
+<div class="title">Listing 50. Tom Hanks' co-actors&#8230;&#8203;</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">tom = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">tom</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tom Hanks</span><span class="delimiter">&quot;</span></span>));
 var movie = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">m</span><span class="delimiter">&quot;</span></span>);
@@ -6774,7 +6829,7 @@ assertThat(cypherRenderer.render(statement))
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 49. How people are related to "Cloud Atlas"&#8230;&#8203;</div>
+<div class="title">Listing 51. How people are related to "Cloud Atlas"&#8230;&#8203;</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">cloudAtlas = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Movie</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">title</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Cloud Atlas</span><span class="delimiter">&quot;</span></span>));
 people = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">people</span><span class="delimiter">&quot;</span></span>);
@@ -6793,7 +6848,7 @@ assertThat(cypherRenderer.render(statement))
 <div class="sect5">
 <h6 id="solve"><a class="anchor" href="#solve"></a>Solve</h6>
 <div class="listingblock">
-<div class="title">Listing 50. Movies and actors up to 4 "hops" away from Kevin Bacon</div>
+<div class="title">Listing 52. Movies and actors up to 4 "hops" away from Kevin Bacon</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">var bacon = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">bacon</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Kevin Bacon</span><span class="delimiter">&quot;</span></span>));
 var hollywood = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">hollywood</span><span class="delimiter">&quot;</span></span>);
@@ -6810,7 +6865,7 @@ assertThat(cypherRenderer.render(statement))
 <div class="sect5">
 <h6 id="recommend"><a class="anchor" href="#recommend"></a>Recommend</h6>
 <div class="listingblock">
-<div class="title">Listing 51. Extend Tom Hanks co-actors, to find co-co-actors who haven&#8217;t worked with Tom Hanks&#8230;&#8203;</div>
+<div class="title">Listing 53. Extend Tom Hanks co-actors, to find co-co-actors who haven&#8217;t worked with Tom Hanks&#8230;&#8203;</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="java">var tom = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">tom</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tom Hanks</span><span class="delimiter">&quot;</span></span>));
 var coActors = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">coActors</span><span class="delimiter">&quot;</span></span>);
@@ -7081,7 +7136,7 @@ You can keep your existing URL.</p>
 <li>
 <p>Configuring SDN/RX through a <code>org.neo4j.ogm.config.Configuration</code> bean is not supported, instead of, all configuration of the driver goes through <a href="https://github.com/neo4j/neo4j-java-driver-spring-boot-starter">our new starter</a>.
 Any of <a href="https://github.com/neo4j/neo4j-java-driver-spring-boot-starter/blob/master/docs/configuration-options.adoc">those properties</a> can be configured through standard Spring Boot means.
-You will especially have to adapt the properties for the url and authentication, see <a href="#migrating-auth">Listing 52</a></p>
+You will especially have to adapt the properties for the url and authentication, see <a href="#migrating-auth">Listing 54</a></p>
 </li>
 </ul>
 </div>
@@ -7101,7 +7156,7 @@ You cannot configure SDN/RX through XML.
 </table>
 </div>
 <div id="migrating-auth" class="listingblock">
-<div class="title">Listing 52. Old and new properties compared</div>
+<div class="title">Listing 54. Old and new properties compared</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="properties"># Old
 spring.data.neo4j.embedded.enabled=false # No longer support
@@ -7264,7 +7319,7 @@ We don&#8217;t want to lose them as users right from the start.</p>
 <p>All builds require a local copy of the the project:</p>
 </div>
 <div id="checkout-sdn-rx" class="listingblock">
-<div class="title">Listing 53. Clone SDN/RX</div>
+<div class="title">Listing 55. Clone SDN/RX</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ git clone git@github.com:neo4j/sdn-rx.git</code></pre>
 </div>
@@ -7274,7 +7329,7 @@ We don&#8217;t want to lose them as users right from the start.</p>
 The output should be similar:</p>
 </div>
 <div id="verify-jdk" class="listingblock">
-<div class="title">Listing 54. Verify your JDK</div>
+<div class="title">Listing 56. Verify your JDK</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ java -version
 java version &quot;12.0.1&quot; 2019-04-16
@@ -7294,7 +7349,7 @@ In short, Docker is a tool that helps you running lightweight software images us
 <p>Our build uses <a href="https://www.testcontainers.org/modules/databases/neo4j/">Testcontainers Neo4j</a> to bring up a database instance.</p>
 </div>
 <div id="build-default-bash" class="listingblock">
-<div class="title">Listing 55. Build with default settings on Linux / macOS</div>
+<div class="title">Listing 57. Build with default settings on Linux / macOS</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ ./mvnw clean verify
 [INFO] Scanning for projects...
@@ -7330,7 +7385,7 @@ In short, Docker is a tool that helps you running lightweight software images us
 <p>On a Windows machine, use</p>
 </div>
 <div id="build-default-windows" class="listingblock">
-<div class="title">Listing 56. Build with default settings on Windows</div>
+<div class="title">Listing 58. Build with default settings on Windows</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ mvnw.cmd clean verify</code></pre>
 </div>
@@ -7349,7 +7404,7 @@ As a consequence, tests requiring a reactive capable database, are skipped, as t
 <p>The image version to use can be configured through an environmental variable like this:</p>
 </div>
 <div id="build-other-image" class="listingblock">
-<div class="title">Listing 57. Build using a different Neo4j Docker image</div>
+<div class="title">Listing 59. Build using a different Neo4j Docker image</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ SDN_RX_NEO4J_VERSION=3.5.11-enterprise SDN_RX_NEO4J_ACCEPT_COMMERCIAL_EDITION=yes ./mvnw clean verify</code></pre>
 </div>
@@ -7393,7 +7448,7 @@ change the default password from <code>neo4j</code> to something of your liking.
 <p>After that, you can run a complete build by specifying the local <code>bolt</code> URL:</p>
 </div>
 <div id="build-using-locally-running-database" class="listingblock">
-<div class="title">Listing 58. Build using a locally running database</div>
+<div class="title">Listing 60. Build using a locally running database</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ SDN_RX_NEO4J_URL=bolt://localhost:7687 SDN_RX_NEO4J_PASSWORD=secret ./mvnw clean verify</code></pre>
 </div>
@@ -7501,7 +7556,7 @@ To keep things both clear and concise, we restrict the usage of those annotation
 and annotations.</p>
 </div>
 <div id="api:api-guardian-usage" class="listingblock constraint">
-<div class="title">Listing 59. @API Guardian annotations must not be used on fields</div>
+<div class="title">Listing 61. @API Guardian annotations must not be used on fields</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (c:Java) - [:ANNOTATED_BY] -&gt; (a) - [:OF_TYPE] -&gt; (t:Type {fqn: 'org.apiguardian.api.API'}),
       (p) - [:DECLARES] -&gt; (c)
@@ -7513,7 +7568,7 @@ RETURN p.fqn, c.name</code></pre>
 <p>Public interfaces, classes or annotations are either part of internal or public API and have a status.</p>
 </div>
 <div id="api:api-guardian-api-concept" class="listingblock concept">
-<div class="title">Listing 60. Define which Java artifacts are part of internal or public API</div>
+<div class="title">Listing 62. Define which Java artifacts are part of internal or public API</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (c:Java) - [:ANNOTATED_BY] -&gt; (a) - [:OF_TYPE] -&gt; (t:Type {fqn: 'org.apiguardian.api.API'}),
       (a) - [:HAS] -&gt; ({name: 'status'}) - [:IS] -&gt; (s)
@@ -7536,7 +7591,7 @@ RETURN c,a</code></pre>
 <p>See ADR-003.</p>
 </div>
 <div id="api:internal" class="listingblock constraint">
-<div class="title">Listing 61. Non abstract, public classes that are only part of internal API must be final</div>
+<div class="title">Listing 63. Non abstract, public classes that are only part of internal API must be final</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (c:Class) - [:IS_PART_OF] -&gt; (:Api {type: 'Internal'})
 WHERE c.visibility = 'public'
@@ -7553,7 +7608,7 @@ RETURN c.name</code></pre>
 <p>The following naming conventions are used throughout the project:</p>
 </div>
 <div id="naming:TypeNameMustBeginWithGroupId" class="listingblock constraint">
-<div class="title">Listing 62. All Java types must be located in packages that start with <code>org.neo4j.springframework.data</code>.</div>
+<div class="title">Listing 64. All Java types must be located in packages that start with <code>org.neo4j.springframework.data</code>.</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH
   (project:Maven:Project)-[:CREATES]-&gt;(:Artifact)-[:CONTAINS]-&gt;(type:Type)
@@ -7570,7 +7625,7 @@ RETURN
 <p>Most of the time, the package structure under <code>org.neo4j.springframework.data</code> should reflect the main building parts.</p>
 </div>
 <div id="structure:mapping" class="listingblock constraint">
-<div class="title">Listing 63. The mapping package must not depend on any other SDN/RX packages than <code>schema</code> and <code>convert</code></div>
+<div class="title">Listing 65. The mapping package must not depend on any other SDN/RX packages than <code>schema</code> and <code>convert</code></div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="cypher">MATCH (a:Main:Artifact)
 OPTIONAL MATCH (a) -[:CONTAINS]-&gt; (s:Package) WHERE s.fqn in ['org.neo4j.springframework.data.core.schema', 'org.neo4j.springframework.data.core.convert']
@@ -7590,7 +7645,7 @@ To access the database, please build the project as described above.
 When the build finishes, execute the following command:</p>
 </div>
 <div id="start-jqassistant" class="listingblock">
-<div class="title">Listing 64. Start jQAssistant</div>
+<div class="title">Listing 66. Start jQAssistant</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:server</code></pre>
 </div>
@@ -7602,7 +7657,7 @@ When the build finishes, execute the following command:</p>
 <p>The scanning and analyzing can be triggered individually, without going through the full verify again:</p>
 </div>
 <div id="scan-with-jqassistant" class="listingblock">
-<div class="title">Listing 65. Manually scan and analyze the main project</div>
+<div class="title">Listing 67. Manually scan and analyze the main project</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="console">$ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:scan@jqassistant-scan
 $ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:analyze@jqassistant-analyze</code></pre>
@@ -7617,7 +7672,7 @@ $ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:ana
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-04-27 13:12:46 UTC
+Last updated 2020-04-27 15:55:44 UTC
 </div>
 </div>
 </body>
