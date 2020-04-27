@@ -182,8 +182,8 @@ to provide the one-way conversion to the `Value` type.
 include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/docs/repositories/conversion/MyCustomTypeConverter.java[tag=custom-converter.implementation]
 ----
 
-To make SDN/RX aware of your converter, it has to get registered in the `Neo4jConversions`.
-This is done in the constructor of the class and requires to explicitly define a `@Bean` creation method in your application configuration.
+To make SDN/RX aware of your converter, it has to be registered in the `Neo4jConversions`.
+To do this, you have to create a `@Bean` with the type `org.neo4j.springframework.data.core.convert.Neo4jConversions`.
 Otherwise, the `Neo4jConversions` will get created in the background with the internal default converters only.
 
 .Example of a custom converter implementation
@@ -192,4 +192,4 @@ Otherwise, the `Neo4jConversions` will get created in the background with the in
 include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/docs/repositories/conversion/MyCustomTypeConverter.java[tag=custom-converter.neo4jConversions]
 ----
 
-If you need multiple converters in your application, you can add as much as you need in the `Neo4jConversions` constructor.
+If you need multiple converters in your application, you can add as many as you need in the `Neo4jConversions` constructor.
