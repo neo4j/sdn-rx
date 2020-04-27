@@ -175,7 +175,7 @@ public class Neo4jMappingContextTest {
 				// no implementation needed for this test
 				return null;
 			}
-		};
+		}
 
 		Neo4jMappingContext schema = new Neo4jMappingContext(new Neo4jConversions(singleton(new ConvertibleTypeConverter())));
 		Neo4jPersistentEntity<?> entity = schema.getPersistentEntity(EntityWithConvertibleProperty.class);

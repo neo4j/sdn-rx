@@ -46,14 +46,17 @@ public class ThingWithCustomTypes {
 		this.customType = customType;
 	}
 
-	public ThingWithCustomTypes withId(Long id) {
-		return new ThingWithCustomTypes(id, this.customType);
+	public ThingWithCustomTypes withId(Long newId) {
+		return new ThingWithCustomTypes(newId, this.customType);
 	}
 
 	public CustomType getCustomType() {
 		return customType;
 	}
 
+	/**
+	 * Custom type to convert
+	 */
 	public static class CustomType {
 
 		private final String value;
@@ -88,6 +91,9 @@ public class ThingWithCustomTypes {
 		}
 	}
 
+	/**
+	 * Converter that converts the custom type.
+	 */
 	public static class CustomTypeConverter implements GenericConverter {
 
 		@Override
