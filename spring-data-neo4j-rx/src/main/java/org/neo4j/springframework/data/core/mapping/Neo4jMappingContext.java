@@ -93,7 +93,7 @@ public final class Neo4jMappingContext
 		return converter;
 	}
 
-	boolean hasRegisteredConverter(Class<?> targetType) {
+	boolean hasCustomWriteTarget(Class<?> targetType) {
 		return neo4jConversions.hasCustomWriteTarget(targetType);
 	}
 

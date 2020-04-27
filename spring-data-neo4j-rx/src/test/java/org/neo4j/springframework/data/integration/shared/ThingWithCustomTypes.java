@@ -114,4 +114,48 @@ public class ThingWithCustomTypes {
 			}
 		}
 	}
+
+	/**
+	 * A type that is not bound anywhere but has a converter
+	 */
+	public static class DifferentType {
+
+		private final String value;
+
+		public static DifferentType of(String value) {
+			return new DifferentType(value);
+		}
+
+		private DifferentType(String value) {
+			this.value = value;
+		}
+
+		public String getValue() {
+			return value;
+		}
+	}
+
+	/**
+	 * Converter for an arbitrary type not bound to any property
+	 */
+	public static class DifferentTypeConverter implements GenericConverter {
+
+		@Override
+		public Set<ConvertiblePair> getConvertibleTypes() {
+			Set<ConvertiblePair> convertiblePairs = new HashSet<>();
+			convertiblePairs.add(new ConvertiblePair(Value.class, DifferentType.class));
+			convertiblePairs.add(new ConvertiblePair(DifferentType.class, Value.class));
+			return convertiblePairs;
+		}
+
+		@Override
+		public Object convert(Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
+
+			if (Value.class.isAssignableFrom(sourceType.getType())) {
+				return CustomType.of(((Value) source).asString());
+			} else {
+				return Values.value(((DifferentType) source).getValue());
+			}
+		}
+	}
 }

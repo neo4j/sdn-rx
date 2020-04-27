@@ -27,14 +27,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
@@ -70,6 +63,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.ConverterNotFoundException;
+import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.ExampleMatcher.StringMatcher;
@@ -2611,6 +2605,15 @@ class RepositoryIT {
 		assertThat(repository.findByCustomTypeSpELObjectQuery(ThingWithCustomTypes.CustomType.of("XYZ"))).isNotNull();
 	}
 
+	@Test
+	void findByConvertedDifferentTypeWithSpELObjectQuery(@Autowired EntityWithCustomTypePropertyRepository repository) {
+		try (Session session = driver.session(getSessionConfig())) {
+			session.run("CREATE (:CustomTypes{customType:'XYZ'})");
+		}
+
+		assertThat(repository.findByDifferentTypeCustomQuery(ThingWithCustomTypes.DifferentType.of("XYZ"))).isNotNull();
+	}
+
 	interface BidirectionalStartRepository extends Neo4jRepository<BidirectionalStart, Long> {
 	}
 
@@ -2691,6 +2694,9 @@ class RepositoryIT {
 		@Query("MATCH (c:CustomTypes) WHERE c.customType = $customType return c")
 		ThingWithCustomTypes findByCustomTypeCustomQuery(@Param("customType") ThingWithCustomTypes.CustomType customType);
 
+		@Query("MATCH (c:CustomTypes) WHERE c.customType = $differentType return c")
+		ThingWithCustomTypes findByDifferentTypeCustomQuery(@Param("differentType") ThingWithCustomTypes.DifferentType differentType);
+
 		@Query("MATCH (c:CustomTypes) WHERE c.customType = :#{#customType.value} return c")
 		ThingWithCustomTypes findByCustomTypeCustomSpELPropertyAccessQuery(@Param("customType") ThingWithCustomTypes.CustomType customType);
 
@@ -2715,7 +2721,11 @@ class RepositoryIT {
 
 		@Override
 		public Neo4jConversions neo4jConversions() {
-			return new Neo4jConversions(singleton(new ThingWithCustomTypes.CustomTypeConverter()));
+			Set<GenericConverter> additionalConverters = new HashSet<>();
+			additionalConverters.add(new ThingWithCustomTypes.CustomTypeConverter());
+			additionalConverters.add(new ThingWithCustomTypes.DifferentTypeConverter());
+
+			return new Neo4jConversions(additionalConverters);
 		}
 	}
 }
