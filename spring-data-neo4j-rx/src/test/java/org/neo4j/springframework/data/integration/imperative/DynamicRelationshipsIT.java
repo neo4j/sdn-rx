@@ -58,11 +58,11 @@ class DynamicRelationshipsIT extends DynamicRelationshipsITBase {
 	@Test
 	void shouldReadDynamicRelationships(@Autowired PersonWithRelativesRepository repository) {
 
-		PersonWithRelatives personWithRelatives = repository.findById(idOfExistingPerson).get();
-		assertThat(personWithRelatives).isNotNull();
-		assertThat(personWithRelatives.getName()).isEqualTo("A");
+		PersonWithRelatives person = repository.findById(idOfExistingPerson).get();
+		assertThat(person).isNotNull();
+		assertThat(person.getName()).isEqualTo("A");
 
-		Map<String, Person> relatives = personWithRelatives.getRelatives();
+		Map<String, Person> relatives = person.getRelatives();
 		assertThat(relatives).containsOnlyKeys("HAS_WIFE", "HAS_DAUGHTER");
 		assertThat(relatives.get("HAS_WIFE").getFirstName()).isEqualTo("B");
 		assertThat(relatives.get("HAS_DAUGHTER").getFirstName()).isEqualTo("C");
@@ -71,11 +71,11 @@ class DynamicRelationshipsIT extends DynamicRelationshipsITBase {
 	@Test // GH-216
 	void shouldReadDynamicCollectionRelationships(@Autowired PersonWithRelativesRepository repository) {
 
-		PersonWithRelatives personWithRelatives = repository.findById(idOfExistingPerson).get();
-		assertThat(personWithRelatives).isNotNull();
-		assertThat(personWithRelatives.getName()).isEqualTo("A");
+		PersonWithRelatives person = repository.findById(idOfExistingPerson).get();
+		assertThat(person).isNotNull();
+		assertThat(person.getName()).isEqualTo("A");
 
-		Map<String, List<Pet>> pets = personWithRelatives.getPets();
+		Map<String, List<Pet>> pets = person.getPets();
 		assertThat(pets).containsOnlyKeys("CATS", "DOGS");
 		assertThat(pets.get("CATS")).extracting(Pet::getName).containsExactlyInAnyOrder("Tom", "Garfield");
 		assertThat(pets.get("DOGS")).extracting(Pet::getName).containsExactlyInAnyOrder("Benji", "Lassie");
@@ -84,11 +84,11 @@ class DynamicRelationshipsIT extends DynamicRelationshipsITBase {
 	@Test
 	void shouldUpdateDynamicRelationships(@Autowired PersonWithRelativesRepository repository) {
 
-		PersonWithRelatives personWithRelatives = repository.findById(idOfExistingPerson).get();
-		assumeThat(personWithRelatives).isNotNull();
-		assumeThat(personWithRelatives.getName()).isEqualTo("A");
+		PersonWithRelatives person = repository.findById(idOfExistingPerson).get();
+		assumeThat(person).isNotNull();
+		assumeThat(person.getName()).isEqualTo("A");
 
-		Map<String, Person> relatives = personWithRelatives.getRelatives();
+		Map<String, Person> relatives = person.getRelatives();
 		assumeThat(relatives).containsOnlyKeys("HAS_WIFE", "HAS_DAUGHTER");
 
 		relatives.remove("HAS_WIFE");
@@ -97,8 +97,8 @@ class DynamicRelationshipsIT extends DynamicRelationshipsITBase {
 		relatives.put("HAS_SON", d);
 		ReflectionTestUtils.setField(relatives.get("HAS_DAUGHTER"), "firstName", "C2");
 
-		personWithRelatives = repository.save(personWithRelatives);
-		relatives = personWithRelatives.getRelatives();
+		person = repository.save(person);
+		relatives = person.getRelatives();
 		assertThat(relatives).containsOnlyKeys("HAS_DAUGHTER", "HAS_SON");
 		assertThat(relatives.get("HAS_DAUGHTER").getFirstName()).isEqualTo("C2");
 		assertThat(relatives.get("HAS_SON").getFirstName()).isEqualTo("D");
@@ -107,11 +107,11 @@ class DynamicRelationshipsIT extends DynamicRelationshipsITBase {
 	@Test // GH-216
 	void shouldUpdateDynamicCollectionRelationships(@Autowired PersonWithRelativesRepository repository) {
 
-		PersonWithRelatives personWithRelatives = repository.findById(idOfExistingPerson).get();
-		assertThat(personWithRelatives).isNotNull();
-		assertThat(personWithRelatives.getName()).isEqualTo("A");
+		PersonWithRelatives person = repository.findById(idOfExistingPerson).get();
+		assertThat(person).isNotNull();
+		assertThat(person.getName()).isEqualTo("A");
 
-		Map<String, List<Pet>> pets = personWithRelatives.getPets();
+		Map<String, List<Pet>> pets = person.getPets();
 		assertThat(pets).containsOnlyKeys("CATS", "DOGS");
 
 		pets.remove("DOGS");
@@ -119,8 +119,8 @@ class DynamicRelationshipsIT extends DynamicRelationshipsITBase {
 
 		pets.put("FISH", Collections.singletonList(new Pet("Nemo")));
 
-		personWithRelatives = repository.save(personWithRelatives);
-		pets = personWithRelatives.getPets();
+		person = repository.save(person);
+		pets = person.getPets();
 		assertThat(pets).containsOnlyKeys("CATS", "FISH");
 		assertThat(pets.get("CATS")).extracting(Pet::getName).containsExactlyInAnyOrder("Tom", "Garfield", "Delilah");
 		assertThat(pets.get("FISH")).extracting(Pet::getName).containsExactlyInAnyOrder("Nemo");
@@ -129,26 +129,26 @@ class DynamicRelationshipsIT extends DynamicRelationshipsITBase {
 	@Test
 	void shouldWriteDynamicRelationships(@Autowired PersonWithRelativesRepository repository) {
 
-		PersonWithRelatives personWithRelatives = new PersonWithRelatives("Test");
-		Map<String, Person> relatives;
-		relatives = personWithRelatives.getRelatives();
-		Person d;
-		d = new Person();
+		PersonWithRelatives newPerson = new PersonWithRelatives("Test");
+		Map<String, Person> relatives = newPerson.getRelatives();
+
+		Person d = new Person();
 		ReflectionTestUtils.setField(d, "firstName", "R1");
 		relatives.put("RELATIVE_1", d);
+
 		d = new Person();
 		ReflectionTestUtils.setField(d, "firstName", "R2");
 		relatives.put("RELATIVE_2", d);
 
-		personWithRelatives = repository.save(personWithRelatives);
-		relatives = personWithRelatives.getRelatives();
+		newPerson = repository.save(newPerson);
+		relatives = newPerson.getRelatives();
 		assertThat(relatives).containsOnlyKeys("RELATIVE_1", "RELATIVE_2");
 
 		try (Transaction transaction = driver.session().beginTransaction()) {
 			long numberOfRelations = transaction.run(""
 				+ "MATCH (t:PersonWithRelatives) WHERE id(t) = $id "
 				+ "RETURN size((t)-->(:Person))"
-				+ " as numberOfRelations", Values.parameters("id", personWithRelatives.getId()))
+				+ " as numberOfRelations", Values.parameters("id", newPerson.getId()))
 				.single().get("numberOfRelations").asLong();
 			assertThat(numberOfRelations).isEqualTo(2L);
 		}
@@ -157,9 +157,8 @@ class DynamicRelationshipsIT extends DynamicRelationshipsITBase {
 	@Test // GH-216
 	void shouldWriteDynamicCollectionRelationships(@Autowired PersonWithRelativesRepository repository) {
 
-		PersonWithRelatives personWithRelatives = new PersonWithRelatives("Test");
-		Map<String, List<Pet>> pets;
-		pets = personWithRelatives.getPets();
+		PersonWithRelatives newPerson = new PersonWithRelatives("Test");
+		Map<String, List<Pet>> pets = newPerson.getPets();
 
 		List<Pet> monsters = pets.computeIfAbsent("MONSTERS", s -> new ArrayList<>());
 		monsters.add(new Pet("Godzilla"));
@@ -168,15 +167,15 @@ class DynamicRelationshipsIT extends DynamicRelationshipsITBase {
 		List<Pet> fish = pets.computeIfAbsent("FISH", s -> new ArrayList<>());
 		fish.add(new Pet("Nemo"));
 
-		personWithRelatives = repository.save(personWithRelatives);
-		pets = personWithRelatives.getPets();
+		newPerson = repository.save(newPerson);
+		pets = newPerson.getPets();
 		assertThat(pets).containsOnlyKeys("MONSTERS", "FISH");
 
 		try (Transaction transaction = driver.session().beginTransaction()) {
 			long numberOfRelations = transaction.run(""
 				+ "MATCH (t:PersonWithRelatives) WHERE id(t) = $id "
 				+ "RETURN size((t)-->(:Pet))"
-				+ " as numberOfRelations", Values.parameters("id", personWithRelatives.getId()))
+				+ " as numberOfRelations", Values.parameters("id", newPerson.getId()))
 				.single().get("numberOfRelations").asLong();
 			assertThat(numberOfRelations).isEqualTo(3L);
 		}
