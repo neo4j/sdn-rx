@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2019-2020 "Neo4j,"
+ * Neo4j Sweden AB [https://neo4j.com]
+ *
+ * This file is part of Neo4j.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.neo4j.springframework.data.integration.imperative;
 
 import static org.assertj.core.api.Assertions.*;
@@ -25,6 +43,7 @@ import org.neo4j.springframework.data.integration.shared.DynamicLabels.SimpleDyn
 import org.neo4j.springframework.data.integration.shared.DynamicLabels.SimpleDynamicLabelsWithBusinessId;
 import org.neo4j.springframework.data.integration.shared.DynamicLabels.SimpleDynamicLabelsWithBusinessIdAndVersion;
 import org.neo4j.springframework.data.integration.shared.DynamicLabels.SimpleDynamicLabelsWithVersion;
+import org.neo4j.springframework.data.integration.shared.DynamicLabels.SuperNode;
 import org.neo4j.springframework.data.test.Neo4jExtension;
 import org.neo4j.springframework.data.test.Neo4jIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -159,19 +178,44 @@ public class DynamicLabelsIT {
 		template.save(entity);
 		try (Session session = driver.session()) {
 			List<String> labels = session
-				.readTransaction(tx -> tx.run("MATCH (n) WHERE n.id = $id AND NOT EXISTS(n.moreLabels) RETURN labels(n) AS labels",
-					Collections.singletonMap("id", entity.id))
-					.single().get("labels")
-					.asList(Value::asString)
+				.readTransaction(
+					tx -> tx.run("MATCH (n) WHERE n.id = $id AND NOT EXISTS(n.moreLabels) RETURN labels(n) AS labels",
+						Collections.singletonMap("id", entity.id))
+						.single().get("labels")
+						.asList(Value::asString)
 				);
 			assertThat(labels).containsExactlyInAnyOrder("SimpleDynamicLabelsWithBusinessId", "A", "B", "C");
 		}
 	}
 
 	@Test
+	void shouldWriteNewDynamicLabels3(@Autowired Neo4jTemplate template) {
+
+		SimpleDynamicLabels entity = new SimpleDynamicLabels();
+		entity.moreLabels = new HashSet<>();
+		entity.moreLabels.add("A");
+		entity.moreLabels.add("B");
+		entity.moreLabels.add("C");
+		SuperNode superNode = new SuperNode();
+		superNode.relatedTo = entity;
+		long id = template.save(superNode).relatedTo.id;
+		try (Session session = driver.session()) {
+			List<String> labels = session
+				.readTransaction(
+					tx -> tx.run("MATCH (n) WHERE id(n) = $id AND NOT EXISTS(n.moreLabels) RETURN labels(n) AS labels",
+						Collections.singletonMap("id", id))
+						.single().get("labels")
+						.asList(Value::asString)
+				);
+			assertThat(labels).containsExactlyInAnyOrder("SimpleDynamicLabels", "A", "B", "C");
+		}
+	}
+
+	@Test
 	void shouldWriteDynamicLabelsWithVersions(@Autowired Neo4jTemplate template) {
 
-		SimpleDynamicLabelsWithVersion entity = template.findById(idOfSimpleDynamicLabelsEntityVersioned, SimpleDynamicLabelsWithVersion.class).get();
+		SimpleDynamicLabelsWithVersion entity = template
+			.findById(idOfSimpleDynamicLabelsEntityVersioned, SimpleDynamicLabelsWithVersion.class).get();
 		entity.moreLabels.remove("Foo");
 		entity.moreLabels.add("Fizz");
 		entity = template.save(entity);

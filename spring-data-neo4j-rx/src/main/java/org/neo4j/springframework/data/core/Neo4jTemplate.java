@@ -222,36 +222,10 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 		Neo4jPersistentEntity entityMetaData = neo4jMappingContext.getPersistentEntity(instance.getClass());
 		T entityToBeSaved = eventSupport.maybeCallBeforeBind(instance);
 
-		List<String> labelsToRemove = new ArrayList<>();
-		List<String> labelsToSet = new ArrayList<>();
-
-		Optional<Neo4jPersistentProperty> optionalDynamicLabelsProperty = entityMetaData.getDynamicLabelsProperty();
-		optionalDynamicLabelsProperty.ifPresent(p -> {
-
-			List<String> fixedLabels = new ArrayList<>();
-			fixedLabels.add(entityMetaData.getPrimaryLabel());
-			fixedLabels.addAll(entityMetaData.getAdditionalLabels());
-
-			PersistentPropertyAccessor propertyAccessor = entityMetaData.getPropertyAccessor(entityToBeSaved);
-			RunnableSpecTightToDatabase runnableQuery = neo4jClient
-				.query(() -> renderer.render(cypherGenerator.f(entityMetaData)))
-				.in(inDatabase)
-				.bind(propertyAccessor.getProperty(entityMetaData.getRequiredIdProperty())).to(NAME_OF_ID)
-				.bind(fixedLabels).to("fixedLabels");
-
-			if (entityMetaData.hasVersionProperty()) {
-				runnableQuery = runnableQuery
-					.bind((Long) propertyAccessor.getProperty(entityMetaData.getRequiredVersionProperty()) - 1)
-					.to(NAME_OF_VERSION_PARAM);
-			}
-			Optional<Map<String, Object>> dingens = runnableQuery.fetch().one();
-
-			dingens.ifPresent(m -> labelsToRemove.addAll((Collection<? extends String>) m.get("labels")));
-			labelsToSet.addAll((Collection<? extends String>) propertyAccessor.getProperty(p));
-		});
+		DynamicLabels dynamicLabels = determineDynamicLabels(entityToBeSaved, entityMetaData, inDatabase);
 
 		Optional<Long> optionalInternalId = neo4jClient
-			.query(() -> renderer.render(cypherGenerator.prepareSaveOf(entityMetaData, labelsToRemove, labelsToSet)))
+			.query(() -> renderer.render(cypherGenerator.prepareSaveOf(entityMetaData, dynamicLabels)))
 			.in(inDatabase)
 			.bind((T) entityToBeSaved)
 			.with(neo4jMappingContext.getRequiredBinderFunctionFor((Class<T>) entityToBeSaved.getClass()))
@@ -271,6 +245,39 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 
 			return propertyAccessor.getBean();
 		}
+	}
+
+	private <T> DynamicLabels determineDynamicLabels(
+		T entityToBeSaved, Neo4jPersistentEntity<?> entityMetaData, @Nullable String inDatabase
+	) {
+		return entityMetaData.getDynamicLabelsProperty().map(p -> {
+
+			List<String> labelsToRemove = new ArrayList<>();
+			List<String> labelsToSet = new ArrayList<>();
+
+			List<String> fixedLabels = new ArrayList<>();
+			fixedLabels.add(entityMetaData.getPrimaryLabel());
+			fixedLabels.addAll(entityMetaData.getAdditionalLabels());
+
+			PersistentPropertyAccessor propertyAccessor = entityMetaData.getPropertyAccessor(entityToBeSaved);
+			RunnableSpecTightToDatabase runnableQuery = neo4jClient
+				.query(() -> renderer.render(cypherGenerator.f(entityMetaData)))
+				.in(inDatabase)
+				.bind(propertyAccessor.getProperty(entityMetaData.getRequiredIdProperty())).to(NAME_OF_ID)
+				.bind(fixedLabels).to("fixedLabels");
+
+			if (entityMetaData.hasVersionProperty()) {
+				runnableQuery = runnableQuery
+					.bind((Long) propertyAccessor.getProperty(entityMetaData.getRequiredVersionProperty()) - 1)
+					.to(NAME_OF_VERSION_PARAM);
+			}
+
+			Optional<Map<String, Object>> dingens = runnableQuery.fetch().one();
+			dingens.ifPresent(m -> labelsToRemove.addAll((Collection<? extends String>) m.get("labels")));
+			labelsToSet.addAll((Collection<? extends String>) propertyAccessor.getProperty(p));
+
+			return new DynamicLabels(labelsToRemove, labelsToSet);
+		}).orElse(DynamicLabels.EMPTY);
 	}
 
 	@Override
@@ -464,14 +471,14 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 				// handle creation of relationship depending on properties on relationship or not
 				RelationshipStatementHolder statementHolder = relationshipContext.hasRelationshipWithProperties()
 					? createStatementForRelationShipWithProperties(neo4jMappingContext,
-						neo4jPersistentEntity,
-						relationshipContext,
-						relatedInternalId,
-						(Map.Entry) relatedValue)
+					neo4jPersistentEntity,
+					relationshipContext,
+					relatedInternalId,
+					(Map.Entry) relatedValue)
 					: createStatementForRelationshipWithoutProperties(neo4jPersistentEntity,
-						relationshipContext,
-						relatedInternalId,
-						relatedValue);
+					relationshipContext,
+					relatedInternalId,
+					relatedValue);
 
 				neo4jClient.query(renderer.render(statementHolder.getRelationshipCreationQuery()))
 					.in(inDatabase)
@@ -501,9 +508,11 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 	}
 
 	private <Y> Long saveRelatedNode(Object entity, Class<Y> entityType, NodeDescription targetNodeDescription, @Nullable String inDatabase) {
+
+		DynamicLabels dynamicLabels = determineDynamicLabels(entity, (Neo4jPersistentEntity) targetNodeDescription, inDatabase);
 		Optional<Long> optionalSavedNodeId = neo4jClient
-			.query(() -> renderer.render(
-				cypherGenerator.prepareSaveOf(targetNodeDescription, Collections.emptyList(), Collections.emptyList())))
+			.query(() -> renderer
+				.render(cypherGenerator.prepareSaveOf(targetNodeDescription, dynamicLabels)))
 			.in(inDatabase)
 			.bind((Y) entity).with(neo4jMappingContext.getRequiredBinderFunctionFor(entityType))
 			.fetchAs(Long.class).one();
