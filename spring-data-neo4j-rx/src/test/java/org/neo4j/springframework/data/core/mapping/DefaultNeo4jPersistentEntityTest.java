@@ -33,6 +33,7 @@ import org.neo4j.springframework.data.core.schema.Id;
 import org.neo4j.springframework.data.core.schema.Node;
 import org.neo4j.springframework.data.core.schema.Property;
 import org.neo4j.springframework.data.core.schema.Relationship;
+import org.neo4j.springframework.data.core.schema.Wurstsalat;
 
 /**
  * @author Gerrit Meier
@@ -155,6 +156,43 @@ class DefaultNeo4jPersistentEntityTest {
 			assertThat(persistentEntity.getPrimaryLabel()).isEqualTo("Child");
 			assertThat(persistentEntity.getAdditionalLabels()).containsExactlyInAnyOrder("Base", "Bases", "Person");
 		}
+
+		@Test
+		void validDynamicLabels() {
+			Neo4jPersistentEntity<?> persistentEntity = new Neo4jMappingContext()
+				.getPersistentEntity(NodeWithDynamicLabels.class);
+
+		//	assertThat(persistentEntity.getGraphProperties()).hasSize(2);
+			assertThat(persistentEntity.getPersistentProperty("id").isIdProperty()).isTrue();
+
+			assertThat(persistentEntity.getPersistentProperty("relatedTo").isDynamicLabels()).isFalse();
+			assertThat(persistentEntity.getPersistentProperty("relatedTo").isAssociation()).isTrue();
+			assertThat(persistentEntity.getPersistentProperty("relatedTo").isIdProperty()).isFalse();
+			assertThat(persistentEntity.getPersistentProperty("relatedTo").isRelationship()).isTrue();
+
+			assertThat(persistentEntity.getPersistentProperty("dynamicLabels").isDynamicLabels()).isTrue();
+			assertThat(persistentEntity.getPersistentProperty("dynamicLabels").isAssociation()).isFalse();
+			assertThat(persistentEntity.getPersistentProperty("dynamicLabels").isIdProperty()).isFalse();
+			assertThat(persistentEntity.getPersistentProperty("dynamicLabels").isRelationship()).isFalse();
+
+//			assertThat(persistentEntity.getDynamicLabelsProperty()).hasValueSatisfying(p -> p.getFieldName().equals("dynamicLabels"));
+		}
+	}
+
+	@Node
+	private static class SomeOtherNode {
+		@Id private Long id;
+	}
+
+	@Node
+	private static class NodeWithDynamicLabels {
+
+		@Id private Long id;
+
+		private List<SomeOtherNode> relatedTo;
+
+		@Wurstsalat
+		private List<String> dynamicLabels;
 	}
 
 	@Node

@@ -39,6 +39,7 @@ import org.apiguardian.api.API;
 import org.neo4j.driver.exceptions.NoSuchRecordException;
 import org.neo4j.driver.summary.ResultSummary;
 import org.neo4j.driver.summary.SummaryCounters;
+import org.neo4j.springframework.data.core.Neo4jClient.RunnableSpecTightToDatabase;
 import org.neo4j.springframework.data.core.cypher.Condition;
 import org.neo4j.springframework.data.core.cypher.Functions;
 import org.neo4j.springframework.data.core.cypher.Statement;
@@ -220,8 +221,37 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 
 		Neo4jPersistentEntity entityMetaData = neo4jMappingContext.getPersistentEntity(instance.getClass());
 		T entityToBeSaved = eventSupport.maybeCallBeforeBind(instance);
+
+		List<String> labelsToRemove = new ArrayList<>();
+		List<String> labelsToSet = new ArrayList<>();
+
+		Optional<Neo4jPersistentProperty> optionalDynamicLabelsProperty = entityMetaData.getDynamicLabelsProperty();
+		optionalDynamicLabelsProperty.ifPresent(p -> {
+
+			List<String> fixedLabels = new ArrayList<>();
+			fixedLabels.add(entityMetaData.getPrimaryLabel());
+			fixedLabels.addAll(entityMetaData.getAdditionalLabels());
+
+			PersistentPropertyAccessor propertyAccessor = entityMetaData.getPropertyAccessor(entityToBeSaved);
+			RunnableSpecTightToDatabase runnableQuery = neo4jClient
+				.query(() -> renderer.render(cypherGenerator.f(entityMetaData)))
+				.in(inDatabase)
+				.bind(propertyAccessor.getProperty(entityMetaData.getRequiredIdProperty())).to(NAME_OF_ID)
+				.bind(fixedLabels).to("fixedLabels");
+
+			if (entityMetaData.hasVersionProperty()) {
+				runnableQuery = runnableQuery
+					.bind((Long) propertyAccessor.getProperty(entityMetaData.getRequiredVersionProperty()) - 1)
+					.to(NAME_OF_VERSION_PARAM);
+			}
+			Optional<Map<String, Object>> dingens = runnableQuery.fetch().one();
+
+			dingens.ifPresent(m -> labelsToRemove.addAll((Collection<? extends String>) m.get("labels")));
+			labelsToSet.addAll((Collection<? extends String>) propertyAccessor.getProperty(p));
+		});
+
 		Optional<Long> optionalInternalId = neo4jClient
-			.query(() -> renderer.render(cypherGenerator.prepareSaveOf(entityMetaData)))
+			.query(() -> renderer.render(cypherGenerator.prepareSaveOf(entityMetaData, labelsToRemove, labelsToSet)))
 			.in(inDatabase)
 			.bind((T) entityToBeSaved)
 			.with(neo4jMappingContext.getRequiredBinderFunctionFor((Class<T>) entityToBeSaved.getClass()))
@@ -472,7 +502,8 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 
 	private <Y> Long saveRelatedNode(Object entity, Class<Y> entityType, NodeDescription targetNodeDescription, @Nullable String inDatabase) {
 		Optional<Long> optionalSavedNodeId = neo4jClient
-			.query(() -> renderer.render(cypherGenerator.prepareSaveOf(targetNodeDescription)))
+			.query(() -> renderer.render(
+				cypherGenerator.prepareSaveOf(targetNodeDescription, Collections.emptyList(), Collections.emptyList())))
 			.in(inDatabase)
 			.bind((Y) entity).with(neo4jMappingContext.getRequiredBinderFunctionFor(entityType))
 			.fetchAs(Long.class).one();

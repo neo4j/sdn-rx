@@ -226,7 +226,7 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 		return Mono.just(instance)
 			.flatMap(eventSupport::maybeCallBeforeBind)
 			.flatMap(entity -> {
-				Statement saveStatement = statementBuilder.prepareSaveOf(entityMetaData);
+				Statement saveStatement = statementBuilder.prepareSaveOf(entityMetaData, Collections.emptyList(), Collections.emptyList());
 
 				Mono<Long> idMono =
 					this.neo4jClient.query(() -> renderer.render(saveStatement))
@@ -490,7 +490,7 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 	private <Y> Mono<Long> saveRelatedNode(Object entity, Class<Y> entityType, NodeDescription targetNodeDescription,
 		@Nullable String inDatabase) {
 
-		return neo4jClient.query(() -> renderer.render(statementBuilder.prepareSaveOf(targetNodeDescription)))
+		return neo4jClient.query(() -> renderer.render(statementBuilder.prepareSaveOf(targetNodeDescription, Collections.emptyList(), Collections.emptyList())))
 			.in(inDatabase)
 			.bind((Y) entity)
 			.with(neo4jMappingContext.getRequiredBinderFunctionFor(entityType)).fetchAs(Long.class).one()

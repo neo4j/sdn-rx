@@ -84,6 +84,8 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 
 	private NodeDescription<?> parentNodeDescription;
 
+	private final Lazy<Neo4jPersistentProperty> dynamicLabelsProperty;
+
 	DefaultNeo4jPersistentEntity(TypeInformation<T> information) {
 		super(information);
 
@@ -91,6 +93,7 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 		this.primaryLabel = computePrimaryLabel();
 		this.additionalLabels = Lazy.of(this::computeAdditionalLabels);
 		this.graphProperties = Lazy.of(this::computeGraphProperties);
+		this.dynamicLabelsProperty = Lazy.of(() -> getGraphProperties().stream().map(Neo4jPersistentProperty.class::cast).filter(Neo4jPersistentProperty::isDynamicLabels).findFirst().orElse(null));
 	}
 
 	/*
@@ -134,6 +137,7 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 	public List<String> getAdditionalLabels() {
 		return this.additionalLabels.get();
 	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see NodeDescription#getGraphProperty(String)
@@ -141,6 +145,11 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 	@Override
 	public Optional<GraphPropertyDescription> getGraphProperty(String fieldName) {
 		return Optional.ofNullable(this.getPersistentProperty(fieldName));
+	}
+
+	@Override
+	public Optional<Neo4jPersistentProperty> getDynamicLabelsProperty() {
+		return this.dynamicLabelsProperty.getOptional();
 	}
 
 	/*
@@ -156,19 +165,26 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 	public void verify() {
 
 		super.verify();
+
 		this.idDescription = computeIdDescription();
+
 		verifyNoDuplicatedGraphProperties();
 		verifyDynamicAssociations();
+		verifyNoDuplicatedGraphProperties();
 	}
 
 	private void verifyNoDuplicatedGraphProperties() {
 
-		Set<String> duplicates = getGraphProperties().stream()
-			.map(GraphPropertyDescription::getPropertyName)
-			.collect(Collectors.groupingBy(Function.identity())).entrySet().stream()
-			.filter(entry -> entry.getValue().size() > 1)
-			.map(Map.Entry::getKey)
-			.collect(Collectors.toSet());
+		Set<String> seen = new HashSet<>();
+		Set<String> duplicates = new HashSet<>();
+		this.doWithProperties((PropertyHandler<Neo4jPersistentProperty>) persistentProperty -> {
+			String propertyName = persistentProperty.getPropertyName();
+			if(seen.contains(propertyName)) {
+				duplicates.add(propertyName);
+			} else {
+				seen.add(propertyName);
+			}
+		});
 
 		Assert.state(duplicates.isEmpty(), () ->
 				String.format("Duplicate definition of propert%s %s in entity %s.", duplicates.size() == 1 ? "y" : "ies", duplicates, getUnderlyingClass()));
@@ -195,6 +211,11 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 				targetEntities.add(inverse.getAssociationTargetType());
 			}
 		});
+	}
+
+	private void verifyOnlyOneDynamicLabelProperty() {
+
+
 	}
 
 	/**
