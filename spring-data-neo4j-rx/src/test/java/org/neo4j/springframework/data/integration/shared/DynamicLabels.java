@@ -88,7 +88,7 @@ public class DynamicLabels {
 		public Set<String> moreLabels;
 	}
 
-	@Node("D1")
+	@Node
 	public static abstract class DynamicLabelsBaseClass {
 
 		@Id @GeneratedValue private Long id;
@@ -97,7 +97,7 @@ public class DynamicLabels {
 		public Set<String> moreLabels;
 	}
 
-	@Node({"D3", "D2"})
+	@Node
 	public static class ExtendedBaseClass1 extends DynamicLabelsBaseClass {
 	}
 
