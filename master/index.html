@@ -575,32 +575,39 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#core.extensions">6.8. Spring Data Extensions</a></li>
 </ul>
 </li>
-<li><a href="#testing">7. Testing</a>
+<li><a href="#projections">7. Projections</a>
 <ul class="sectlevel2">
-<li><a href="#dataneo4jtest">7.1. <code>@DataNeo4jTest</code></a></li>
-<li><a href="#reactivedataneo4jtest">7.2. <code>@ReactiveDataNeo4jTest</code></a></li>
+<li><a href="#projections.interfaces">7.1. Interface-based Projections</a></li>
+<li><a href="#projections.dtos">7.2. Class-based Projections (DTOs)</a></li>
+<li><a href="#projection.dynamic">7.3. Dynamic Projections</a></li>
 </ul>
 </li>
-<li><a href="#auditing">8. Auditing</a>
+<li><a href="#testing">8. Testing</a>
 <ul class="sectlevel2">
-<li><a href="#auditing.basics">8.1. Basics</a></li>
+<li><a href="#dataneo4jtest">8.1. <code>@DataNeo4jTest</code></a></li>
+<li><a href="#reactivedataneo4jtest">8.2. <code>@ReactiveDataNeo4jTest</code></a></li>
 </ul>
 </li>
-<li><a href="#faq">9. Frequently Asked Questions</a>
+<li><a href="#auditing">9. Auditing</a>
 <ul class="sectlevel2">
-<li><a href="#neo4j4.0supportsmultipledatabases-howcaniusethem">9.1. Neo4j 4.0 supports multiple databases - How can I use them?</a></li>
-<li><a href="#doineedspecificconfigurationsothattransactionsworkseamlesswithaneo4jcausalcluster">9.2. Do I need specific configuration so that transactions work seamless with a Neo4j Causal Cluster?</a></li>
-<li><a href="#doineedtouseneo4jspecificannotations">9.3. Do I need to use Neo4j specific annotations?</a></li>
-<li><a href="#howdoiuseassignedids">9.4. How do I use assigned ids?</a></li>
-<li><a href="#howdoiuseexternallygeneratedids">9.5. How do I use externally generated ids?</a></li>
-<li><a href="#template-support">9.6. Do I have to create repositories for each domain class?</a></li>
-<li><a href="#howdoispecifyparametersincustomqueries">9.7. How do I specify parameters in custom queries?</a></li>
-<li><a href="#howdoiusespringexpressionlanguageincustomqueries">9.8. How do I use Spring Expression Language in custom queries?</a></li>
-<li><a href="#howdoiauditentities">9.9. How do I audit entities?</a></li>
-<li><a href="#howdoiusefindbyexample">9.10. How do I use "Find by example"?</a></li>
+<li><a href="#auditing.basics">9.1. Basics</a></li>
 </ul>
 </li>
-<li><a href="#appendix">10. Appendix</a>
+<li><a href="#faq">10. Frequently Asked Questions</a>
+<ul class="sectlevel2">
+<li><a href="#neo4j4.0supportsmultipledatabases-howcaniusethem">10.1. Neo4j 4.0 supports multiple databases - How can I use them?</a></li>
+<li><a href="#doineedspecificconfigurationsothattransactionsworkseamlesswithaneo4jcausalcluster">10.2. Do I need specific configuration so that transactions work seamless with a Neo4j Causal Cluster?</a></li>
+<li><a href="#doineedtouseneo4jspecificannotations">10.3. Do I need to use Neo4j specific annotations?</a></li>
+<li><a href="#howdoiuseassignedids">10.4. How do I use assigned ids?</a></li>
+<li><a href="#howdoiuseexternallygeneratedids">10.5. How do I use externally generated ids?</a></li>
+<li><a href="#template-support">10.6. Do I have to create repositories for each domain class?</a></li>
+<li><a href="#howdoispecifyparametersincustomqueries">10.7. How do I specify parameters in custom queries?</a></li>
+<li><a href="#howdoiusespringexpressionlanguageincustomqueries">10.8. How do I use Spring Expression Language in custom queries?</a></li>
+<li><a href="#howdoiauditentities">10.9. How do I audit entities?</a></li>
+<li><a href="#howdoiusefindbyexample">10.10. How do I use "Find by example"?</a></li>
+</ul>
+</li>
+<li><a href="#appendix">11. Appendix</a>
 <ul class="sectlevel2">
 <li><a href="#conversions">Conversions</a></li>
 <li><a href="#repository-query-keywords">Repository query keywords</a></li>
@@ -1492,7 +1499,7 @@ The initial value is zero which is bumped automatically on every update.</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>Have a look at <a href="#auditing">Chapter 8</a> for all annotations regarding auditing support.</p>
+<p>Have a look at <a href="#auditing">Chapter 9</a> for all annotations regarding auditing support.</p>
 </div>
 </div>
 </div>
@@ -4725,7 +4732,330 @@ The infrastructure eventually selects the appropriate repository to handle the o
 </div>
 </div>
 <div class="sect1">
-<h2 id="testing"><a class="anchor" href="#testing"></a>7. Testing</h2>
+<h2 id="projections"><a class="anchor" href="#projections"></a>7. Projections</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Data query methods usually return one or multiple instances of the aggregate root managed by the repository.
+However, it might sometimes be desirable to create projections based on certain attributes of those types.
+Spring Data allows modeling dedicated return types, to more selectively retrieve partial views of the managed aggregates.</p>
+</div>
+<div class="paragraph">
+<p>Imagine a repository and aggregate root type such as the following example:</p>
+</div>
+<div class="exampleblock">
+<div class="title">Example 57. A sample aggregate and repository</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="annotation">@Node</span>
+<span class="directive">public</span> <span class="type">class</span> <span class="class">Person</span> {
+
+        <span class="annotation">@Id</span> <span class="annotation">@GeneratedValue</span> <span class="directive">private</span> <span class="predefined-type">Long</span> id;
+        <span class="predefined-type">String</span> firstName;
+        <span class="predefined-type">String</span> lastName;
+
+        <span class="annotation">@Relationship</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">LIVES_AT</span><span class="delimiter">&quot;</span></span>)
+        Address address;
+
+        <span class="annotation">@Node</span>
+        <span class="directive">static</span> <span class="type">class</span> <span class="class">Address</span> {
+                <span class="annotation">@Id</span> <span class="annotation">@GeneratedValue</span> <span class="directive">private</span> <span class="predefined-type">Long</span> id;
+                <span class="directive">private</span> <span class="predefined-type">String</span> zipCode;
+                <span class="directive">private</span> <span class="predefined-type">String</span> city;
+                <span class="directive">private</span> <span class="predefined-type">String</span> street;
+        }
+
+}
+
+<span class="type">interface</span> <span class="class">PersonRepository</span> <span class="directive">extends</span> Neo4jRepository&lt;Person, <span class="predefined-type">Long</span>&gt; {
+
+        <span class="predefined-type">List</span>&lt;Person&gt; findByLastName(<span class="predefined-type">String</span> lastName);
+
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Now imagine that we want to retrieve the person&#8217;s name attributes only.
+What means does Spring Data offer to achieve this?
+The rest of this chapter answers that question.</p>
+</div>
+<div class="sect2">
+<h3 id="projections.interfaces"><a class="anchor" href="#projections.interfaces"></a>7.1. Interface-based Projections</h3>
+<div class="paragraph">
+<p>The easiest way to limit the result of the queries to only the name attributes is by declaring an interface that exposes accessor methods for the properties to be read, as shown in the following example:</p>
+</div>
+<div class="exampleblock">
+<div class="title">Example 58. A projection interface to retrieve a subset of attributes</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="type">interface</span> <span class="class">NamesOnly</span> {
+        <span class="predefined-type">String</span> getFirstName();
+        <span class="predefined-type">String</span> getLastName();
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>The important bit here is that the properties defined here exactly match properties in the aggregate root.
+Doing so lets a query method be added as follows:</p>
+</div>
+<div class="exampleblock">
+<div class="title">Example 59. A repository using an interface based projection with a query method</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="type">interface</span> <span class="class">PersonRepository</span> <span class="directive">extends</span> Neo4jRepository&lt;Person, <span class="predefined-type">Long</span>&gt; {
+
+
+        <span class="predefined-type">List</span>&lt;NamesOnly&gt; findByFirstName(<span class="predefined-type">String</span> firstName);
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>The query execution engine creates proxy instances of that interface at runtime for each element returned and forwards calls to the exposed methods to the target object.</p>
+</div>
+<div id="projections.interfaces.nested" class="paragraph">
+<p>Projections can be used recursively.
+If you want to include some of the <code>Address</code> information as well, create a projection interface for that and return that interface from the declaration of <code>getAddress()</code>, as shown in the following example:</p>
+</div>
+<div class="exampleblock">
+<div class="title">Example 60. A projection interface to retrieve a subset of attributes</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="type">interface</span> <span class="class">PersonSummary</span> {
+
+        <span class="predefined-type">String</span> getFirstName();
+        <span class="predefined-type">String</span> getLastName();
+        AddressSummary getAddress();
+
+        <span class="type">interface</span> <span class="class">AddressSummary</span> {
+                <span class="predefined-type">String</span> getCity();
+        }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>On method invocation, the <code>address</code> property of the target instance is obtained and wrapped into a projecting proxy in turn.</p>
+</div>
+<div class="sect3">
+<h4 id="projections.interfaces.closed"><a class="anchor" href="#projections.interfaces.closed"></a>7.1.1. Closed Projections</h4>
+<div class="paragraph">
+<p>A projection interface whose accessor methods all match properties of the target aggregate is considered to be a closed projection.
+The following example (which we used earlier in this chapter, too) is a closed projection:</p>
+</div>
+<div class="exampleblock">
+<div class="title">Example 61. A closed projection</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="type">interface</span> <span class="class">NamesOnly</span> {
+        <span class="predefined-type">String</span> getFirstName();
+        <span class="predefined-type">String</span> getLastName();
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>If you use a closed projection, Spring Data can optimize the query execution, because we know about all the attributes that are needed to back the projection proxy.
+For more details on that, see the module-specific part of the reference documentation.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="projections.interfaces.open"><a class="anchor" href="#projections.interfaces.open"></a>7.1.2. Open Projections</h4>
+<div class="paragraph">
+<p>Accessor methods in projection interfaces can also be used to compute new values by using the <code>@Value</code> annotation, as shown in the following example:</p>
+</div>
+<div id="projections.interfaces.open.simple" class="exampleblock">
+<div class="title">Example 62. An Open Projection</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="type">interface</span> <span class="class">NamesOnly</span> {
+
+        <span class="annotation">@Value</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">#{target.firstName + ' ' + target.lastName}</span><span class="delimiter">&quot;</span></span>)
+        <span class="predefined-type">String</span> getFullName();
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>The aggregate root backing the projection is available in the <code>target</code> variable.
+A projection interface using <code>@Value</code> is an open projection.
+Spring Data cannot apply query execution optimizations in this case, because the SpEL expression could use any attribute of the aggregate root.</p>
+</div>
+<div class="paragraph">
+<p>The expressions used in <code>@Value</code> should not be too complex&#8201;&#8212;&#8201;you want to avoid programming in <code>String</code> variables.
+For very simple expressions, one option might be to resort to default methods (introduced in Java 8), as shown in the following example:</p>
+</div>
+<div id="projections.interfaces.open.default" class="exampleblock">
+<div class="title">Example 63. A projection interface using a default method for custom logic</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="type">interface</span> <span class="class">NamesOnly</span> {
+        <span class="predefined-type">String</span> getFirstName();
+        <span class="predefined-type">String</span> getLastName();
+
+        <span class="keyword">default</span> <span class="predefined-type">String</span> getName() {
+                <span class="keyword">return</span> getFirstName().concat(<span class="string"><span class="delimiter">&quot;</span><span class="content"> </span><span class="delimiter">&quot;</span></span>).concat(getLastName());
+        }
+
+        <span class="annotation">@Value</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">#{@nameBean.getFullName(target)}</span><span class="delimiter">&quot;</span></span>)
+        <span class="predefined-type">String</span> getFullNameFromBean();
+
+        <span class="annotation">@Value</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">#{args[0] + ' ' + target.firstname + '!'}</span><span class="delimiter">&quot;</span></span>)
+        <span class="predefined-type">String</span> getSalutation(<span class="predefined-type">String</span> prefix);
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>This approach requires you to be able to implement logic purely based on the other accessor methods exposed on the projection interface.
+A second, more flexible, option is to implement the custom logic in a Spring bean and then invoke that from the SpEL expression, as shown in the following example:</p>
+</div>
+<div id="projections.interfaces.open.bean-reference" class="exampleblock">
+<div class="title">Example 64. Sample Person object</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="annotation">@Component</span>
+<span class="type">class</span> <span class="class">NameBean</span> {
+
+        <span class="predefined-type">String</span> getFullName(Person person) {
+                <span class="keyword">return</span> person.firstName + <span class="string"><span class="delimiter">&quot;</span><span class="content"> </span><span class="delimiter">&quot;</span></span> + person.lastName;
+        }
+}
+
+<span class="type">interface</span> <span class="class">NamesOnly</span> {
+
+        <span class="annotation">@Value</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">#{@nameBean.getFullName(target)}</span><span class="delimiter">&quot;</span></span>)
+        <span class="predefined-type">String</span> getFullNameFromBean();
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Notice how the SpEL expression refers to <code>nameBean</code> and invokes the <code>getFullName(…)</code> method and forwards the projection target as a method parameter.
+Methods backed by SpEL expression evaluation can also use method parameters, which can then be referred to from the expression.
+The method parameters are available through an <code>Object</code> array named <code>args</code>. The following example shows how to get a method parameter from the <code>args</code> array:</p>
+</div>
+<div class="exampleblock">
+<div class="title">Example 65. Sample Person object</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="type">interface</span> <span class="class">NamesOnly</span> {
+
+        <span class="annotation">@Value</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">#{args[0] + ' ' + target.firstname + '!'}</span><span class="delimiter">&quot;</span></span>)
+        <span class="predefined-type">String</span> getSalutation(<span class="predefined-type">String</span> prefix);
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Again, for more complex expressions, you should use a Spring bean and let the expression invoke a method, as described  <a href="#projections.interfaces.open.bean-reference">earlier</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="projections.dtos"><a class="anchor" href="#projections.dtos"></a>7.2. Class-based Projections (DTOs)</h3>
+<div class="paragraph">
+<p>Another way of defining projections is by using value type DTOs (Data Transfer Objects) that hold properties for the fields that are supposed to be retrieved.
+These DTO types can be used in exactly the same way projection interfaces are used, except that no proxying happens and no nested projections can be applied.</p>
+</div>
+<div class="paragraph">
+<p>If the store optimizes the query execution by limiting the fields to be loaded, the fields to be loaded are determined from the parameter names of the constructor that is exposed.</p>
+</div>
+<div class="paragraph">
+<p>The following example shows a projecting DTO:</p>
+</div>
+<div class="exampleblock">
+<div class="title">Example 66. A projecting DTO</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="directive">public</span> <span class="type">class</span> <span class="class">NamesOnlyDto</span> {
+
+        <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">String</span> firstName;
+        <span class="directive">private</span> <span class="directive">final</span> <span class="predefined-type">String</span> lastName;
+
+        <span class="directive">public</span> NamesOnlyDto(<span class="predefined-type">String</span> firstName, <span class="predefined-type">String</span> lastName) {
+                <span class="local-variable">this</span>.firstName = firstName;
+                <span class="local-variable">this</span>.lastName = lastName;
+        }
+
+        <span class="directive">public</span> <span class="predefined-type">String</span> getFirstName() {
+                <span class="keyword">return</span> firstName;
+        }
+
+        <span class="directive">public</span> <span class="predefined-type">String</span> getLastName() {
+                <span class="keyword">return</span> lastName;
+        }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="projection.dynamic"><a class="anchor" href="#projection.dynamic"></a>7.3. Dynamic Projections</h3>
+<div class="paragraph">
+<p>So far, we have used the projection type as the return type or element type of a collection.
+However, you might want to select the type to be used at invocation time (which makes it dynamic).
+To apply dynamic projections, use a query method such as the one shown in the following example:</p>
+</div>
+<div class="exampleblock">
+<div class="title">Example 67. A repository using a dynamic projection parameter</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="type">interface</span> <span class="class">DynamicProjectionPersonRepository</span> <span class="directive">extends</span> Neo4jRepository&lt;Person, <span class="predefined-type">Long</span>&gt; {
+
+        &lt;T&gt; <span class="predefined-type">Collection</span>&lt;T&gt; findByFirstName(<span class="predefined-type">String</span> firstName, <span class="predefined-type">Class</span>&lt;T&gt; type);
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>This way, the method can be used to obtain the aggregates as is or with a projection applied, as shown in the following example:</p>
+</div>
+<div class="exampleblock">
+<div class="title">Example 68. Using a repository with dynamic projections</div>
+<div class="content">
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="java"><span class="type">class</span> <span class="class">DynamicProjectionService</span> {
+
+        <span class="type">void</span> someMethod(DynamicProjectionPersonRepository people) {
+                <span class="predefined-type">Collection</span>&lt;Person&gt; daves = people.findByFirstName(<span class="string"><span class="delimiter">&quot;</span><span class="content">Dave</span><span class="delimiter">&quot;</span></span>, Person.class);
+
+                <span class="predefined-type">Collection</span>&lt;NamesOnly&gt; davesWithNameOnly = people.findByFirstName(<span class="string"><span class="delimiter">&quot;</span><span class="content">Dave</span><span class="delimiter">&quot;</span></span>, NamesOnly.class);
+        }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="testing"><a class="anchor" href="#testing"></a>8. Testing</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>We offer <code>org.neo4j.springframework.boot.test.autoconfigure.data.DataNeo4jTest</code> and <code>org.neo4j.springframework.boot.test.autoconfigure.data.ReactiveDataNeo4jTest</code>
@@ -4771,7 +5101,7 @@ The reason for doing this is simple: Spring Data&#8217;s JDK baseline is JDK 8. 
 Both test slices include <code>@ExtendWith(SpringExtension.class)</code> so that they run automatically with JUnit 5 (JUnit Jupiter).</p>
 </div>
 <div class="sect2">
-<h3 id="dataneo4jtest"><a class="anchor" href="#dataneo4jtest"></a>7.1. <code>@DataNeo4jTest</code></h3>
+<h3 id="dataneo4jtest"><a class="anchor" href="#dataneo4jtest"></a>8.1. <code>@DataNeo4jTest</code></h3>
 <div class="paragraph">
 <p><code>@DataNeo4jTest</code> provides both imperative and reactive infrastructure by default.
 If you annotate a test with it the test becomes <code>@Transactional</code>.</p>
@@ -4781,7 +5111,7 @@ If you annotate a test with it the test becomes <code>@Transactional</code>.</p>
 This is the reason you cannot use <code>@DataNeo4jTest</code> with setting <code>spring.data.neo4j.repositories.type</code> to <code>reactive</code> as this disables imperative infrastructure.</p>
 </div>
 <div class="sect3">
-<h4 id="withneo4jtestharness"><a class="anchor" href="#withneo4jtestharness"></a>7.1.1. With Neo4j test harness</h4>
+<h4 id="withneo4jtestharness"><a class="anchor" href="#withneo4jtestharness"></a>8.1.1. With Neo4j test harness</h4>
 <div class="paragraph">
 <p>This is the default.
 See the <a href="#imperative-template-example">imperative template example test</a>.
@@ -4797,7 +5127,7 @@ This class uses the included Neo4j test harness 3.5 by default.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="withneo4j4.0testharness"><a class="anchor" href="#withneo4j4.0testharness"></a>7.1.2. With Neo4j 4.0 test harness</h4>
+<h4 id="withneo4j4.0testharness"><a class="anchor" href="#withneo4j4.0testharness"></a>8.1.2. With Neo4j 4.0 test harness</h4>
 <div class="paragraph">
 <p>Include the following dependency in your project setup</p>
 </div>
@@ -4840,7 +5170,7 @@ The test setup doesn&#8217;t change. <code>@DataNeo4jTest</code> is enough.
 </div>
 </div>
 <div class="sect3">
-<h4 id="withtestcontainers"><a class="anchor" href="#withtestcontainers"></a>7.1.3. With Testcontainers</h4>
+<h4 id="withtestcontainers"><a class="anchor" href="#withtestcontainers"></a>8.1.3. With Testcontainers</h4>
 <div class="paragraph">
 <p>Bring in the required dependencies:</p>
 </div>
@@ -4976,7 +5306,7 @@ the <code>Neo4jTestHarnessAutoConfiguration.class</code> from the test slice lik
 </div>
 </div>
 <div class="sect2">
-<h3 id="reactivedataneo4jtest"><a class="anchor" href="#reactivedataneo4jtest"></a>7.2. <code>@ReactiveDataNeo4jTest</code></h3>
+<h3 id="reactivedataneo4jtest"><a class="anchor" href="#reactivedataneo4jtest"></a>8.2. <code>@ReactiveDataNeo4jTest</code></h3>
 <div class="paragraph">
 <p>Everything said about <code>@DataNeo4jTest</code> applies to <code>@ReactiveDataNeo4jTest</code> as well.
 However, <code>@ReactiveDataNeo4jTest</code> enables reactive infrastructure only and is not meta-annotated with <code>@Transactional</code>,
@@ -5038,21 +5368,21 @@ thus it doesn&#8217;t depend on a <code>PlatformTransactionManager</code>.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="auditing"><a class="anchor" href="#auditing"></a>8. Auditing</h2>
+<h2 id="auditing"><a class="anchor" href="#auditing"></a>9. Auditing</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="auditing.basics"><a class="anchor" href="#auditing.basics"></a>8.1. Basics</h3>
+<h3 id="auditing.basics"><a class="anchor" href="#auditing.basics"></a>9.1. Basics</h3>
 <div class="paragraph">
 <p>Spring Data provides sophisticated support to transparently keep track of who created or changed an entity and when the change happened.
 To benefit from that functionality, you have to equip your entity classes with auditing metadata that can be defined either using annotations or by implementing an interface.</p>
 </div>
 <div class="sect3">
-<h4 id="auditing.annotations"><a class="anchor" href="#auditing.annotations"></a>8.1.1. Annotation-based Auditing Metadata</h4>
+<h4 id="auditing.annotations"><a class="anchor" href="#auditing.annotations"></a>9.1.1. Annotation-based Auditing Metadata</h4>
 <div class="paragraph">
 <p>We provide <code>@CreatedBy</code> and <code>@LastModifiedBy</code> to capture the user who created or modified the entity as well as <code>@CreatedDate</code> and <code>@LastModifiedDate</code> to capture when the change happened.</p>
 </div>
 <div class="exampleblock">
-<div class="title">Example 57. An audited entity</div>
+<div class="title">Example 69. An audited entity</div>
 <div class="content">
 <div class="listingblock">
 <div class="content">
@@ -5076,7 +5406,7 @@ The annotations capturing when changes were made can be used on properties of ty
 </div>
 </div>
 <div class="sect3">
-<h4 id="auditing.interfaces"><a class="anchor" href="#auditing.interfaces"></a>8.1.2. Interface-based Auditing Metadata</h4>
+<h4 id="auditing.interfaces"><a class="anchor" href="#auditing.interfaces"></a>9.1.2. Interface-based Auditing Metadata</h4>
 <div class="paragraph">
 <p>In case you do not want to use annotations to define auditing metadata, you can let your domain class implement the <code>Auditable</code> interface.
 It exposes setter methods for all of the auditing properties.</p>
@@ -5088,7 +5418,7 @@ Usually, the annotation-based way of defining auditing metadata is preferred as 
 </div>
 </div>
 <div class="sect3">
-<h4 id="auditing.auditor-aware"><a class="anchor" href="#auditing.auditor-aware"></a>8.1.3. <code>AuditorAware</code></h4>
+<h4 id="auditing.auditor-aware"><a class="anchor" href="#auditing.auditor-aware"></a>9.1.3. <code>AuditorAware</code></h4>
 <div class="paragraph">
 <p>In case you use either <code>@CreatedBy</code> or <code>@LastModifiedBy</code>, the auditing infrastructure somehow needs to become aware of the current principal.
 To do so, we provide an <code>AuditorAware&lt;T&gt;</code> SPI interface that you have to implement to tell the infrastructure who the current user or system interacting with the application is.
@@ -5098,7 +5428,7 @@ The generic type <code>T</code> defines what type the properties annotated with 
 <p>The following example shows an implementation of the interface that uses Spring Security&#8217;s <code>Authentication</code> object:</p>
 </div>
 <div class="exampleblock">
-<div class="title">Example 58. Implementation of AuditorAware based on Spring Security</div>
+<div class="title">Example 70. Implementation of AuditorAware based on Spring Security</div>
 <div class="content">
 <div class="listingblock">
 <div class="content">
@@ -5127,13 +5457,13 @@ We assume here that you are exposing the domain user through the <code>UserDetai
 </div>
 </div>
 <div class="sect1">
-<h2 id="faq"><a class="anchor" href="#faq"></a>9. Frequently Asked Questions</h2>
+<h2 id="faq"><a class="anchor" href="#faq"></a>10. Frequently Asked Questions</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Here are a couple of more frequently asked question in addition to the ones in the <a href="#what-is-sdn-rx">preface</a>.</p>
 </div>
 <div class="sect2">
-<h3 id="neo4j4.0supportsmultipledatabases-howcaniusethem"><a class="anchor" href="#neo4j4.0supportsmultipledatabases-howcaniusethem"></a>9.1. Neo4j 4.0 supports multiple databases - How can I use them?</h3>
+<h3 id="neo4j4.0supportsmultipledatabases-howcaniusethem"><a class="anchor" href="#neo4j4.0supportsmultipledatabases-howcaniusethem"></a>10.1. Neo4j 4.0 supports multiple databases - How can I use them?</h3>
 <div class="paragraph">
 <p>You can either statically configure the database name or run your own database name provider.
 Bear in mind that SDN/RX will not create the databases for you.
@@ -5141,7 +5471,7 @@ You can do this with the help of a <a href="https://github.com/michael-simons/ne
 or of course with a simple script upfront.</p>
 </div>
 <div class="sect3">
-<h4 id="staticallyconfigured"><a class="anchor" href="#staticallyconfigured"></a>9.1.1. Statically configured</h4>
+<h4 id="staticallyconfigured"><a class="anchor" href="#staticallyconfigured"></a>10.1.1. Statically configured</h4>
 <div class="paragraph">
 <p>Configure the database name to use in your Spring Boot configuration like this
 (The same property applies of course for YML or environment based configuration, with Spring Boots conventions applied):</p>
@@ -5157,7 +5487,7 @@ and by the <code>ReactiveNeo4jTemplate</code> respectively <code>Neo4jTemplate</
 </div>
 </div>
 <div class="sect3">
-<h4 id="dynamicallyconfigured"><a class="anchor" href="#dynamicallyconfigured"></a>9.1.2. Dynamically configured</h4>
+<h4 id="dynamicallyconfigured"><a class="anchor" href="#dynamicallyconfigured"></a>10.1.2. Dynamically configured</h4>
 <div class="paragraph">
 <p>Provide a bean with the type <code>Neo4jDatabaseNameProvider</code> or <code>ReactiveDatabaseSelectionProvider</code> depending on the type of your Spring application.</p>
 </div>
@@ -5213,7 +5543,7 @@ Be careful that you don&#8217;t mix up entities retrieved from one database with
 </div>
 </div>
 <div class="sect2">
-<h3 id="doineedspecificconfigurationsothattransactionsworkseamlesswithaneo4jcausalcluster"><a class="anchor" href="#doineedspecificconfigurationsothattransactionsworkseamlesswithaneo4jcausalcluster"></a>9.2. Do I need specific configuration so that transactions work seamless with a Neo4j Causal Cluster?</h3>
+<h3 id="doineedspecificconfigurationsothattransactionsworkseamlesswithaneo4jcausalcluster"><a class="anchor" href="#doineedspecificconfigurationsothattransactionsworkseamlesswithaneo4jcausalcluster"></a>10.2. Do I need specific configuration so that transactions work seamless with a Neo4j Causal Cluster?</h3>
 <div class="paragraph">
 <p>No, you don&#8217;t.
 SDN/RX uses Neo4j Causal Cluster bookmarks internally without any configuration on your side required.
@@ -5221,7 +5551,7 @@ Transactions in the same thread or the same reactive stream following each other
 </div>
 </div>
 <div class="sect2">
-<h3 id="doineedtouseneo4jspecificannotations"><a class="anchor" href="#doineedtouseneo4jspecificannotations"></a>9.3. Do I need to use Neo4j specific annotations?</h3>
+<h3 id="doineedtouseneo4jspecificannotations"><a class="anchor" href="#doineedtouseneo4jspecificannotations"></a>10.3. Do I need to use Neo4j specific annotations?</h3>
 <div class="paragraph">
 <p>No.
 You are free to use the following, equivalent Spring Data annotations:</p>
@@ -5258,14 +5588,14 @@ You are free to use the following, equivalent Spring Data annotations:</p>
 </table>
 </div>
 <div class="sect2">
-<h3 id="howdoiuseassignedids"><a class="anchor" href="#howdoiuseassignedids"></a>9.4. How do I use assigned ids?</h3>
+<h3 id="howdoiuseassignedids"><a class="anchor" href="#howdoiuseassignedids"></a>10.4. How do I use assigned ids?</h3>
 <div class="paragraph">
 <p>Just <code>@Id</code> without <code>@GeneratedValue</code> and fill your id attribute via a constructor parameter or a setter or <em>wither</em>.
 See this <a href="https://medium.com/neo4j/neo4j-ogm-and-spring-data-neo4j-a55a866df68c">blog post</a> for some general remarks about finding good ids.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="howdoiuseexternallygeneratedids"><a class="anchor" href="#howdoiuseexternallygeneratedids"></a>9.5. How do I use externally generated ids?</h3>
+<h3 id="howdoiuseexternallygeneratedids"><a class="anchor" href="#howdoiuseexternallygeneratedids"></a>10.5. How do I use externally generated ids?</h3>
 <div class="paragraph">
 <p>We provide the interface <code>org.neo4j.springframework.data.core.schema.IdGenerator</code>.
 Implement it anyway you want and configure your implementation like this:</p>
@@ -5314,7 +5644,7 @@ Setters are not required on non-final fields for the id.
 </div>
 </div>
 <div class="sect2">
-<h3 id="template-support"><a class="anchor" href="#template-support"></a>9.6. Do I have to create repositories for each domain class?</h3>
+<h3 id="template-support"><a class="anchor" href="#template-support"></a>10.6. Do I have to create repositories for each domain class?</h3>
 <div class="paragraph">
 <p>No.
 Have a look at the <a href="#sdn-rx-building-blocks">SDN/RX building blocks</a> and
@@ -5436,7 +5766,7 @@ find the <code>Neo4jTemplate</code> respectively the <code>ReactiveNeo4jTemplate
 </div>
 </div>
 <div class="sect2">
-<h3 id="howdoispecifyparametersincustomqueries"><a class="anchor" href="#howdoispecifyparametersincustomqueries"></a>9.7. How do I specify parameters in custom queries?</h3>
+<h3 id="howdoispecifyparametersincustomqueries"><a class="anchor" href="#howdoispecifyparametersincustomqueries"></a>10.7. How do I specify parameters in custom queries?</h3>
 <div class="paragraph">
 <p>You do this exactly the same way as in a standard Cypher query issued in the Neo4j Browser or the Cypher-Shell,
 with the <code>$</code> syntax (from Neo4j 4.0 on upwards, the old <code>{foo}</code> syntax for Cypher parameters has been removed from the database);</p>
@@ -5477,7 +5807,7 @@ You need to compile your Java 8+ project with <code>-parameters</code> to make n
 </div>
 </div>
 <div class="sect2">
-<h3 id="howdoiusespringexpressionlanguageincustomqueries"><a class="anchor" href="#howdoiusespringexpressionlanguageincustomqueries"></a>9.8. How do I use Spring Expression Language in custom queries?</h3>
+<h3 id="howdoiusespringexpressionlanguageincustomqueries"><a class="anchor" href="#howdoiusespringexpressionlanguageincustomqueries"></a>10.8. How do I use Spring Expression Language in custom queries?</h3>
 <div class="paragraph">
 <p><a href="https://docs.spring.io/spring/docs/current/spring-framework-reference/core.html#expressions">Spring Expression Language (SpEL)</a> can be used in custom queries inside <code>:#{}</code>.
 This is the standard Spring Data way of defining a block of text inside a query that undergoes SpEL evaluation.</p>
@@ -5503,7 +5833,7 @@ The SpEL block ends with <code>}</code>.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="howdoiauditentities"><a class="anchor" href="#howdoiauditentities"></a>9.9. How do I audit entities?</h3>
+<h3 id="howdoiauditentities"><a class="anchor" href="#howdoiauditentities"></a>10.9. How do I audit entities?</h3>
 <div class="paragraph">
 <p>All Spring Data annotations are supported.
 Those are</p>
@@ -5526,7 +5856,7 @@ Those are</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="howdoiusefindbyexample"><a class="anchor" href="#howdoiusefindbyexample"></a>9.10. How do I use "Find by example"?</h3>
+<h3 id="howdoiusefindbyexample"><a class="anchor" href="#howdoiusefindbyexample"></a>10.10. How do I use "Find by example"?</h3>
 <div class="paragraph">
 <p>"Find by example" is a new feature in SDN/RX.
 You instantiate an entity or use an existing one.
@@ -5556,7 +5886,7 @@ movies = <span class="local-variable">this</span>.movieRepository.findAll(movieE
 </div>
 </div>
 <div class="sect1">
-<h2 id="appendix"><a class="anchor" href="#appendix"></a>10. Appendix</h2>
+<h2 id="appendix"><a class="anchor" href="#appendix"></a>11. Appendix</h2>
 <div class="sectionbody">
 <div class="sect2">
 <h3 id="conversions"><a class="anchor" href="#conversions"></a>Conversions</h3>
@@ -7672,7 +8002,7 @@ $ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:ana
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-04-30 09:53:50 UTC
+Last updated 2020-04-30 11:14:34 UTC
 </div>
 </div>
 </body>
