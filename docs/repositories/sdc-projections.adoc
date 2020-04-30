@@ -22,7 +22,8 @@ include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/do
 ====
 
 Now imagine that we want to retrieve the person's name attributes only.
-What means does Spring Data offer to achieve this? The rest of this chapter answers that question.
+What means does Spring Data offer to achieve this?
+The rest of this chapter answers that question.
 
 [[projections.interfaces]]
 == Interface-based Projections
@@ -51,7 +52,8 @@ include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/do
 The query execution engine creates proxy instances of that interface at runtime for each element returned and forwards calls to the exposed methods to the target object.
 
 [[projections.interfaces.nested]]
-Projections can be used recursively. If you want to include some of the `Address` information as well, create a projection interface for that and return that interface from the declaration of `getAddress()`, as shown in the following example:
+Projections can be used recursively.
+If you want to include some of the `Address` information as well, create a projection interface for that and return that interface from the declaration of `getAddress()`, as shown in the following example:
 
 .A projection interface to retrieve a subset of attributes
 ====
@@ -66,7 +68,8 @@ On method invocation, the `address` property of the target instance is obtained 
 [[projections.interfaces.closed]]
 === Closed Projections
 
-A projection interface whose accessor methods all match properties of the target aggregate is considered to be a closed projection. The following example (which we used earlier in this chapter, too) is a closed projection:
+A projection interface whose accessor methods all match properties of the target aggregate is considered to be a closed projection.
+The following example (which we used earlier in this chapter, too) is a closed projection:
 
 .A closed projection
 ====
@@ -121,7 +124,7 @@ include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/do
 ----
 ====
 
-Notice how the SpEL expression refers to `myBean` and invokes the `getFullName(…)` method and forwards the projection target as a method parameter.
+Notice how the SpEL expression refers to `nameBean` and invokes the `getFullName(…)` method and forwards the projection target as a method parameter.
 Methods backed by SpEL expression evaluation can also use method parameters, which can then be referred to from the expression.
 The method parameters are available through an `Object` array named `args`. The following example shows how to get a method parameter from the `args` array:
 
@@ -149,26 +152,7 @@ The following example shows a projecting DTO:
 ====
 [source, java]
 ----
-class NamesOnly {
-
-  private final String firstname, lastname;
-
-  NamesOnly(String firstname, String lastname) {
-
-    this.firstname = firstname;
-    this.lastname = lastname;
-  }
-
-  String getFirstname() {
-    return this.firstname;
-  }
-
-  String getLastname() {
-    return this.lastname;
-  }
-
-  // equals(…) and hashCode() implementations
-}
+include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/docs/repositories/projection/NamesOnlyDto.java[tags=projection.class]
 ----
 ====
 
@@ -183,10 +167,7 @@ To apply dynamic projections, use a query method such as the one shown in the fo
 ====
 [source, java, subs="+attributes"]
 ----
-interface PersonRepository extends Repository<Person, UUID> {
-
-  <T> List<T> findByLastname(String lastname, Class<T> type);
-}
+include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/docs/repositories/projection/Person.java[tags=projection.dynamic-projection-repository]
 ----
 ====
 
@@ -196,13 +177,6 @@ This way, the method can be used to obtain the aggregates as is or with a projec
 ====
 [source, java, subs="+attributes"]
 ----
-void someMethod(PersonRepository people) {
-
-  List<Person> aggregates =
-    people.findByLastname("Matthews", Person.class);
-
-  List<NamesOnly> aggregates =
-    people.findByLastname("Matthews", NamesOnly.class);
-}
+include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/docs/repositories/projection/Person.java[tags=projection.dynamic-projection-usage]
 ----
 ====

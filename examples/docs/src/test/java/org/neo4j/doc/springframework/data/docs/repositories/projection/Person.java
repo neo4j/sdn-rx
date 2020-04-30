@@ -18,15 +18,15 @@
  */
 package org.neo4j.doc.springframework.data.docs.repositories.projection;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.UUID;
 
+import org.neo4j.driver.internal.shaded.reactor.core.publisher.Flux;
 import org.neo4j.springframework.data.core.schema.GeneratedValue;
 import org.neo4j.springframework.data.core.schema.Id;
 import org.neo4j.springframework.data.core.schema.Node;
 import org.neo4j.springframework.data.core.schema.Relationship;
 import org.neo4j.springframework.data.repository.Neo4jRepository;
-import org.springframework.data.repository.Repository;
 
 /**
  * @author Gerrit Meier
@@ -54,7 +54,7 @@ public class Person {
 // end::projection.entity[]
 
 // tag::projection.repository[]
-interface PersonRepository extends Neo4jRepository<Person, UUID> {
+interface PersonRepository extends Neo4jRepository<Person, Long> {
 
 	// tag::projection.repository.concrete[]
 	List<Person> findByLastName(String lastName);
@@ -66,3 +66,20 @@ interface PersonRepository extends Neo4jRepository<Person, UUID> {
 }
 // end::projection.repository[]
 
+// tag::projection.dynamic-projection-repository[]
+interface DynamicProjectionPersonRepository extends Neo4jRepository<Person, Long> {
+
+	<T> Collection<T> findByFirstName(String firstName, Class<T> type);
+}
+// end::projection.dynamic-projection-repository[]
+
+// tag::projection.dynamic-projection-usage[]
+class DynamicProjectionService {
+
+	void someMethod(DynamicProjectionPersonRepository people) {
+		Collection<Person> daves = people.findByFirstName("Dave", Person.class);
+
+		Collection<NamesOnly> davesWithNameOnly = people.findByFirstName("Dave", NamesOnly.class);
+	}
+}
+// end::projection.dynamic-projection-usage[]

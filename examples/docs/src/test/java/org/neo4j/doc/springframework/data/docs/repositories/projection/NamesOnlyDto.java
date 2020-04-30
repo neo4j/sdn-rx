@@ -21,6 +21,7 @@ package org.neo4j.doc.springframework.data.docs.repositories.projection;
 /**
  * @author Gerrit Meier
  */
+// tag::projection.class[]
 public class NamesOnlyDto {
 
 	private final String firstName;
@@ -39,3 +40,4 @@ public class NamesOnlyDto {
 		return lastName;
 	}
 }
+// end::projection.class[]
