@@ -15,21 +15,9 @@ Imagine a repository and aggregate root type such as the following example:
 ====
 [source, java, subs="+attributes"]
 ----
-class Person {
+include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/docs/repositories/projection/Person.java[tag=projection.entity]
 
-  @Id UUID id;
-  String firstname, lastname;
-  Address address;
-
-  static class Address {
-    String zipCode, city, street;
-  }
-}
-
-interface PersonRepository extends Repository<Person, UUID> {
-
-  List<Person> findByLastname(String lastname);
-}
+include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/docs/repositories/projection/Person.java[tags=projection.repository;projection.repository.concrete;!projection.repository.interface]
 ----
 ====
 
@@ -45,11 +33,7 @@ The easiest way to limit the result of the queries to only the name attributes i
 ====
 [source, java]
 ----
-interface NamesOnly {
-
-  String getFirstname();
-  String getLastname();
-}
+include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/docs/repositories/projection/NamesOnly.java[tags=projection.interface;!projection.interface.default-method;!projection.interface.open-projection;!projection.interface.bean-access;!projection.interface.method-parameters]
 ----
 ====
 
@@ -60,10 +44,7 @@ Doing so lets a query method be added as follows:
 ====
 [source, java, subs="+attributes"]
 ----
-interface PersonRepository extends Repository<Person, UUID> {
-
-  List<NamesOnly> findByLastname(String lastname);
-}
+include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/docs/repositories/projection/Person.java[tags=projection.repository;projection.repository.interface;!projection.repository.concrete]
 ----
 ====
 
@@ -76,16 +57,7 @@ Projections can be used recursively. If you want to include some of the `Address
 ====
 [source, java]
 ----
-interface PersonSummary {
-
-  String getFirstname();
-  String getLastname();
-  AddressSummary getAddress();
-
-  interface AddressSummary {
-    String getCity();
-  }
-}
+include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/docs/repositories/projection/PersonSummary.java[tag=projection.interface.nested]
 ----
 ====
 
@@ -100,11 +72,7 @@ A projection interface whose accessor methods all match properties of the target
 ====
 [source, java]
 ----
-interface NamesOnly {
-
-  String getFirstname();
-  String getLastname();
-}
+include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/docs/repositories/projection/NamesOnly.java[tags=projection.interface;!projection.interface.default-method;!projection.interface.open-projection;!projection.interface.bean-access;!projection.interface.method-parameters]
 ----
 ====
 
@@ -121,12 +89,7 @@ Accessor methods in projection interfaces can also be used to compute new values
 ====
 [source, java]
 ----
-interface NamesOnly {
-
-  @Value("#{target.firstname + ' ' + target.lastname}")
-  String getFullName();
-  …
-}
+include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/docs/repositories/projection/NamesOnly.java[tags=projection.interface;!projection.interface.default-method;!projection.interface.closed-projection;!projection.interface.bean-access;!projection.interface.method-parameters]
 ----
 ====
 
@@ -142,15 +105,7 @@ For very simple expressions, one option might be to resort to default methods (i
 ====
 [source, java]
 ----
-interface NamesOnly {
-
-  String getFirstname();
-  String getLastname();
-
-  default String getFullName() {
-    return getFirstname().concat(" ").concat(getLastname());
-  }
-}
+include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/docs/repositories/projection/NamesOnly.java[tags=projection.interface;!projection.interface.open-projection]
 ----
 ====
 
@@ -162,20 +117,7 @@ A second, more flexible, option is to implement the custom logic in a Spring bea
 ====
 [source, java]
 ----
-@Component
-class MyBean {
-
-  String getFullName(Person person) {
-    …
-  }
-}
-
-interface NamesOnly {
-
-  @Value("#{@myBean.getFullName(target)}")
-  String getFullName();
-  …
-}
+include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/docs/repositories/projection/NamesOnly.java[tags=projection.interface.bean-access;projection.interface;!projection.interface.open-projection;!projection.interface.closed-projection;!projection.interface.default-method;!projection.interface.method-parameters]
 ----
 ====
 
@@ -187,11 +129,7 @@ The method parameters are available through an `Object` array named `args`. The 
 ====
 [source, java]
 ----
-interface NamesOnly {
-
-  @Value("#{args[0] + ' ' + target.firstname + '!'}")
-  String getSalutation(String prefix);
-}
+include::../../examples/docs/src/test/java/org/neo4j/doc/springframework/data/docs/repositories/projection/NamesOnly.java[tags=projection.interface;!projection.interface.open-projection;!projection.interface.closed-projection;!projection.interface.default-method;!projection.interface.bean-access]
 ----
 ====
 
@@ -232,23 +170,6 @@ class NamesOnly {
   // equals(…) and hashCode() implementations
 }
 ----
-====
-
-[TIP]
-.Avoid boilerplate code for projection DTOs
-====
-You can dramatically simplify the code for a DTO by using https://projectlombok.org[Project Lombok], which provides an `@Value` annotation (not to be confused with Spring's `@Value` annotation shown in the earlier interface examples).
-If you use Project Lombok's `@Value` annotation, the sample DTO shown earlier would become the following:
-
-[source, java]
-----
-@Value
-class NamesOnly {
-	String firstname, lastname;
-}
-----
-Fields are `private final` by default, and the class exposes a constructor that takes all fields and automatically gets `equals(…)` and `hashCode()` methods implemented.
-
 ====
 
 [[projection.dynamic]]
