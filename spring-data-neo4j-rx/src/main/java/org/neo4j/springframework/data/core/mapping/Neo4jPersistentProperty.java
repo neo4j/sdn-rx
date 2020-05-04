@@ -21,7 +21,7 @@ package org.neo4j.springframework.data.core.mapping;
 import org.apiguardian.api.API;
 import org.neo4j.springframework.data.core.schema.GraphPropertyDescription;
 import org.neo4j.springframework.data.core.schema.RelationshipProperties;
-import org.neo4j.springframework.data.core.schema.Wurstsalat;
+import org.neo4j.springframework.data.core.schema.DynamicLabels;
 import org.springframework.data.mapping.PersistentProperty;
 
 /**
@@ -61,7 +61,7 @@ public interface Neo4jPersistentProperty
 	 * @since 1.1
 	 */
 	default boolean isDynamicLabels() {
-		return this.isAnnotationPresent(Wurstsalat.class) && this.isCollectionLike();
+		return this.isAnnotationPresent(DynamicLabels.class) && this.isCollectionLike();
 	}
 
 	/**

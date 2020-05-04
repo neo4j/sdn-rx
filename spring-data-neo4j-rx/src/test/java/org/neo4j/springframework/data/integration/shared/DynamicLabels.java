@@ -23,7 +23,6 @@ import java.util.Set;
 import org.neo4j.springframework.data.core.schema.GeneratedValue;
 import org.neo4j.springframework.data.core.schema.Id;
 import org.neo4j.springframework.data.core.schema.Node;
-import org.neo4j.springframework.data.core.schema.Wurstsalat;
 import org.springframework.data.annotation.Version;
 
 /**
@@ -55,12 +54,19 @@ public class DynamicLabels {
 
 		@Id @GeneratedValue public Long id;
 
-		@Wurstsalat
+		@org.neo4j.springframework.data.core.schema.DynamicLabels
 		public Set<String> moreLabels;
 
 		public Long getId() {
 			return id;
 		}
+	}
+
+	/**
+	 * Used for testing whether the inherited dynamic labels is populated.
+	 */
+	@Node
+	public static class InheritedSimpleDynamicLabels extends SimpleDynamicLabels {
 	}
 
 	/**
@@ -74,7 +80,7 @@ public class DynamicLabels {
 		@Version
 		public Long myVersion;
 
-		@Wurstsalat
+		@org.neo4j.springframework.data.core.schema.DynamicLabels
 		public Set<String> moreLabels;
 
 		public Long getId() {
@@ -90,7 +96,7 @@ public class DynamicLabels {
 
 		@Id public String id;
 
-		@Wurstsalat
+		@org.neo4j.springframework.data.core.schema.DynamicLabels
 		public Set<String> moreLabels;
 
 		public String getId() {
@@ -109,7 +115,7 @@ public class DynamicLabels {
 		@Version
 		public Long myVersion;
 
-		@Wurstsalat
+		@org.neo4j.springframework.data.core.schema.DynamicLabels
 		public Set<String> moreLabels;
 
 		public String getId() {
@@ -125,7 +131,7 @@ public class DynamicLabels {
 
 		@Id @GeneratedValue private final Long id;
 
-		@Wurstsalat
+		@org.neo4j.springframework.data.core.schema.DynamicLabels
 		public final Set<String> moreLabels;
 
 		public SimpleDynamicLabelsCtor(Long id, Set<String> moreLabels) {
@@ -142,7 +148,7 @@ public class DynamicLabels {
 
 		@Id @GeneratedValue private Long id;
 
-		@Wurstsalat
+		@org.neo4j.springframework.data.core.schema.DynamicLabels
 		public Set<String> moreLabels;
 	}
 
@@ -154,7 +160,7 @@ public class DynamicLabels {
 
 		@Id @GeneratedValue private Long id;
 
-		@Wurstsalat
+		@org.neo4j.springframework.data.core.schema.DynamicLabels
 		public Set<String> moreLabels;
 	}
 
@@ -162,9 +168,6 @@ public class DynamicLabels {
 	static abstract class DynamicLabelsBaseClass {
 
 		@Id @GeneratedValue private Long id;
-
-		@Wurstsalat
-		public Set<String> moreLabels;
 	}
 
 	/**
@@ -172,5 +175,8 @@ public class DynamicLabels {
 	 */
 	@Node
 	public static class ExtendedBaseClass1 extends DynamicLabelsBaseClass {
+
+		@org.neo4j.springframework.data.core.schema.DynamicLabels
+		public Set<String> moreLabels;
 	}
 }

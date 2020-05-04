@@ -46,15 +46,7 @@ import org.neo4j.springframework.data.core.cypher.Condition;
 import org.neo4j.springframework.data.core.cypher.Cypher;
 import org.neo4j.springframework.data.core.cypher.Node;
 import org.neo4j.springframework.data.core.cypher.renderer.Renderer;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.DynamicLabelsWithMultipleNodeLabels;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.DynamicLabelsWithNodeLabel;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.ExtendedBaseClass1;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.SimpleDynamicLabels;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.SimpleDynamicLabelsCtor;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.SimpleDynamicLabelsWithBusinessId;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.SimpleDynamicLabelsWithBusinessIdAndVersion;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.SimpleDynamicLabelsWithVersion;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.SuperNode;
+import org.neo4j.springframework.data.integration.shared.DynamicLabels.*;
 import org.neo4j.springframework.data.test.Neo4jExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -151,6 +143,68 @@ public class ReactiveDynamicLabelsIT {
 				.sort()
 				.as(StepVerifier::create)
 				.expectNext("A", "B", "C", "SimpleDynamicLabels")
+				.verifyComplete();
+		}
+	}
+
+	@Nested
+	class EntityWithInheritedDynamicLabels extends SpringTestBase {
+
+		@Override
+		Long createTestEntity(Transaction transaction) {
+			Record r = transaction.run(""
+				+ "CREATE (e:InheritedSimpleDynamicLabels:Foo:Bar:Baz:Foobar) "
+				+ "RETURN id(e) as existingEntityId").single();
+			long newId = r.get("existingEntityId").asLong();
+			transaction.commit();
+			return newId;
+		}
+
+		@Test
+		void shouldReadDynamicLabels(@Autowired ReactiveNeo4jTemplate template) {
+
+			template
+				.findById(existingEntityId, InheritedSimpleDynamicLabels.class)
+				.flatMapMany(entity -> Flux.fromIterable(entity.moreLabels))
+				.sort()
+				.as(StepVerifier::create)
+				.expectNext("Bar", "Baz", "Foo", "Foobar")
+				.verifyComplete();
+		}
+
+		@Test
+		void shouldUpdateDynamicLabels(@Autowired ReactiveNeo4jTemplate template) {
+
+			template
+				.findById(existingEntityId, InheritedSimpleDynamicLabels.class)
+				.flatMap(entity -> {
+					entity.moreLabels.remove("Foo");
+					entity.moreLabels.add("Fizz");
+					return template.save(entity);
+				})
+				.thenMany(getLabels(existingEntityId))
+				.sort()
+				.as(StepVerifier::create)
+				.expectNext("Bar", "Baz", "Fizz", "Foobar", "InheritedSimpleDynamicLabels")
+				.verifyComplete();
+		}
+
+		@Test
+		void shouldWriteDynamicLabels(@Autowired ReactiveNeo4jTemplate template) {
+
+			InheritedSimpleDynamicLabels entity = new InheritedSimpleDynamicLabels();
+			entity.moreLabels = new HashSet<>();
+			entity.moreLabels.add("A");
+			entity.moreLabels.add("B");
+			entity.moreLabels.add("C");
+
+			template
+				.save(entity)
+				.map(SimpleDynamicLabels::getId)
+				.flatMapMany(this::getLabels)
+				.sort()
+				.as(StepVerifier::create)
+				.expectNext("A", "B", "C", "InheritedSimpleDynamicLabels")
 				.verifyComplete();
 		}
 	}

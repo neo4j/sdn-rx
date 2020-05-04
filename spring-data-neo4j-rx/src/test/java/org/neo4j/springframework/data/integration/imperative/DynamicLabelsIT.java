@@ -45,15 +45,7 @@ import org.neo4j.springframework.data.core.cypher.Condition;
 import org.neo4j.springframework.data.core.cypher.Cypher;
 import org.neo4j.springframework.data.core.cypher.Node;
 import org.neo4j.springframework.data.core.cypher.renderer.Renderer;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.DynamicLabelsWithMultipleNodeLabels;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.DynamicLabelsWithNodeLabel;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.ExtendedBaseClass1;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.SimpleDynamicLabels;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.SimpleDynamicLabelsCtor;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.SimpleDynamicLabelsWithBusinessId;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.SimpleDynamicLabelsWithBusinessIdAndVersion;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.SimpleDynamicLabelsWithVersion;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.SuperNode;
+import org.neo4j.springframework.data.integration.shared.DynamicLabels.*;
 import org.neo4j.springframework.data.test.Neo4jExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -134,6 +126,58 @@ public class DynamicLabelsIT {
 			long id = template.save(superNode).relatedTo.id;
 			List<String> labels = getLabels(id);
 			assertThat(labels).containsExactlyInAnyOrder("SimpleDynamicLabels", "A", "B", "C");
+		}
+	}
+
+	@Nested
+	class EntityWithInheritedDynamicLabels extends SpringTestBase {
+
+		@Override
+		Long createTestEntity(Transaction transaction) {
+			Record r = transaction.run(""
+				+ "CREATE (e:InheritedSimpleDynamicLabels:Foo:Bar:Baz:Foobar) "
+				+ "RETURN id(e) as existingEntityId").single();
+			long newId = r.get("existingEntityId").asLong();
+			transaction.commit();
+			return newId;
+		}
+
+		@Test
+		void shouldReadDynamicLabels(@Autowired Neo4jTemplate template) {
+
+			Optional<InheritedSimpleDynamicLabels> optionalEntity = template
+				.findById(existingEntityId, InheritedSimpleDynamicLabels.class);
+			assertThat(optionalEntity).hasValueSatisfying(entity ->
+				assertThat(entity.moreLabels).containsExactlyInAnyOrder("Foo", "Bar", "Baz", "Foobar")
+			);
+		}
+
+		@Test
+		void shouldUpdateDynamicLabels(@Autowired Neo4jTemplate template) {
+
+			InheritedSimpleDynamicLabels entity = template
+				.findById(existingEntityId, InheritedSimpleDynamicLabels.class).get();
+			entity.moreLabels.remove("Foo");
+			entity.moreLabels.add("Fizz");
+			template.save(entity);
+
+			List<String> labels = getLabels(existingEntityId);
+			assertThat(labels)
+				.containsExactlyInAnyOrder("InheritedSimpleDynamicLabels", "Fizz", "Bar", "Baz", "Foobar");
+		}
+
+		@Test
+		void shouldWriteDynamicLabels(@Autowired Neo4jTemplate template) {
+
+			InheritedSimpleDynamicLabels entity = new InheritedSimpleDynamicLabels();
+			entity.moreLabels = new HashSet<>();
+			entity.moreLabels.add("A");
+			entity.moreLabels.add("B");
+			entity.moreLabels.add("C");
+			long id = template.save(entity).id;
+
+			List<String> labels = getLabels(id);
+			assertThat(labels).containsExactlyInAnyOrder("InheritedSimpleDynamicLabels", "A", "B", "C");
 		}
 	}
 

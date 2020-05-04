@@ -25,17 +25,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.neo4j.springframework.data.core.schema.GeneratedValue;
+import org.neo4j.springframework.data.core.schema.*;
 import org.neo4j.springframework.data.core.schema.GeneratedValue.InternalIdGenerator;
 import org.neo4j.springframework.data.core.schema.GeneratedValue.UUIDGenerator;
-import org.neo4j.springframework.data.core.schema.GraphPropertyDescription;
-import org.neo4j.springframework.data.core.schema.IdDescription;
-import org.neo4j.springframework.data.core.schema.IdGenerator;
-import org.neo4j.springframework.data.core.schema.Node;
-import org.neo4j.springframework.data.core.schema.NodeDescription;
-import org.neo4j.springframework.data.core.schema.Property;
-import org.neo4j.springframework.data.core.schema.Relationship;
-import org.neo4j.springframework.data.core.schema.RelationshipDescription;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.mapping.model.BasicPersistentEntity;
@@ -92,7 +84,9 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 		this.primaryLabel = computePrimaryLabel();
 		this.additionalLabels = Lazy.of(this::computeAdditionalLabels);
 		this.graphProperties = Lazy.of(this::computeGraphProperties);
-		this.dynamicLabelsProperty = Lazy.of(() -> getGraphProperties().stream().map(Neo4jPersistentProperty.class::cast).filter(Neo4jPersistentProperty::isDynamicLabels).findFirst().orElse(null));
+		this.dynamicLabelsProperty = Lazy
+			.of(() -> getGraphProperties().stream().map(Neo4jPersistentProperty.class::cast)
+				.filter(Neo4jPersistentProperty::isDynamicLabels).findFirst().orElse(null));
 	}
 
 	/*
@@ -169,7 +163,7 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 
 		verifyNoDuplicatedGraphProperties();
 		verifyDynamicAssociations();
-		verifyNoDuplicatedGraphProperties();
+		verifyDynamicLabels();
 	}
 
 	private void verifyNoDuplicatedGraphProperties() {
@@ -212,9 +206,27 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 		});
 	}
 
-	private void verifyOnlyOneDynamicLabelProperty() {
+	private void verifyDynamicLabels() {
 
+		Set<String> namesOfPropertiesWithDynamicLabels = new HashSet<>();
 
+		this.doWithProperties((PropertyHandler<Neo4jPersistentProperty>) persistentProperty -> {
+			if (!persistentProperty.isAnnotationPresent(DynamicLabels.class)) {
+				return;
+			}
+			String propertyName = persistentProperty.getPropertyName();
+			namesOfPropertiesWithDynamicLabels.add(propertyName);
+
+			Assert.state(persistentProperty.isCollectionLike() == true,
+				() -> String.format("Property %s on %s must extends %s.", persistentProperty.getFieldName(),
+					persistentProperty.getOwner().getType(), Collection.class.getName())
+			);
+		});
+
+		Assert.state(namesOfPropertiesWithDynamicLabels.size() <= 1, () ->
+			String.format(
+				"Multiple properties in entity %s are annotated with @%s: %s.", getUnderlyingClass(),
+				DynamicLabels.class.getSimpleName(), namesOfPropertiesWithDynamicLabels));
 	}
 
 	/**
