@@ -23,7 +23,6 @@ import java.util.Set;
 import org.neo4j.springframework.data.core.schema.GeneratedValue;
 import org.neo4j.springframework.data.core.schema.Id;
 import org.neo4j.springframework.data.core.schema.Node;
-import org.neo4j.springframework.data.core.schema.Relationship;
 import org.neo4j.springframework.data.core.schema.Wurstsalat;
 import org.springframework.data.annotation.Version;
 
@@ -33,14 +32,24 @@ import org.springframework.data.annotation.Version;
  */
 public class DynamicLabels {
 
+	/**
+	 * Used for testing whether related nodes store their dynamic labels.
+	 */
 	@Node
 	public static class SuperNode {
 
 		@Id @GeneratedValue public Long id;
 
 		public SimpleDynamicLabels relatedTo;
+
+		public SimpleDynamicLabels getRelatedTo() {
+			return relatedTo;
+		}
 	}
 
+	/**
+	 * Most simple version of a class with dynamic labels.
+	 */
 	@Node
 	public static class SimpleDynamicLabels {
 
@@ -48,8 +57,15 @@ public class DynamicLabels {
 
 		@Wurstsalat
 		public Set<String> moreLabels;
+
+		public Long getId() {
+			return id;
+		}
 	}
 
+	/**
+	 * Same as {@link SimpleDynamicLabels} but with an added version field.
+	 */
 	@Node
 	public static class SimpleDynamicLabelsWithVersion {
 
@@ -60,8 +76,15 @@ public class DynamicLabels {
 
 		@Wurstsalat
 		public Set<String> moreLabels;
+
+		public Long getId() {
+			return id;
+		}
 	}
 
+	/**
+	 * Dynamic labels with assigned ids.
+	 */
 	@Node
 	public static class SimpleDynamicLabelsWithBusinessId {
 
@@ -69,8 +92,15 @@ public class DynamicLabels {
 
 		@Wurstsalat
 		public Set<String> moreLabels;
+
+		public String getId() {
+			return id;
+		}
 	}
 
+	/**
+	 * Dynamic labels with assigned ids and version property.
+	 */
 	@Node
 	public static class SimpleDynamicLabelsWithBusinessIdAndVersion {
 
@@ -81,8 +111,15 @@ public class DynamicLabels {
 
 		@Wurstsalat
 		public Set<String> moreLabels;
+
+		public String getId() {
+			return id;
+		}
 	}
 
+	/**
+	 * Dynamic labels set via constructor argument.
+	 */
 	@Node
 	public static class SimpleDynamicLabelsCtor {
 
@@ -97,6 +134,9 @@ public class DynamicLabels {
 		}
 	}
 
+	/**
+	 * Dynamic labels together with on explicit label.
+	 */
 	@Node("Baz")
 	public static class DynamicLabelsWithNodeLabel {
 
@@ -106,6 +146,9 @@ public class DynamicLabels {
 		public Set<String> moreLabels;
 	}
 
+	/**
+	 * Dynamic labels together with multiple labels.
+	 */
 	@Node({ "Foo", "Bar" })
 	public static class DynamicLabelsWithMultipleNodeLabels {
 
@@ -116,7 +159,7 @@ public class DynamicLabels {
 	}
 
 	@Node
-	public static abstract class DynamicLabelsBaseClass {
+	static abstract class DynamicLabelsBaseClass {
 
 		@Id @GeneratedValue private Long id;
 
@@ -124,8 +167,10 @@ public class DynamicLabels {
 		public Set<String> moreLabels;
 	}
 
+	/**
+	 * Labels through inheritance plus dynamic labels
+	 */
 	@Node
 	public static class ExtendedBaseClass1 extends DynamicLabelsBaseClass {
 	}
-
 }

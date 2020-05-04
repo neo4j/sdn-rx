@@ -20,19 +20,23 @@ package org.neo4j.springframework.data.core;
 
 import static org.neo4j.springframework.data.core.schema.Constants.*;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.UnaryOperator;
 
-import org.apiguardian.api.API;
 import org.neo4j.springframework.data.core.cypher.Cypher;
 import org.neo4j.springframework.data.core.cypher.Node;
-import org.neo4j.springframework.data.core.cypher.StatementBuilder;
+import org.neo4j.springframework.data.core.cypher.StatementBuilder.OngoingMatchAndUpdate;
 
 /**
+ * Decorator for an ongoing update statement that removes obsolete dynamic labels and adds new ones.
+ *
  * @author Michael J. Simons
  */
-@API(status = API.Status.INTERNAL, since = "1.1")
-public final class DynamicLabels {
+final class DynamicLabels
+	implements UnaryOperator<OngoingMatchAndUpdate> {
 
 	public static final DynamicLabels EMPTY = new DynamicLabels(Collections.emptyList(), Collections.emptyList());
 
@@ -41,14 +45,15 @@ public final class DynamicLabels {
 	private final List<String> oldLabels;
 	private final List<String> newLabels;
 
-	DynamicLabels(List<String> oldLabels, List<String> newLabels) {
-		this.oldLabels = oldLabels;
-		this.newLabels = newLabels;
+	DynamicLabels(Collection<String> oldLabels, Collection<String> newLabels) {
+		this.oldLabels = new ArrayList<>(oldLabels);
+		this.newLabels = new ArrayList<>(newLabels);
 	}
 
-	public StatementBuilder.OngoingMatchAndUpdate applyTo(
-		StatementBuilder.OngoingMatchAndUpdate ongoingMatchAndUpdate) {
-		StatementBuilder.OngoingMatchAndUpdate decoratedMatchAndUpdate = ongoingMatchAndUpdate;
+	@Override
+	public OngoingMatchAndUpdate apply(OngoingMatchAndUpdate ongoingMatchAndUpdate) {
+
+		OngoingMatchAndUpdate decoratedMatchAndUpdate = ongoingMatchAndUpdate;
 		if (!oldLabels.isEmpty()) {
 			decoratedMatchAndUpdate = decoratedMatchAndUpdate.remove(rootNode, oldLabels.toArray(new String[0]));
 		}

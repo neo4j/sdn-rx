@@ -22,7 +22,6 @@ import static java.util.Collections.*;
 import static org.springframework.util.StringUtils.*;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -179,7 +178,7 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 		Set<String> duplicates = new HashSet<>();
 		this.doWithProperties((PropertyHandler<Neo4jPersistentProperty>) persistentProperty -> {
 			String propertyName = persistentProperty.getPropertyName();
-			if(seen.contains(propertyName)) {
+			if (seen.contains(propertyName)) {
 				duplicates.add(propertyName);
 			} else {
 				seen.add(propertyName);

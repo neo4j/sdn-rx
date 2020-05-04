@@ -42,7 +42,7 @@ public interface Neo4jPersistentEntity<T>
 	extends MutablePersistentEntity<T, Neo4jPersistentProperty>, NodeDescription<T> {
 
 	/**
-	 * @return An optional property pointing to a {@link java.util.Collection Collection<String>} containing dynamic "runtime managed" labels.
+	 * @return An optional property pointing to a {@link java.util.Collection Collection&lt;String&gt;} containing dynamic "runtime managed" labels.
 	 */
 	Optional<Neo4jPersistentProperty> getDynamicLabelsProperty();
 }

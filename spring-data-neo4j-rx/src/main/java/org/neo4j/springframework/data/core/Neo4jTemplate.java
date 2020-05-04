@@ -252,19 +252,12 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 	) {
 		return entityMetaData.getDynamicLabelsProperty().map(p -> {
 
-			List<String> labelsToRemove = new ArrayList<>();
-			List<String> labelsToSet = new ArrayList<>();
-
-			List<String> fixedLabels = new ArrayList<>();
-			fixedLabels.add(entityMetaData.getPrimaryLabel());
-			fixedLabels.addAll(entityMetaData.getAdditionalLabels());
-
 			PersistentPropertyAccessor propertyAccessor = entityMetaData.getPropertyAccessor(entityToBeSaved);
 			RunnableSpecTightToDatabase runnableQuery = neo4jClient
-				.query(() -> renderer.render(cypherGenerator.f(entityMetaData)))
+				.query(() -> renderer.render(cypherGenerator.createStatementReturningDynamicLabels(entityMetaData)))
 				.in(inDatabase)
 				.bind(propertyAccessor.getProperty(entityMetaData.getRequiredIdProperty())).to(NAME_OF_ID)
-				.bind(fixedLabels).to("fixedLabels");
+				.bind(entityMetaData.getStaticLabels()).to(NAME_OF_STATIC_LABELS_PARAM);
 
 			if (entityMetaData.hasVersionProperty()) {
 				runnableQuery = runnableQuery
@@ -272,11 +265,11 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 					.to(NAME_OF_VERSION_PARAM);
 			}
 
-			Optional<Map<String, Object>> dingens = runnableQuery.fetch().one();
-			dingens.ifPresent(m -> labelsToRemove.addAll((Collection<? extends String>) m.get("labels")));
-			labelsToSet.addAll((Collection<? extends String>) propertyAccessor.getProperty(p));
-
-			return new DynamicLabels(labelsToRemove, labelsToSet);
+			Optional<Map<String, Object>> optionalResult = runnableQuery.fetch().one();
+			return new DynamicLabels(
+				optionalResult.map(r -> (Collection<String>) r.get(NAME_OF_LABELS)).orElseGet(Collections::emptyList),
+				(Collection<String>) propertyAccessor.getProperty(p)
+			);
 		}).orElse(DynamicLabels.EMPTY);
 	}
 

@@ -22,7 +22,6 @@ import org.apiguardian.api.API;
 import org.neo4j.springframework.data.core.schema.GraphPropertyDescription;
 import org.neo4j.springframework.data.core.schema.RelationshipProperties;
 import org.neo4j.springframework.data.core.schema.Wurstsalat;
-import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.PersistentProperty;
 
 /**

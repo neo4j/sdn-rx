@@ -27,12 +27,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 import org.apiguardian.api.API;
-import org.neo4j.springframework.data.core.DynamicLabels;
 import org.neo4j.springframework.data.core.cypher.Node;
 import org.neo4j.springframework.data.core.cypher.Relationship;
 import org.neo4j.springframework.data.core.cypher.*;
+import org.neo4j.springframework.data.core.cypher.StatementBuilder.OngoingMatchAndUpdate;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentEntity;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentProperty;
 import org.springframework.data.mapping.MappingException;
@@ -103,7 +104,15 @@ public enum CypherGenerator {
 			.with(expressions.toArray(new Expression[] {}));
 	}
 
-	public Statement f(NodeDescription<?> nodeDescription) {
+	/**
+	 * Creates a statement that returns all labels of a node that are not part of a list parameter named {@link Constants#NAME_OF_STATIC_LABELS_PARAM}.
+	 * Those are the "dynamic labels" of a node as set through SDN/RX.
+	 *
+	 * @param nodeDescription The node description for which the statement should be generated
+	 * @return A statement having one parameter.
+	 * @since 1.1
+	 */
+	public Statement createStatementReturningDynamicLabels(NodeDescription<?> nodeDescription) {
 
 		final Node rootNode = anyNode(NAME_OF_ROOT_NODE);
 
@@ -120,8 +129,8 @@ public enum CypherGenerator {
 			.where(nodeDescription.getIdDescription().asIdExpression().isEqualTo(parameter(NAME_OF_ID)))
 			.and(versionCondition)
 			.unwind(rootNode.labels()).as("label")
-			.with(Cypher.name("label")).where(Cypher.name("label").in(parameter("fixedLabels")).not())
-			.returning(Functions.collect(Cypher.name("label")).as("labels")).build();
+			.with(Cypher.name("label")).where(Cypher.name("label").in(parameter(NAME_OF_STATIC_LABELS_PARAM)).not())
+			.returning(Functions.collect(Cypher.name("label")).as(NAME_OF_LABELS)).build();
 	}
 
 	public Statement prepareDeleteOf(NodeDescription<?> nodeDescription) {
@@ -135,7 +144,7 @@ public enum CypherGenerator {
 		return match(rootNode).where(conditionOrNoCondition(condition)).detachDelete(rootNode).build();
 	}
 
-	public Statement prepareSaveOf(NodeDescription<?> nodeDescription, DynamicLabels dynamicLabels) {
+	public Statement prepareSaveOf(NodeDescription<?> nodeDescription, UnaryOperator<OngoingMatchAndUpdate> updateDecorator) {
 
 		String primaryLabel = nodeDescription.getPrimaryLabel();
 		List<String> additionalLabels = nodeDescription.getAdditionalLabels();
@@ -155,7 +164,7 @@ public enum CypherGenerator {
 				String nameOfPossibleExistingNode = "hlp";
 				Node possibleExistingNode = node(primaryLabel, additionalLabels).named(nameOfPossibleExistingNode);
 
-				Statement createIfNew = dynamicLabels.applyTo(optionalMatch(possibleExistingNode)
+				Statement createIfNew = updateDecorator.apply(optionalMatch(possibleExistingNode)
 					.where(possibleExistingNode.property(nameOfIdProperty).isEqualTo(idParameter))
 					.with(possibleExistingNode).where(possibleExistingNode.isNull())
 					.create(rootNode)
@@ -163,7 +172,7 @@ public enum CypherGenerator {
 					.returning(rootNode.internalId())
 					.build();
 
-				Statement updateIfExists = dynamicLabels.applyTo(match(rootNode)
+				Statement updateIfExists = updateDecorator.apply(match(rootNode)
 					.where(rootNode.property(nameOfIdProperty).isEqualTo(idParameter))
 					.and(rootNode.property(versionProperty.getName()).isEqualTo(parameter(NAME_OF_VERSION_PARAM)))
 					.set(rootNode, parameter(NAME_OF_PROPERTIES_PARAM)))
@@ -172,7 +181,7 @@ public enum CypherGenerator {
 				return Cypher.union(createIfNew, updateIfExists);
 
 			} else {
-				return dynamicLabels.applyTo(
+				return updateDecorator.apply(
 					Cypher.merge(rootNode.properties(nameOfIdProperty, idParameter))
 						.set(rootNode, parameter(NAME_OF_PROPERTIES_PARAM))
 				).returning(rootNode.internalId()).build();
@@ -189,21 +198,21 @@ public enum CypherGenerator {
 				PersistentProperty versionProperty = ((Neo4jPersistentEntity) nodeDescription)
 					.getRequiredVersionProperty();
 
-				createIfNew = dynamicLabels.applyTo(optionalMatch(possibleExistingNode)
+				createIfNew = updateDecorator.apply(optionalMatch(possibleExistingNode)
 					.where(possibleExistingNode.internalId().isEqualTo(idParameter))
 					.with(possibleExistingNode).where(possibleExistingNode.isNull())
 					.create(rootNode)
 					.set(rootNode, parameter(NAME_OF_PROPERTIES_PARAM)))
 					.returning(rootNode.internalId()).build();
 
-				updateIfExists = dynamicLabels.applyTo(match(rootNode)
+				updateIfExists = updateDecorator.apply(match(rootNode)
 					.where(rootNode.internalId().isEqualTo(idParameter))
 					.and(rootNode.property(versionProperty.getName()).isEqualTo(parameter(NAME_OF_VERSION_PARAM)))
 					.set(rootNode, parameter(NAME_OF_PROPERTIES_PARAM)))
 					.returning(rootNode.internalId())
 					.build();
 			} else {
-				createIfNew = dynamicLabels.applyTo(optionalMatch(possibleExistingNode)
+				createIfNew = updateDecorator.apply(optionalMatch(possibleExistingNode)
 					.where(possibleExistingNode.internalId().isEqualTo(idParameter))
 					.with(possibleExistingNode).where(possibleExistingNode.isNull())
 					.create(rootNode)
@@ -211,7 +220,7 @@ public enum CypherGenerator {
 					.returning(rootNode.internalId())
 					.build();
 
-				updateIfExists = dynamicLabels.applyTo(match(rootNode)
+				updateIfExists = updateDecorator.apply(match(rootNode)
 					.where(rootNode.internalId().isEqualTo(idParameter))
 					.set(rootNode, parameter(NAME_OF_PROPERTIES_PARAM)))
 					.returning(rootNode.internalId()).build();
@@ -486,6 +495,4 @@ public enum CypherGenerator {
 	private static Condition conditionOrNoCondition(@Nullable Condition condition) {
 		return condition == null ? Conditions.noCondition() : condition;
 	}
-
 }
-

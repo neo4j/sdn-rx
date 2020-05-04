@@ -16,18 +16,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.springframework.data.integration.imperative;
+package org.neo4j.springframework.data.integration.reactive;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.neo4j.springframework.data.core.cypher.Conditions.not;
 import static org.neo4j.springframework.data.core.cypher.Conditions.*;
-import static org.neo4j.springframework.data.core.cypher.Cypher.*;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -38,9 +39,9 @@ import org.neo4j.driver.Driver;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Transaction;
-import org.neo4j.driver.Value;
-import org.neo4j.springframework.data.config.AbstractNeo4jConfig;
-import org.neo4j.springframework.data.core.Neo4jTemplate;
+import org.neo4j.driver.reactive.RxSession;
+import org.neo4j.springframework.data.config.AbstractReactiveNeo4jConfig;
+import org.neo4j.springframework.data.core.ReactiveNeo4jTemplate;
 import org.neo4j.springframework.data.core.cypher.Condition;
 import org.neo4j.springframework.data.core.cypher.Cypher;
 import org.neo4j.springframework.data.core.cypher.Node;
@@ -64,10 +65,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * @author Michael J. Simons
- * @soundtrack Samy Deluxe - Samy Deluxe
  */
 @ExtendWith(Neo4jExtension.class)
-public class DynamicLabelsIT {
+public class ReactiveDynamicLabelsIT {
 
 	protected static Neo4jExtension.Neo4jConnectionSupport neo4jConnectionSupport;
 
@@ -85,44 +85,55 @@ public class DynamicLabelsIT {
 		}
 
 		@Test
-		void shouldReadDynamicLabels(@Autowired Neo4jTemplate template) {
+		void shouldReadDynamicLabels(@Autowired ReactiveNeo4jTemplate template) {
 
-			Optional<SimpleDynamicLabels> optionalEntity = template
-				.findById(existingEntityId, SimpleDynamicLabels.class);
-			assertThat(optionalEntity).hasValueSatisfying(entity ->
-				assertThat(entity.moreLabels).containsExactlyInAnyOrder("Foo", "Bar", "Baz", "Foobar")
-			);
+			template
+				.findById(existingEntityId, SimpleDynamicLabels.class)
+				.flatMapMany(entity -> Flux.fromIterable(entity.moreLabels))
+				.sort()
+				.as(StepVerifier::create)
+				.expectNext("Bar", "Baz", "Foo", "Foobar")
+				.verifyComplete();
 		}
 
 		@Test
-		void shouldUpdateDynamicLabels(@Autowired Neo4jTemplate template) {
+		void shouldUpdateDynamicLabels(@Autowired ReactiveNeo4jTemplate template) {
 
-			SimpleDynamicLabels entity = template
-				.findById(existingEntityId, SimpleDynamicLabels.class).get();
-			entity.moreLabels.remove("Foo");
-			entity.moreLabels.add("Fizz");
-			template.save(entity);
-
-			List<String> labels = getLabels(existingEntityId);
-			assertThat(labels).containsExactlyInAnyOrder("SimpleDynamicLabels", "Fizz", "Bar", "Baz", "Foobar");
+			template
+				.findById(existingEntityId, SimpleDynamicLabels.class)
+				.flatMap(entity -> {
+					entity.moreLabels.remove("Foo");
+					entity.moreLabels.add("Fizz");
+					return template.save(entity);
+				})
+				.thenMany(getLabels(existingEntityId))
+				.sort()
+				.as(StepVerifier::create)
+				.expectNext("Bar", "Baz", "Fizz", "Foobar", "SimpleDynamicLabels")
+				.verifyComplete();
 		}
 
 		@Test
-		void shouldWriteDynamicLabels(@Autowired Neo4jTemplate template) {
+		void shouldWriteDynamicLabels(@Autowired ReactiveNeo4jTemplate template) {
 
 			SimpleDynamicLabels entity = new SimpleDynamicLabels();
 			entity.moreLabels = new HashSet<>();
 			entity.moreLabels.add("A");
 			entity.moreLabels.add("B");
 			entity.moreLabels.add("C");
-			long id = template.save(entity).id;
 
-			List<String> labels = getLabels(id);
-			assertThat(labels).containsExactlyInAnyOrder("SimpleDynamicLabels", "A", "B", "C");
+			template
+				.save(entity)
+				.map(SimpleDynamicLabels::getId)
+				.flatMapMany(this::getLabels)
+				.sort()
+				.as(StepVerifier::create)
+				.expectNext("A", "B", "C", "SimpleDynamicLabels")
+				.verifyComplete();
 		}
 
 		@Test
-		void shouldWriteDynamicLabelsFromRelatedNodes(@Autowired Neo4jTemplate template) {
+		void shouldWriteDynamicLabelsFromRelatedNodes(@Autowired ReactiveNeo4jTemplate template) {
 
 			SimpleDynamicLabels entity = new SimpleDynamicLabels();
 			entity.moreLabels = new HashSet<>();
@@ -131,9 +142,16 @@ public class DynamicLabelsIT {
 			entity.moreLabels.add("C");
 			SuperNode superNode = new SuperNode();
 			superNode.relatedTo = entity;
-			long id = template.save(superNode).relatedTo.id;
-			List<String> labels = getLabels(id);
-			assertThat(labels).containsExactlyInAnyOrder("SimpleDynamicLabels", "A", "B", "C");
+
+			template
+				.save(superNode)
+				.map(SuperNode::getRelatedTo)
+				.map(SimpleDynamicLabels::getId)
+				.flatMapMany(this::getLabels)
+				.sort()
+				.as(StepVerifier::create)
+				.expectNext("A", "B", "C", "SimpleDynamicLabels")
+				.verifyComplete();
 		}
 	}
 
@@ -151,20 +169,24 @@ public class DynamicLabelsIT {
 		}
 
 		@Test
-		void shouldUpdateDynamicLabels(@Autowired Neo4jTemplate template) {
+		void shouldUpdateDynamicLabels(@Autowired ReactiveNeo4jTemplate template) {
 
-			SimpleDynamicLabelsWithBusinessId entity = template
-				.findById("E1", SimpleDynamicLabelsWithBusinessId.class).get();
-			entity.moreLabels.remove("Foo");
-			entity.moreLabels.add("Fizz");
-			template.save(entity);
-			List<String> labels = getLabels(existingEntityId);
-			assertThat(labels)
-				.containsExactlyInAnyOrder("SimpleDynamicLabelsWithBusinessId", "Fizz", "Bar", "Baz", "Foobar");
+			template
+				.findById("E1", SimpleDynamicLabelsWithBusinessId.class)
+				.flatMap(entity -> {
+					entity.moreLabels.remove("Foo");
+					entity.moreLabels.add("Fizz");
+					return template.save(entity);
+				})
+				.thenMany(getLabels(existingEntityId))
+				.sort()
+				.as(StepVerifier::create)
+				.expectNext("Bar", "Baz", "Fizz", "Foobar", "SimpleDynamicLabelsWithBusinessId")
+				.verifyComplete();
 		}
 
 		@Test
-		void shouldWriteDynamicLabels(@Autowired Neo4jTemplate template) {
+		void shouldWriteDynamicLabels(@Autowired ReactiveNeo4jTemplate template) {
 
 			SimpleDynamicLabelsWithBusinessId entity = new SimpleDynamicLabelsWithBusinessId();
 			entity.id = UUID.randomUUID().toString();
@@ -172,9 +194,15 @@ public class DynamicLabelsIT {
 			entity.moreLabels.add("A");
 			entity.moreLabels.add("B");
 			entity.moreLabels.add("C");
-			template.save(entity);
-			List<String> labels = getLabels(Cypher.anyNode("n").property("id").isEqualTo(parameter("id")), entity.id);
-			assertThat(labels).containsExactlyInAnyOrder("SimpleDynamicLabelsWithBusinessId", "A", "B", "C");
+
+			template
+				.save(entity)
+				.map(SimpleDynamicLabelsWithBusinessId::getId)
+				.flatMapMany(id -> getLabels(Cypher.anyNode("n").property("id").isEqualTo(Cypher.parameter("id")), id))
+				.sort()
+				.as(StepVerifier::create)
+				.expectNext("A", "B", "C", "SimpleDynamicLabelsWithBusinessId")
+				.verifyComplete();
 		}
 	}
 
@@ -192,33 +220,41 @@ public class DynamicLabelsIT {
 		}
 
 		@Test
-		void shouldUpdateDynamicLabels(@Autowired Neo4jTemplate template) {
+		void shouldUpdateDynamicLabels(@Autowired ReactiveNeo4jTemplate template) {
 
-			SimpleDynamicLabelsWithVersion entity = template
-				.findById(existingEntityId, SimpleDynamicLabelsWithVersion.class).get();
-			entity.moreLabels.remove("Foo");
-			entity.moreLabels.add("Fizz");
-			entity = template.save(entity);
-
-			assertThat(entity.myVersion).isNotNull().isEqualTo(1);
-			List<String> labels = getLabels(existingEntityId);
-			assertThat(labels)
-				.containsExactlyInAnyOrder("SimpleDynamicLabelsWithVersion", "Fizz", "Bar", "Baz", "Foobar");
+			template
+				.findById(existingEntityId, SimpleDynamicLabelsWithVersion.class)
+				.flatMap(entity -> {
+					entity.moreLabels.remove("Foo");
+					entity.moreLabels.add("Fizz");
+					return template.save(entity);
+				})
+				.doOnNext(e -> assertThat(e.myVersion).isNotNull().isEqualTo(1))
+				.thenMany(getLabels(existingEntityId))
+				.sort()
+				.as(StepVerifier::create)
+				.expectNext("Bar", "Baz", "Fizz", "Foobar", "SimpleDynamicLabelsWithVersion")
+				.verifyComplete();
 		}
 
 		@Test
-		void shouldWriteDynamicLabels(@Autowired Neo4jTemplate template) {
+		void shouldWriteDynamicLabels(@Autowired ReactiveNeo4jTemplate template) {
 
 			SimpleDynamicLabelsWithVersion entity = new SimpleDynamicLabelsWithVersion();
 			entity.moreLabels = new HashSet<>();
 			entity.moreLabels.add("A");
 			entity.moreLabels.add("B");
 			entity.moreLabels.add("C");
-			entity = template.save(entity);
 
-			assertThat(entity.myVersion).isNotNull().isEqualTo(0);
-			List<String> labels = getLabels(entity.id);
-			assertThat(labels).containsExactlyInAnyOrder("SimpleDynamicLabelsWithVersion", "A", "B", "C");
+			template
+				.save(entity)
+				.doOnNext(e -> assertThat(e.myVersion).isNotNull().isEqualTo(0))
+				.map(SimpleDynamicLabelsWithVersion::getId)
+				.flatMapMany(this::getLabels)
+				.sort()
+				.as(StepVerifier::create)
+				.expectNext("A", "B", "C", "SimpleDynamicLabelsWithVersion")
+				.verifyComplete();
 		}
 	}
 
@@ -236,22 +272,26 @@ public class DynamicLabelsIT {
 		}
 
 		@Test
-		void shouldUpdateDynamicLabels(@Autowired Neo4jTemplate template) {
+		void shouldUpdateDynamicLabels(@Autowired ReactiveNeo4jTemplate template) {
 
-			SimpleDynamicLabelsWithBusinessIdAndVersion entity = template
-				.findById("E2", SimpleDynamicLabelsWithBusinessIdAndVersion.class).get();
-			entity.moreLabels.remove("Foo");
-			entity.moreLabels.add("Fizz");
-			entity = template.save(entity);
-			assertThat(entity.myVersion).isNotNull().isEqualTo(1);
-			List<String> labels = getLabels(existingEntityId);
-			assertThat(labels)
-				.containsExactlyInAnyOrder("SimpleDynamicLabelsWithBusinessIdAndVersion", "Fizz", "Bar", "Baz",
-					"Foobar");
+			template
+				.findById("E2", SimpleDynamicLabelsWithBusinessIdAndVersion.class)
+				.flatMap(entity -> {
+					entity.moreLabels.remove("Foo");
+					entity.moreLabels.add("Fizz");
+					return template.save(entity);
+				})
+				.doOnNext(e -> assertThat(e.myVersion).isNotNull().isEqualTo(1))
+				.map(SimpleDynamicLabelsWithBusinessIdAndVersion::getId)
+				.flatMapMany(id -> getLabels(Cypher.anyNode("n").property("id").isEqualTo(Cypher.parameter("id")), id))
+				.sort()
+				.as(StepVerifier::create)
+				.expectNext("Bar", "Baz", "Fizz", "Foobar", "SimpleDynamicLabelsWithBusinessIdAndVersion")
+				.verifyComplete();
 		}
 
 		@Test
-		void shouldWriteDynamicLabels(@Autowired Neo4jTemplate template) {
+		void shouldWriteDynamicLabels(@Autowired ReactiveNeo4jTemplate template) {
 
 			SimpleDynamicLabelsWithBusinessIdAndVersion entity = new SimpleDynamicLabelsWithBusinessIdAndVersion();
 			entity.id = UUID.randomUUID().toString();
@@ -259,11 +299,16 @@ public class DynamicLabelsIT {
 			entity.moreLabels.add("A");
 			entity.moreLabels.add("B");
 			entity.moreLabels.add("C");
-			entity = template.save(entity);
-			assertThat(entity.myVersion).isNotNull().isEqualTo(0);
 
-			List<String> labels = getLabels(Cypher.anyNode("n").property("id").isEqualTo(parameter("id")), entity.id);
-			assertThat(labels).containsExactlyInAnyOrder("SimpleDynamicLabelsWithBusinessIdAndVersion", "A", "B", "C");
+			template
+				.save(entity)
+				.doOnNext(e -> assertThat(e.myVersion).isNotNull().isEqualTo(0))
+				.map(SimpleDynamicLabelsWithBusinessIdAndVersion::getId)
+				.flatMapMany(id -> getLabels(Cypher.anyNode("n").property("id").isEqualTo(Cypher.parameter("id")), id))
+				.sort()
+				.as(StepVerifier::create)
+				.expectNext("A", "B", "C", "SimpleDynamicLabelsWithBusinessIdAndVersion")
+				.verifyComplete();
 		}
 	}
 
@@ -281,13 +326,14 @@ public class DynamicLabelsIT {
 		}
 
 		@Test
-		void shouldReadDynamicLabels(@Autowired Neo4jTemplate template) {
+		void shouldReadDynamicLabels(@Autowired ReactiveNeo4jTemplate template) {
 
-			Optional<SimpleDynamicLabelsCtor> optionalEntity = template
-				.findById(existingEntityId, SimpleDynamicLabelsCtor.class);
-			assertThat(optionalEntity).hasValueSatisfying(entity ->
-				assertThat(entity.moreLabels).containsExactlyInAnyOrder("Foo", "Bar", "Baz", "Foobar")
-			);
+			template
+				.findById(existingEntityId, SimpleDynamicLabelsCtor.class)
+				.flatMapMany(entity -> Flux.fromIterable(entity.moreLabels))
+				.sort()
+				.as(StepVerifier::create)
+				.expectNext("Bar", "Baz", "Foo", "Foobar");
 		}
 	}
 
@@ -305,24 +351,26 @@ public class DynamicLabelsIT {
 		}
 
 		@Test
-		void shouldReadDynamicLabelsOnClassWithSingleNodeLabel(@Autowired Neo4jTemplate template) {
-			Optional<DynamicLabelsWithNodeLabel> optionalEntity = template
-				.findById(existingEntityId, DynamicLabelsWithNodeLabel.class);
-			assertThat(optionalEntity).hasValueSatisfying(entity ->
-				assertThat(entity.moreLabels).containsExactlyInAnyOrder("SimpleDynamicLabels", "Foo", "Bar", "Foobar")
-			);
+		void shouldReadDynamicLabelsOnClassWithSingleNodeLabel(@Autowired ReactiveNeo4jTemplate template) {
+
+			template
+				.findById(existingEntityId, DynamicLabelsWithNodeLabel.class)
+				.flatMapMany(entity -> Flux.fromIterable(entity.moreLabels))
+				.sort()
+				.as(StepVerifier::create)
+				.expectNext("Bar", "Foo", "Foobar", "SimpleDynamicLabels");
 		}
 
 		@Test
-		void shouldReadDynamicLabelsOnClassWithMultipleNodeLabel(@Autowired Neo4jTemplate template) {
+		void shouldReadDynamicLabelsOnClassWithMultipleNodeLabel(@Autowired ReactiveNeo4jTemplate template) {
 
-			Optional<DynamicLabelsWithMultipleNodeLabels> optionalEntity = template
-				.findById(existingEntityId, DynamicLabelsWithMultipleNodeLabels.class);
-			assertThat(optionalEntity).hasValueSatisfying(entity ->
-				assertThat(entity.moreLabels).containsExactlyInAnyOrder("SimpleDynamicLabels", "Baz", "Foobar")
-			);
+			template
+				.findById(existingEntityId, DynamicLabelsWithMultipleNodeLabels.class)
+				.flatMapMany(entity -> Flux.fromIterable(entity.moreLabels))
+				.sort()
+				.as(StepVerifier::create)
+				.expectNext("Baz", "Foobar", "SimpleDynamicLabels");
 		}
-
 	}
 
 	@Nested
@@ -339,13 +387,14 @@ public class DynamicLabelsIT {
 		}
 
 		@Test
-		void shouldReadDynamicLabelsInInheritance(@Autowired Neo4jTemplate template) {
+		void shouldReadDynamicLabelsInInheritance(@Autowired ReactiveNeo4jTemplate template) {
 
-			Optional<ExtendedBaseClass1> optionalEntity = template
-				.findById(existingEntityId, ExtendedBaseClass1.class);
-			assertThat(optionalEntity).hasValueSatisfying(entity ->
-				assertThat(entity.moreLabels).containsExactlyInAnyOrder("D1", "D2", "D3")
-			);
+			template
+				.findById(existingEntityId, ExtendedBaseClass1.class)
+				.flatMapMany(entity -> Flux.fromIterable(entity.moreLabels))
+				.sort()
+				.as(StepVerifier::create)
+				.expectNext("D1", "D2", "D3");
 		}
 	}
 
@@ -368,33 +417,29 @@ public class DynamicLabelsIT {
 			}
 		}
 
-		protected final List<String> getLabels(Long id) {
-			return getLabels(Cypher.anyNode().named("n").internalId().isEqualTo(parameter("id")), id);
+		protected final Flux<String> getLabels(Long id) {
+			return getLabels(Cypher.anyNode().named("n").internalId().isEqualTo(Cypher.parameter("id")), id);
 		}
 
-		protected final List<String> getLabels(Condition idCondition, Object id) {
+		protected final Flux<String> getLabels(Condition idCondition, Object id) {
 
 			Node n = Cypher.anyNode("n");
 			String cypher = Renderer.getDefaultRenderer().render(Cypher
 				.match(n)
-				.where(idCondition).and(not(exists(n.property("moreLabels"))))
-				.returning(n.labels().as("labels"))
-				.build()
+				.where(idCondition).and(not(exists(n.property("moreLabels")))).unwind(n.labels()).as("label")
+				.returning("label").build()
 			);
 
-			try (Session session = driver.session()) {
-				return session
-					.readTransaction(tx -> tx
-						.run(cypher, Collections.singletonMap("id", id))
-						.single().get("labels")
-						.asList(Value::asString)
-					);
-			}
+			return Flux.usingWhen(
+				Mono.fromSupplier(() -> driver.rxSession()),
+				s -> s.run(cypher, Collections.singletonMap("id", id)).records(),
+				RxSession::close
+			).map(r -> r.get("label").asString());
 		}
 
 		@Configuration
 		@EnableTransactionManagement
-		static class Config extends AbstractNeo4jConfig {
+		static class Config extends AbstractReactiveNeo4jConfig {
 
 			@Bean
 			public Driver driver() {
