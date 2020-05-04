@@ -217,7 +217,7 @@ class DefaultNeo4jPersistentEntity<T> extends BasicPersistentEntity<T, Neo4jPers
 			String propertyName = persistentProperty.getPropertyName();
 			namesOfPropertiesWithDynamicLabels.add(propertyName);
 
-			Assert.state(persistentProperty.isCollectionLike() == true,
+			Assert.state(persistentProperty.isCollectionLike(),
 				() -> String.format("Property %s on %s must extends %s.", persistentProperty.getFieldName(),
 					persistentProperty.getOwner().getType(), Collection.class.getName())
 			);
