@@ -45,7 +45,7 @@ import org.neo4j.springframework.data.core.cypher.Condition;
 import org.neo4j.springframework.data.core.cypher.Cypher;
 import org.neo4j.springframework.data.core.cypher.Node;
 import org.neo4j.springframework.data.core.cypher.renderer.Renderer;
-import org.neo4j.springframework.data.integration.shared.DynamicLabels.*;
+import org.neo4j.springframework.data.integration.shared.EntitiesWithDynamicLabels.*;
 import org.neo4j.springframework.data.test.Neo4jExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;

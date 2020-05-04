@@ -33,7 +33,7 @@ import org.apiguardian.api.API;
  * loading the entity and all values contained in the collection will be added to the nodes labels.
  * <p>
  * Labels not defined through the class hierarchy or the list of dynamic labels will be removed from the database
- * when {@link DynamicLabels @Wurstsalat} is used.
+ * when {@link DynamicLabels @DynamicLabels} is used.
  *
  * @author Michael J. Simons
  * @soundtrack Danger Dan - Nudeln und Klopapier

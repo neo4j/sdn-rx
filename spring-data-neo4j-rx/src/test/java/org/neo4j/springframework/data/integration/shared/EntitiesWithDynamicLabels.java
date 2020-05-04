@@ -20,6 +20,7 @@ package org.neo4j.springframework.data.integration.shared;
 
 import java.util.Set;
 
+import org.neo4j.springframework.data.core.schema.DynamicLabels;
 import org.neo4j.springframework.data.core.schema.GeneratedValue;
 import org.neo4j.springframework.data.core.schema.Id;
 import org.neo4j.springframework.data.core.schema.Node;
@@ -29,7 +30,7 @@ import org.springframework.data.annotation.Version;
  * @author Michael J. Simons
  * @soundtrack Samy Deluxe - Samy Deluxe
  */
-public class DynamicLabels {
+public final class EntitiesWithDynamicLabels {
 
 	/**
 	 * Used for testing whether related nodes store their dynamic labels.
@@ -54,7 +55,7 @@ public class DynamicLabels {
 
 		@Id @GeneratedValue public Long id;
 
-		@org.neo4j.springframework.data.core.schema.DynamicLabels
+		@DynamicLabels
 		public Set<String> moreLabels;
 
 		public Long getId() {
@@ -80,7 +81,7 @@ public class DynamicLabels {
 		@Version
 		public Long myVersion;
 
-		@org.neo4j.springframework.data.core.schema.DynamicLabels
+		@DynamicLabels
 		public Set<String> moreLabels;
 
 		public Long getId() {
@@ -96,7 +97,7 @@ public class DynamicLabels {
 
 		@Id public String id;
 
-		@org.neo4j.springframework.data.core.schema.DynamicLabels
+		@DynamicLabels
 		public Set<String> moreLabels;
 
 		public String getId() {
@@ -115,7 +116,7 @@ public class DynamicLabels {
 		@Version
 		public Long myVersion;
 
-		@org.neo4j.springframework.data.core.schema.DynamicLabels
+		@DynamicLabels
 		public Set<String> moreLabels;
 
 		public String getId() {
@@ -131,7 +132,7 @@ public class DynamicLabels {
 
 		@Id @GeneratedValue private final Long id;
 
-		@org.neo4j.springframework.data.core.schema.DynamicLabels
+		@DynamicLabels
 		public final Set<String> moreLabels;
 
 		public SimpleDynamicLabelsCtor(Long id, Set<String> moreLabels) {
@@ -148,7 +149,7 @@ public class DynamicLabels {
 
 		@Id @GeneratedValue private Long id;
 
-		@org.neo4j.springframework.data.core.schema.DynamicLabels
+		@DynamicLabels
 		public Set<String> moreLabels;
 	}
 
@@ -160,7 +161,7 @@ public class DynamicLabels {
 
 		@Id @GeneratedValue private Long id;
 
-		@org.neo4j.springframework.data.core.schema.DynamicLabels
+		@DynamicLabels
 		public Set<String> moreLabels;
 	}
 
@@ -176,7 +177,10 @@ public class DynamicLabels {
 	@Node
 	public static class ExtendedBaseClass1 extends DynamicLabelsBaseClass {
 
-		@org.neo4j.springframework.data.core.schema.DynamicLabels
+		@DynamicLabels
 		public Set<String> moreLabels;
+	}
+
+	private EntitiesWithDynamicLabels() {
 	}
 }
