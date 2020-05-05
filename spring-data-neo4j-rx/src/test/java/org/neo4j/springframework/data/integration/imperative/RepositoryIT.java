@@ -2715,11 +2715,6 @@ class RepositoryIT {
 		}
 
 		@Override
-		protected Collection<String> getMappingBasePackages() {
-			return singletonList(PersonWithAllConstructor.class.getPackage().getName());
-		}
-
-		@Override
 		public Neo4jConversions neo4jConversions() {
 			Set<GenericConverter> additionalConverters = new HashSet<>();
 			additionalConverters.add(new ThingWithCustomTypes.CustomTypeConverter());

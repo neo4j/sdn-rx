@@ -31,7 +31,6 @@ import reactor.test.StepVerifier;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -2071,11 +2070,6 @@ class ReactiveRepositoryIT {
 		@Bean
 		public Driver driver() {
 			return neo4jConnectionSupport.getDriver();
-		}
-
-		@Override
-		protected Collection<String> getMappingBasePackages() {
-			return Collections.singletonList(PersonWithAllConstructor.class.getPackage().getName());
 		}
 
 		@Override
