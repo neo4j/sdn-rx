@@ -19,20 +19,21 @@
 package org.neo4j.springframework.data.integration.reactive;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.neo4j.springframework.data.core.cypher.Conditions.not;
 import static org.neo4j.springframework.data.core.cypher.Conditions.*;
+import static org.neo4j.springframework.data.core.cypher.Conditions.not;
+import static org.neo4j.springframework.data.test.Neo4jExtension.*;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.neo4j.driver.Driver;
@@ -58,6 +59,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 /**
  * @author Michael J. Simons
  */
+@Tag(NEEDS_REACTIVE_SUPPORT)
 @ExtendWith(Neo4jExtension.class)
 public class ReactiveDynamicLabelsIT {
 
@@ -500,10 +502,6 @@ public class ReactiveDynamicLabelsIT {
 				return neo4jConnectionSupport.getDriver();
 			}
 
-			@Override
-			protected Collection<String> getMappingBasePackages() {
-				return Collections.singletonList("org.neo4j.springframework.data.integration.shared.f");
-			}
 		}
 	}
 

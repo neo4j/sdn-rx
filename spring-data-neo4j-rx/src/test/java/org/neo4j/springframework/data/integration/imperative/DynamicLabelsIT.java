@@ -19,11 +19,10 @@
 package org.neo4j.springframework.data.integration.imperative;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.neo4j.springframework.data.core.cypher.Conditions.not;
 import static org.neo4j.springframework.data.core.cypher.Conditions.*;
+import static org.neo4j.springframework.data.core.cypher.Conditions.not;
 import static org.neo4j.springframework.data.core.cypher.Cypher.*;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -445,10 +444,6 @@ public class DynamicLabelsIT {
 				return neo4jConnectionSupport.getDriver();
 			}
 
-			@Override
-			protected Collection<String> getMappingBasePackages() {
-				return Collections.singletonList("org.neo4j.springframework.data.integration.shared.f");
-			}
 		}
 	}
 
