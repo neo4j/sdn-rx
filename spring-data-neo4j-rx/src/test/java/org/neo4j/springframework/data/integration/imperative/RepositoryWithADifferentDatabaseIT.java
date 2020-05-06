@@ -26,11 +26,13 @@ import org.junit.jupiter.api.Tag;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
+import org.neo4j.springframework.data.config.AbstractNeo4jConfig;
 import org.neo4j.springframework.data.core.DatabaseSelection;
 import org.neo4j.springframework.data.core.DatabaseSelectionProvider;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.neo4j.springframework.data.test.Neo4jExtension;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * @author Michael J. Simons
@@ -39,11 +41,9 @@ import org.springframework.context.annotation.Configuration;
 @Tag(REQUIRES + "4.0.0")
 class RepositoryWithADifferentDatabaseIT extends RepositoryIT {
 
-	private static final String TEST_DATABASE_NAME = "aTestDatabase";
+	protected static Neo4jExtension.Neo4jConnectionSupport neo4jConnectionSupport;
 
-	@Autowired RepositoryWithADifferentDatabaseIT(Driver driver) {
-		super(driver);
-	}
+	private static final String TEST_DATABASE_NAME = "aTestDatabase";
 
 	@BeforeAll
 	static void createTestDatabase() {
@@ -63,14 +63,14 @@ class RepositoryWithADifferentDatabaseIT extends RepositoryIT {
 		}
 	}
 
-	@Override
-	SessionConfig getSessionConfig() {
-
-		return SessionConfig.forDatabase(TEST_DATABASE_NAME);
-	}
-
 	@Configuration
-	static class ConfigWithDatabaseNameProviderBean extends RepositoryIT.Config {
+	@EnableTransactionManagement
+	static class ConfigWithDatabaseNameProviderBean extends AbstractNeo4jConfig {
+
+		@Override
+		public Driver driver() {
+			return neo4jConnectionSupport.getDriver();
+		}
 
 		@Bean
 		DatabaseSelectionProvider databaseNameProvider() {
