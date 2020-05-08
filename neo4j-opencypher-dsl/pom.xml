@@ -27,6 +27,7 @@
 		<version>${revision}${sha1}${changelist}</version>
 	</parent>
 
+	<groupId>org.neo4j</groupId>
 	<artifactId>neo4j-opencypher-dsl</artifactId>
 
 	<name>openCypher DSL</name>
