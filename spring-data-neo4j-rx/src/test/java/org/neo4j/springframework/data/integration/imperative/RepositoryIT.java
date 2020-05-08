@@ -80,6 +80,7 @@ import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Metrics;
 import org.springframework.data.geo.Polygon;
 import org.springframework.data.repository.query.Param;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -91,6 +92,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * @author Philipp Tölle
  */
 @ExtendWith(Neo4jExtension.class)
+@DirtiesContext
 class RepositoryIT {
 
 	protected static Neo4jExtension.Neo4jConnectionSupport neo4jConnectionSupport;
