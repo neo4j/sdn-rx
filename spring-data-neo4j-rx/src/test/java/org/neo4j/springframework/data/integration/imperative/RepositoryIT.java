@@ -92,7 +92,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * @author Philipp Tölle
  */
 @ExtendWith(Neo4jExtension.class)
-@DirtiesContext
 class RepositoryIT {
 
 	protected static Neo4jExtension.Neo4jConnectionSupport neo4jConnectionSupport;
@@ -2889,6 +2888,7 @@ class RepositoryIT {
 	}
 
 	@ExtendWith(SpringExtension.class)
+	@DirtiesContext
 	@ContextConfiguration(classes = Config.class)
 	abstract static class IntegrationTestBase {
 
