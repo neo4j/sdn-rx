@@ -23,16 +23,9 @@ import static org.neo4j.springframework.data.test.Neo4jExtension.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
-import org.neo4j.springframework.data.config.AbstractNeo4jConfig;
 import org.neo4j.springframework.data.core.DatabaseSelection;
-import org.neo4j.springframework.data.core.DatabaseSelectionProvider;
-import org.neo4j.springframework.data.test.Neo4jExtension;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  * @author Michael J. Simons
@@ -41,9 +34,11 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Tag(REQUIRES + "4.0.0")
 class RepositoryWithADifferentDatabaseIT extends RepositoryIT {
 
-	protected static Neo4jExtension.Neo4jConnectionSupport neo4jConnectionSupport;
-
 	private static final String TEST_DATABASE_NAME = "aTestDatabase";
+
+	static {
+		databaseSelection = DatabaseSelection.byName(TEST_DATABASE_NAME);
+	}
 
 	@BeforeAll
 	static void createTestDatabase() {
@@ -62,20 +57,4 @@ class RepositoryWithADifferentDatabaseIT extends RepositoryIT {
 			session.run("DROP DATABASE " + TEST_DATABASE_NAME).consume();
 		}
 	}
-
-	@Configuration
-	@EnableTransactionManagement
-	static class ConfigWithDatabaseNameProviderBean extends AbstractNeo4jConfig {
-
-		@Override
-		public Driver driver() {
-			return neo4jConnectionSupport.getDriver();
-		}
-
-		@Bean
-		DatabaseSelectionProvider databaseNameProvider() {
-			return () -> DatabaseSelection.byName("aTestDatabase");
-		}
-	}
-
 }

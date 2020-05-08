@@ -48,6 +48,8 @@ import org.neo4j.driver.types.Node;
 import org.neo4j.driver.types.Point;
 import org.neo4j.driver.types.Relationship;
 import org.neo4j.springframework.data.config.AbstractNeo4jConfig;
+import org.neo4j.springframework.data.core.DatabaseSelection;
+import org.neo4j.springframework.data.core.DatabaseSelectionProvider;
 import org.neo4j.springframework.data.core.convert.Neo4jConversions;
 import org.neo4j.springframework.data.integration.imperative.repositories.PersonRepository;
 import org.neo4j.springframework.data.integration.imperative.repositories.ThingRepository;
@@ -92,6 +94,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 class RepositoryIT {
 
 	protected static Neo4jExtension.Neo4jConnectionSupport neo4jConnectionSupport;
+	protected static DatabaseSelection databaseSelection = DatabaseSelection.undecided();
 
 	private static final String TEST_PERSON1_NAME = "Test";
 	private static final String TEST_PERSON2_NAME = "Test2";
@@ -2906,7 +2909,8 @@ class RepositoryIT {
 		}
 
 		Session createSession() {
-			return driver.session(SessionConfig.defaultConfig());
+			return driver.session(Optional.ofNullable(databaseSelection.getValue())
+				.map(SessionConfig::forDatabase).orElseGet(SessionConfig::defaultConfig));
 		}
 
 	}
@@ -2934,7 +2938,10 @@ class RepositoryIT {
 		protected Collection<String> getMappingBasePackages() {
 			return singletonList(PersonWithAllConstructor.class.getPackage().getName());
 		}
+
+		@Bean
+		public DatabaseSelectionProvider databaseNameProvider() {
+			return () -> databaseSelection;
+		}
 	}
-
-
 }
