@@ -2922,7 +2922,7 @@ class RepositoryIT {
 	@EnableTransactionManagement
 	static class Config extends AbstractNeo4jConfig {
 
-		@Bean
+		@Bean(destroyMethod = "")
 		public Driver driver() {
 			return neo4jConnectionSupport.getDriver();
 		}
