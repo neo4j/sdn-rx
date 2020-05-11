@@ -36,7 +36,7 @@ class RepositoryWithADifferentDatabaseIT extends RepositoryIT {
 
 	private static final String TEST_DATABASE_NAME = "aTestDatabase";
 
-	static {
+	RepositoryWithADifferentDatabaseIT() {
 		databaseSelection = DatabaseSelection.byName(TEST_DATABASE_NAME);
 	}
 

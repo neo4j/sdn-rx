@@ -35,6 +35,7 @@ import org.assertj.core.data.MapEntry;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.neo4j.driver.Driver;
@@ -111,6 +112,10 @@ class RepositoryIT {
 
 	static PersonWithAllConstructor personExample(String sameValue) {
 		return new PersonWithAllConstructor(null, null, null, sameValue, null, null, null, null, null, null, null);
+	}
+
+	RepositoryIT() {
+		databaseSelection = DatabaseSelection.undecided();
 	}
 
 	Long id1;
