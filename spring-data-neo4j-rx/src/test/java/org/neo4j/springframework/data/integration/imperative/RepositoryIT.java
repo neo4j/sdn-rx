@@ -81,8 +81,7 @@ import org.springframework.data.geo.Metrics;
 import org.springframework.data.geo.Polygon;
 import org.springframework.data.repository.query.Param;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
@@ -92,6 +91,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * @author Philipp Tölle
  */
 @ExtendWith(Neo4jExtension.class)
+@SpringJUnitConfig
+@DirtiesContext
 class RepositoryIT {
 
 	protected static Neo4jExtension.Neo4jConnectionSupport neo4jConnectionSupport;
@@ -2891,10 +2892,8 @@ class RepositoryIT {
 		ThingWithCustomTypes findByCustomTypeSpELObjectQuery(@Param("customType") ThingWithCustomTypes.CustomType customType);
 	}
 
-	@ExtendWith(SpringExtension.class)
-	@DirtiesContext
-	@ContextConfiguration(classes = Config.class)
-	abstract static class IntegrationTestBase {
+	@SpringJUnitConfig(Config.class)
+	static class IntegrationTestBase {
 
 		@Autowired
 		private Driver driver;
@@ -2926,7 +2925,7 @@ class RepositoryIT {
 	@EnableTransactionManagement
 	static class Config extends AbstractNeo4jConfig {
 
-		@Bean(destroyMethod = "")
+		@Bean
 		public Driver driver() {
 			return neo4jConnectionSupport.getDriver();
 		}

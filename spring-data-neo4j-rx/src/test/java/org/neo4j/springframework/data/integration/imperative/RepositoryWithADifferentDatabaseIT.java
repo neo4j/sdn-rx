@@ -26,12 +26,14 @@ import org.junit.jupiter.api.Tag;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
 import org.neo4j.springframework.data.core.DatabaseSelection;
+import org.springframework.test.annotation.DirtiesContext;
 
 /**
  * @author Michael J. Simons
  */
 @Tag(COMMERCIAL_EDITION_ONLY)
 @Tag(REQUIRES + "4.0.0")
+@DirtiesContext
 class RepositoryWithADifferentDatabaseIT extends RepositoryIT {
 
 	private static final String TEST_DATABASE_NAME = "aTestDatabase";
