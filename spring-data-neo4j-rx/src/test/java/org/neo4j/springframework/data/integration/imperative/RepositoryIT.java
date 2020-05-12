@@ -2905,11 +2905,11 @@ class RepositoryIT {
 		@BeforeEach
 		void before() {
 			Session session = createSession();
-			Transaction transaction = session.beginTransaction();
-			transaction.run("MATCH (n) detach delete n");
-			setupData(transaction);
-			transaction.commit();
-			transaction.close();
+			session.writeTransaction(tx -> {
+				tx.run("MATCH (n) detach delete n");
+				setupData(tx);
+				return null;
+			});
 			session.close();
 		}
 
