@@ -114,14 +114,14 @@ class RepositoryIT {
 		return new PersonWithAllConstructor(null, null, null, sameValue, null, null, null, null, null, null, null);
 	}
 
-	RepositoryIT() {
-		databaseSelection = DatabaseSelection.undecided();
-	}
-
 	Long id1;
 	Long id2;
 	PersonWithAllConstructor person1;
 	PersonWithAllConstructor person2;
+
+	RepositoryIT() {
+		databaseSelection = DatabaseSelection.undecided();
+	}
 
 	@Nested
 	class Find extends IntegrationTestBase {
@@ -879,6 +879,11 @@ class RepositoryIT {
 			assertThat(relatedThing.getName()).isEqualTo("Thing1");
 		}
 
+	}
+
+	@Nested
+	class RelationshipProperties extends IntegrationTestBase {
+
 		@Test
 		void findEntityWithRelationshipWithProperties(
 			@Autowired PersonWithRelationshipWithPropertiesRepository repository) {
@@ -932,10 +937,6 @@ class RepositoryIT {
 
 			assertThat(person.getHobbies()).contains(MapEntry.entry(hobby1, rel1), MapEntry.entry(hobby2, rel2));
 		}
-	}
-
-	@Nested
-	class RelationshipProperties extends IntegrationTestBase {
 
 		@Test
 		void saveEntityWithRelationshipWithProperties(
