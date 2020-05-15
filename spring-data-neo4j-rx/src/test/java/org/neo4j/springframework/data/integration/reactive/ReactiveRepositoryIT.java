@@ -1074,7 +1074,82 @@ class ReactiveRepositoryIT {
 	}
 
 	@Nested
-	class Blubb extends ReactiveIntegrationTestBase {
+	class RelatedEntityQuery extends ReactiveIntegrationTestBase {
+
+		@Test
+		void findByPropertyOnRelatedEntity(@Autowired ReactiveRelationshipRepository repository) {
+			try (Session session = createSession()) {
+				session.run("CREATE (:PersonWithRelationship{name:'Freddie'})-[:Has]->(:Pet{name: 'Jerry'})");
+			}
+
+			StepVerifier.create(repository.findByPetsName("Jerry"))
+				.assertNext(person -> assertThat(person.getName()).isEqualTo("Freddie"))
+				.verifyComplete();
+		}
+
+		@Test
+		void findByPropertyOnRelatedEntitiesOr(@Autowired ReactiveRelationshipRepository repository) {
+			try (Session session = createSession()) {
+				session.run("CREATE (n:PersonWithRelationship{name:'Freddie'})-[:Has]->(:Pet{name: 'Tom'}),"
+					+ "(n)-[:Has]->(:Hobby{name: 'Music'})");
+			}
+
+			StepVerifier.create(repository.findByHobbiesNameOrPetsName("Music", "Jerry"))
+				.assertNext(person -> assertThat(person.getName()).isEqualTo("Freddie"))
+				.verifyComplete();
+			StepVerifier.create(repository.findByHobbiesNameOrPetsName("Sports", "Tom"))
+				.assertNext(person -> assertThat(person.getName()).isEqualTo("Freddie"))
+				.verifyComplete();
+
+			StepVerifier.create(repository.findByHobbiesNameOrPetsName("Sports", "Jerry"))
+				.verifyComplete();
+		}
+
+		@Test
+		void findByPropertyOnRelatedEntitiesAnd(@Autowired ReactiveRelationshipRepository repository) {
+			try (Session session = createSession()) {
+				session.run("CREATE (n:PersonWithRelationship{name:'Freddie'})-[:Has]->(:Pet{name: 'Tom'}),"
+					+ "(n)-[:Has]->(:Hobby{name: 'Music'})");
+			}
+
+			StepVerifier.create(repository.findByHobbiesNameAndPetsName("Music", "Tom"))
+				.assertNext(person -> assertThat(person.getName()).isEqualTo("Freddie"))
+				.verifyComplete();
+
+			StepVerifier.create(repository.findByHobbiesNameAndPetsName("Sports", "Jerry"))
+				.verifyComplete();
+		}
+
+		@Test
+		void findByPropertyOnRelatedEntityOfRelatedEntity(@Autowired ReactiveRelationshipRepository repository) {
+			try (Session session = createSession()) {
+				session.run("CREATE (:PersonWithRelationship{name:'Freddie'})-[:Has]->(:Pet{name: 'Jerry'})"
+					+ "-[:Has]->(:Hobby{name: 'Sleeping'})");
+			}
+
+			StepVerifier.create(repository.findByPetsHobbiesName("Sleeping"))
+				.assertNext(person -> assertThat(person.getName()).isEqualTo("Freddie"))
+				.verifyComplete();
+
+			StepVerifier.create(repository.findByPetsHobbiesName("Sports"))
+				.verifyComplete();
+		}
+
+		@Test
+		void findByPropertyOnRelatedEntityOfRelatedSameEntity(@Autowired ReactiveRelationshipRepository repository) {
+			try (Session session = createSession()) {
+				session.run("CREATE (:PersonWithRelationship{name:'Freddie'})-[:Has]->(:Pet{name: 'Jerry'})"
+					+ "-[:Has]->(:Pet{name: 'Tom'})");
+			}
+
+			StepVerifier.create(repository.findByPetsFriendsName("Tom"))
+				.assertNext(person -> assertThat(person.getName()).isEqualTo("Freddie"))
+				.verifyComplete();
+
+			StepVerifier.create(repository.findByPetsFriendsName("Jerry"))
+				.verifyComplete();
+		}
+
 		@Test
 		void findByPropertyOnRelationshipWithProperties(@Autowired ReactivePersonWithRelationshipWithPropertiesRepository repository) {
 			try (Session session = createSession()) {
@@ -2246,6 +2321,16 @@ class ReactiveRepositoryIT {
 			+ "OPTIONAL MATCH (n)-[r2:Has]->(h:Hobby) "
 			+ "return n, petRels, pets, collect(r2) as hobbyRels, collect(h) as hobbies")
 		Mono<PersonWithRelationship> getPersonWithRelationshipsViaQuery();
+
+		Mono<PersonWithRelationship> findByPetsName(String petName);
+
+		Mono<PersonWithRelationship> findByHobbiesNameOrPetsName(String hobbyName, String petName);
+
+		Mono<PersonWithRelationship> findByHobbiesNameAndPetsName(String hobbyName, String petName);
+
+		Mono<PersonWithRelationship> findByPetsHobbiesName(String hobbyName);
+
+		Mono<PersonWithRelationship> findByPetsFriendsName(String petName);
 	}
 
 	interface ReactiveSimilarThingRepository extends ReactiveCrudRepository<SimilarThing, Long> {
