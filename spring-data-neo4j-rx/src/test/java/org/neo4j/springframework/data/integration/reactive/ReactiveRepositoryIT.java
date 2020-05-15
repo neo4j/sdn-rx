@@ -2214,7 +2214,7 @@ class ReactiveRepositoryIT {
 	}
 
 	@SpringJUnitConfig(ReactiveRepositoryIT.Config.class)
-	static class ReactiveIntegrationTestBase {
+	static abstract class ReactiveIntegrationTestBase {
 
 		@Autowired
 		private Driver driver;
@@ -2230,7 +2230,7 @@ class ReactiveRepositoryIT {
 		void before() {
 			Session session = createSession();
 			session.writeTransaction(tx -> {
-				tx.run("MATCH (n) detach delete n");
+				tx.run("MATCH (n) detach delete n").consume();
 				setupData(tx);
 				return null;
 			});

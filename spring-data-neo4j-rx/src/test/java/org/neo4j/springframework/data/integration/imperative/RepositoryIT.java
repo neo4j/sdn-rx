@@ -2894,7 +2894,7 @@ class RepositoryIT {
 	}
 
 	@SpringJUnitConfig(Config.class)
-	static class IntegrationTestBase {
+	static abstract class IntegrationTestBase {
 
 		@Autowired
 		private Driver driver;
@@ -2907,7 +2907,7 @@ class RepositoryIT {
 		void before() {
 			Session session = createSession();
 			session.writeTransaction(tx -> {
-				tx.run("MATCH (n) detach delete n");
+				tx.run("MATCH (n) detach delete n").consume();
 				setupData(tx);
 				return null;
 			});
