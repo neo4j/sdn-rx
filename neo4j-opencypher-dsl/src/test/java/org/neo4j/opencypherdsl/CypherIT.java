@@ -2510,12 +2510,12 @@ class CypherIT {
 
 			statement = Cypher.match(a)
 				.returning(
-					listBasedOn(a.relationshipBetween(b)).where(b.hasLabels("Movie")).returning(b.property("released"))
+					listBasedOn(a.relationshipBetween(b)).where(b.hasLabels("Movie")).and(b.property("released").isNotNull()).returning(b.property("released"))
 						.as("years"))
 				.build();
 			assertThat(cypherRenderer.render(statement))
 				.isEqualTo(
-					"MATCH (a:`Person` {name: 'Keanu Reeves'}) RETURN [(a)--(b) WHERE b:`Movie` | b.released] AS years");
+					"MATCH (a:`Person` {name: 'Keanu Reeves'}) RETURN [(a)--(b) WHERE (b:`Movie` AND b.released IS NOT NULL) | b.released] AS years");
 		}
 
 		@Test

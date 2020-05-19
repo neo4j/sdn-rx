@@ -31,8 +31,8 @@ import org.neo4j.opencypherdsl.support.TypedSubtree;
  * <p>
  * See <a href="https://s3.amazonaws.com/artifacts.opencypher.org/railroad/Pattern.html">Pattern</a>.
  *
- * @author Michael J. Simons
  * @param <S> The pattern's entry type
+ * @author Michael J. Simons
  * @since 1.0
  */
 @API(status = INTERNAL, since = "1.0")
