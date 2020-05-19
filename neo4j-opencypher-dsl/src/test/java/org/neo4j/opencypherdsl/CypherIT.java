@@ -2276,6 +2276,21 @@ class CypherIT {
 					n.project("something");
 				}).withMessage("No name present.");
 			}
+
+			@Test
+			void aliasing() {
+Statement statement;
+Node n = Cypher.node("Person").named("p");
+
+statement = Cypher.match(n)
+	.returning(
+		n.project("alias", n.property("name"))
+	)
+	.build();
+				assertThat(cypherRenderer.render(statement))
+					.isEqualTo(
+						"MATCH (p:`Person`) RETURN p{alias: p.name}");
+			}
 		}
 
 		@Nested
