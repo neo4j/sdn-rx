@@ -3568,8 +3568,8 @@ Stream&lt;User&gt; findAllByCustomQueryAndStream();
 
 Stream&lt;User&gt; readAllByFirstnameNotNull();
 
-<span class="annotation">@Query</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (u:User) RETURN u)
-Stream&lt;User&gt; streamAllPaged(Pageable pageable);</span></span></code></pre>
+<span class="annotation">@Query</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">MATCH (u:User) RETURN u</span><span class="delimiter">&quot;</span></span>)
+Stream&lt;User&gt; streamAllPaged(<span class="predefined-type">Pageable</span> pageable);</code></pre>
 </div>
 </div>
 </div>
@@ -8031,7 +8031,7 @@ $ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:ana
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-05-20 17:49:48 UTC
+Last updated 2020-05-25 06:03:19 UTC
 </div>
 </div>
 </body>
