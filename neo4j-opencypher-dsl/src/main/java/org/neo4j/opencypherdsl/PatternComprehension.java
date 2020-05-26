@@ -55,7 +55,7 @@ public final class PatternComprehension implements Expression {
 	/**
 	 * Provides the final step of defining a pattern comprehension.
 	 */
-	public interface OngoingDefinitionWithoutReturn  {
+	public interface OngoingDefinitionWithoutReturn {
 
 		/**
 		 * @param variables the elements to be returned from the pattern
