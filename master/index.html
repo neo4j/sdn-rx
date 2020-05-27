@@ -7090,7 +7090,7 @@ assertThat(cypherRenderer.render(statement))
 <div class="listingblock">
 <div class="title">Listing 45. Find the actor named "Tom Hanks"&#8230;&#8203;</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">var tom = anyNode().named(<span class="string"><span class="delimiter">&quot;</span><span class="content">tom</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tom Hanks</span><span class="delimiter">&quot;</span></span>));
+<pre class="CodeRay highlight"><code data-lang="java">var tom = anyNode().named(<span class="string"><span class="delimiter">&quot;</span><span class="content">tom</span><span class="delimiter">&quot;</span></span>).withProperties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tom Hanks</span><span class="delimiter">&quot;</span></span>));
 var statement = Cypher
         .match(tom).returning(tom)
         .build();
@@ -7144,7 +7144,7 @@ assertThat(cypherRenderer.render(statement))
 <div class="listingblock">
 <div class="title">Listing 48. List all Tom Hanks movies&#8230;&#8203;</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">var tom = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">tom</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tom Hanks</span><span class="delimiter">&quot;</span></span>));
+<pre class="CodeRay highlight"><code data-lang="java">var tom = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">tom</span><span class="delimiter">&quot;</span></span>).withProperties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tom Hanks</span><span class="delimiter">&quot;</span></span>));
 var tomHanksMovies = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">tomHanksMovies</span><span class="delimiter">&quot;</span></span>);
 var statement = Cypher
         .match(tom.relationshipTo(tomHanksMovies, <span class="string"><span class="delimiter">&quot;</span><span class="content">ACTED_IN</span><span class="delimiter">&quot;</span></span>))
@@ -7159,7 +7159,7 @@ assertThat(cypherRenderer.render(statement))
 <div class="listingblock">
 <div class="title">Listing 49. Who directed "Cloud Atlas"?</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">var cloudAtlas = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">cloudAtlas</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">title</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Cloud Atlas</span><span class="delimiter">&quot;</span></span>));
+<pre class="CodeRay highlight"><code data-lang="java">var cloudAtlas = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">cloudAtlas</span><span class="delimiter">&quot;</span></span>).withProperties(<span class="string"><span class="delimiter">&quot;</span><span class="content">title</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Cloud Atlas</span><span class="delimiter">&quot;</span></span>));
 var directors = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">directors</span><span class="delimiter">&quot;</span></span>);
 statement = Cypher
         .match(cloudAtlas.relationshipFrom(directors, <span class="string"><span class="delimiter">&quot;</span><span class="content">DIRECTED</span><span class="delimiter">&quot;</span></span>))
@@ -7173,7 +7173,7 @@ assertThat(cypherRenderer.render(statement))
 <div class="listingblock">
 <div class="title">Listing 50. Tom Hanks' co-actors&#8230;&#8203;</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">tom = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">tom</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tom Hanks</span><span class="delimiter">&quot;</span></span>));
+<pre class="CodeRay highlight"><code data-lang="java">tom = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">tom</span><span class="delimiter">&quot;</span></span>).withProperties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tom Hanks</span><span class="delimiter">&quot;</span></span>));
 var movie = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">m</span><span class="delimiter">&quot;</span></span>);
 var coActors = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">coActors</span><span class="delimiter">&quot;</span></span>);
 var people = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">people</span><span class="delimiter">&quot;</span></span>);
@@ -7190,7 +7190,7 @@ assertThat(cypherRenderer.render(statement))
 <div class="listingblock">
 <div class="title">Listing 51. How people are related to "Cloud Atlas"&#8230;&#8203;</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">cloudAtlas = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Movie</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">title</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Cloud Atlas</span><span class="delimiter">&quot;</span></span>));
+<pre class="CodeRay highlight"><code data-lang="java">cloudAtlas = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Movie</span><span class="delimiter">&quot;</span></span>).withProperties(<span class="string"><span class="delimiter">&quot;</span><span class="content">title</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Cloud Atlas</span><span class="delimiter">&quot;</span></span>));
 people = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">people</span><span class="delimiter">&quot;</span></span>);
 var relatedTo = people.relationshipBetween(cloudAtlas).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">relatedTo</span><span class="delimiter">&quot;</span></span>);
 statement = Cypher
@@ -7209,7 +7209,7 @@ assertThat(cypherRenderer.render(statement))
 <div class="listingblock">
 <div class="title">Listing 52. Movies and actors up to 4 "hops" away from Kevin Bacon</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">var bacon = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">bacon</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Kevin Bacon</span><span class="delimiter">&quot;</span></span>));
+<pre class="CodeRay highlight"><code data-lang="java">var bacon = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">bacon</span><span class="delimiter">&quot;</span></span>).withProperties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Kevin Bacon</span><span class="delimiter">&quot;</span></span>));
 var hollywood = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">hollywood</span><span class="delimiter">&quot;</span></span>);
 var statement = Cypher
         .match(bacon.relationshipBetween(hollywood).length(<span class="integer">1</span>, <span class="integer">4</span>))
@@ -7226,7 +7226,7 @@ assertThat(cypherRenderer.render(statement))
 <div class="listingblock">
 <div class="title">Listing 53. Extend Tom Hanks co-actors, to find co-co-actors who haven&#8217;t worked with Tom Hanks&#8230;&#8203;</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">var tom = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">tom</span><span class="delimiter">&quot;</span></span>).properties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tom Hanks</span><span class="delimiter">&quot;</span></span>));
+<pre class="CodeRay highlight"><code data-lang="java">var tom = node(<span class="string"><span class="delimiter">&quot;</span><span class="content">Person</span><span class="delimiter">&quot;</span></span>).named(<span class="string"><span class="delimiter">&quot;</span><span class="content">tom</span><span class="delimiter">&quot;</span></span>).withProperties(<span class="string"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>, literalOf(<span class="string"><span class="delimiter">&quot;</span><span class="content">Tom Hanks</span><span class="delimiter">&quot;</span></span>));
 var coActors = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">coActors</span><span class="delimiter">&quot;</span></span>);
 var cocoActors = anyNode(<span class="string"><span class="delimiter">&quot;</span><span class="content">cocoActors</span><span class="delimiter">&quot;</span></span>);
 var strength = count(asterisk()).as(<span class="string"><span class="delimiter">&quot;</span><span class="content">Strength</span><span class="delimiter">&quot;</span></span>);
@@ -8031,7 +8031,7 @@ $ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:ana
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-05-27 04:41:18 UTC
+Last updated 2020-05-27 12:32:54 UTC
 </div>
 </div>
 </body>
