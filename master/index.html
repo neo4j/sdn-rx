@@ -634,7 +634,7 @@ table.CodeRay td.code>pre{padding:0}
 <div class="quoteblock abstract">
 <blockquote>
 <div class="paragraph">
-<p>This is the SDN/RX manual version 1.0.1.</p>
+<p>This is the SDN/RX manual version 1.1.0.</p>
 </div>
 <div class="paragraph">
 <p>It contains excerpts of the shared <a href="https://docs.spring.io/spring-data/commons/docs/current/reference/html">Spring Data Commons documentation</a>,
@@ -989,7 +989,7 @@ as it comes for free with every Neo4j instance.</p>
 <div id="start-docker-neo4j" class="listingblock">
 <div class="title">Listing 1. Start a local Neo4j instance inside Docker.</div>
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="console">docker run --publish=7474:7474 --publish=7687:7687 -e 'NEO4J_AUTH=neo4j/secret' neo4j:4.0.3</code></pre>
+<pre class="CodeRay highlight"><code data-lang="console">docker run --publish=7474:7474 --publish=7687:7687 -e 'NEO4J_AUTH=neo4j/secret' neo4j:4.0.4</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1035,7 +1035,7 @@ Don&#8217;t choose Spring Data Neo4j here, as it will get you the previous gener
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="bash">curl https://start.spring.io/starter.tgz \
   -d dependencies=webflux,actuator \
-  -d bootVersion=2.2.6.RELEASE \
+  -d bootVersion=2.3.0.RELEASE \
   -d baseDir=Neo4jSpringBootExample \
   -d name=Neo4j%20SpringBoot%20Example | tar -xzvf -</code></pre>
 </div>
@@ -1050,7 +1050,7 @@ As this starter is not yet on the initializer, you will have to add the followin
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
         <span class="tag">&lt;groupId&gt;</span>org.neo4j.springframework.data<span class="tag">&lt;/groupId&gt;</span>
         <span class="tag">&lt;artifactId&gt;</span>spring-data-neo4j-rx-spring-boot-starter<span class="tag">&lt;/artifactId&gt;</span>
-        <span class="tag">&lt;version&gt;</span>1.0.1<span class="tag">&lt;/version&gt;</span>
+        <span class="tag">&lt;version&gt;</span>1.1.0<span class="tag">&lt;/version&gt;</span>
 <span class="tag">&lt;/dependency&gt;</span></code></pre>
 </div>
 </div>
@@ -1069,7 +1069,7 @@ As this starter is not yet on the initializer, you will have to add the followin
 <pre class="CodeRay highlight"><code data-lang="bash">curl https://start.spring.io/starter.tgz \
   -d dependencies=webflux,actuator \
   -d type=gradle-project \
-  -d bootVersion=2.2.6.RELEASE \
+  -d bootVersion=2.3.0.RELEASE \
   -d baseDir=Neo4jSpringBootExampleGradle \
   -d name=Neo4j%20SpringBoot%20Example | tar -xzvf -</code></pre>
 </div>
@@ -1081,7 +1081,7 @@ As this starter is not yet on the initializer, you will have to add the followin
 <div class="title">Listing 5. Inclusion of the spring-data-neo4j-rx-spring-boot-starter in a Gradle project</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
-    implementation <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j.springframework.data:spring-data-neo4j-rx-spring-boot-starter:1.0.1</span><span class="delimiter">'</span></span>
+    implementation <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j.springframework.data:spring-data-neo4j-rx-spring-boot-starter:1.1.0</span><span class="delimiter">'</span></span>
 }</code></pre>
 </div>
 </div>
@@ -5098,7 +5098,7 @@ Include the following dependency in your project setup</p>
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>org.neo4j.springframework.data<span class="tag">&lt;/groupId&gt;</span>
     <span class="tag">&lt;artifactId&gt;</span>spring-data-neo4j-rx-spring-boot-test-autoconfigure<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>1.0.1<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;version&gt;</span>1.1.0<span class="tag">&lt;/version&gt;</span>
     <span class="tag">&lt;scope&gt;</span>test<span class="tag">&lt;/scope&gt;</span>
 <span class="tag">&lt;/dependency&gt;</span></code></pre>
 </div>
@@ -5110,7 +5110,7 @@ Include the following dependency in your project setup</p>
 <div class="title">Listing 13. spring-data-neo4j-rx-spring-boot-test-autoconfigure for Gradle</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
-    testImplementation <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j.springframework.data:spring-data-neo4j-rx-spring-boot-test-autoconfigure:1.0.1</span><span class="delimiter">'</span></span>
+    testImplementation <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j.springframework.data:spring-data-neo4j-rx-spring-boot-test-autoconfigure:1.1.0</span><span class="delimiter">'</span></span>
 }</code></pre>
 </div>
 </div>
@@ -5166,7 +5166,7 @@ This class uses the included Neo4j test harness 3.5 by default.</p>
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="tag">&lt;dependency&gt;</span>
     <span class="tag">&lt;groupId&gt;</span>org.neo4j.test<span class="tag">&lt;/groupId&gt;</span>
     <span class="tag">&lt;artifactId&gt;</span>neo4j-harness<span class="tag">&lt;/artifactId&gt;</span>
-    <span class="tag">&lt;version&gt;</span>4.0.3<span class="tag">&lt;/version&gt;</span>
+    <span class="tag">&lt;version&gt;</span>4.0.4<span class="tag">&lt;/version&gt;</span>
     <span class="tag">&lt;scope&gt;</span>test<span class="tag">&lt;/scope&gt;</span>
 <span class="tag">&lt;/dependency&gt;</span></code></pre>
 </div>
@@ -5178,7 +5178,7 @@ This class uses the included Neo4j test harness 3.5 by default.</p>
 <div class="title">Listing 16. Neo4j 4.0 test harness for Gradle</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="groovy">dependencies {
-    testImplementation <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j.test:neo4j-harness:4.0.3</span><span class="delimiter">'</span></span>
+    testImplementation <span class="string"><span class="delimiter">'</span><span class="content">org.neo4j.test:neo4j-harness:4.0.4</span><span class="delimiter">'</span></span>
 }</code></pre>
 </div>
 </div>
@@ -8031,7 +8031,7 @@ $ ./mvnw -pl org.neo4j.springframework.data:spring-data-neo4j-rx jqassistant:ana
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2020-05-28 12:19:31 UTC
+Last updated 2020-05-29 12:58:26 UTC
 </div>
 </div>
 </body>
