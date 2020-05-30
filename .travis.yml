@@ -6,3 +6,8 @@ jdk:
 
 services:
   - docker
+
+# cache Maven libraries to speedup builds
+cache:
+  directories:
+    - $HOME/.m2
