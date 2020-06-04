@@ -49,6 +49,7 @@ import org.neo4j.driver.types.Relationship;
 import org.neo4j.driver.types.TypeSystem;
 import org.neo4j.springframework.data.core.convert.Neo4jConversions;
 import org.neo4j.springframework.data.core.convert.Neo4jConverter;
+import org.neo4j.springframework.data.core.schema.IdDescription;
 import org.neo4j.springframework.data.core.schema.RelationshipDescription;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.ConfigurableConversionService;
@@ -470,10 +471,15 @@ final class DefaultNeo4jConverter implements Neo4jConverter {
 			for (Value relatedEntity : list.asList(Function.identity())) {
 				Neo4jPersistentProperty idProperty = concreteTargetNodeDescription.getRequiredIdProperty();
 
+				String relatedEntityIdKey = Optional.ofNullable(concreteTargetNodeDescription.getIdDescription())
+					.flatMap(IdDescription::getOptionalGraphPropertyName)
+					.orElse(concreteTargetNodeDescription.getRequiredIdProperty().getName());
+
 				// internal (generated) id or external set
 				Object idValue = idProperty.isInternalIdProperty()
 					? relatedEntity.get(NAME_OF_INTERNAL_ID)
-					: relatedEntity.get(idProperty.getName());
+					: relatedEntity.get(relatedEntityIdKey);
+
 				Object valueEntry = knownObjects.computeIfAbsent(idValue,
 					() -> map(relatedEntity, concreteTargetNodeDescription, knownObjects));
 
