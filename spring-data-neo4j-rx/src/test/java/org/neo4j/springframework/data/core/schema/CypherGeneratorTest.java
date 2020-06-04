@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
  * @author Davide Fantuzzi
  * @author Andrea Santurbano
  */
-public class CypherGeneratorTest {
+class CypherGeneratorTest {
 
 	@Test
 	void itShouldCreateRelationshipCreationQueryWithLabelIfPresent() {
