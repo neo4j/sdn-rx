@@ -156,15 +156,5 @@ class DefaultNeo4jConverterIT {
 			return neo4jConnectionSupport.getDriver();
 		}
 
-		// If someone wants to use the plain driver or the delegating mechanism of the client, than they must provide a couple of more beans.
-		@Bean
-		public Neo4jPersistenceExceptionTranslator neo4jPersistenceExceptionTranslator() {
-			return new Neo4jPersistenceExceptionTranslator();
-		}
-
-		@Bean
-		public PersistenceExceptionTranslationPostProcessor persistenceExceptionTranslationPostProcessor() {
-			return new PersistenceExceptionTranslationPostProcessor();
-		}
 	}
 }
