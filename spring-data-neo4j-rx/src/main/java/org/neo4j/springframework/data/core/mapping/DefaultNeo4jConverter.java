@@ -473,7 +473,7 @@ final class DefaultNeo4jConverter implements Neo4jConverter {
 
 				String relatedEntityIdKey = Optional.ofNullable(concreteTargetNodeDescription.getIdDescription())
 					.flatMap(IdDescription::getOptionalGraphPropertyName)
-					.orElse(concreteTargetNodeDescription.getRequiredIdProperty().getName());
+					.orElse(idProperty.getName());
 
 				// internal (generated) id or external set
 				Object idValue = idProperty.isInternalIdProperty()
