@@ -24,10 +24,12 @@ import java.util.Map;
 
 import org.neo4j.springframework.data.core.schema.GeneratedValue;
 import org.neo4j.springframework.data.core.schema.Id;
+import org.neo4j.springframework.data.core.schema.Node;
 
 /**
  * @author Michael J. Simons
  */
+@Node
 public class PersonWithStringlyTypedRelatives {
 
 	@Id @GeneratedValue

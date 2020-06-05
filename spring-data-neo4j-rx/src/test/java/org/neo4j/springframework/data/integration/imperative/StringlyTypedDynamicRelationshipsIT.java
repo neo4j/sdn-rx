@@ -44,7 +44,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
- *
  * @author Michael J. Simons
  */
 class StringlyTypedDynamicRelationshipsIT extends DynamicRelationshipsITBase<PersonWithStringlyTypedRelatives> {
