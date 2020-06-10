@@ -405,11 +405,11 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 
 	private void processAssociations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject,
 		@Nullable String inDatabase) {
-		processNestedAssociations(neo4jPersistentEntity, parentObject, inDatabase, new HashSet<>());
+		processNestedAssociations(neo4jPersistentEntity, parentObject, inDatabase, new HashSet<>(), new HashSet<>());
 	}
 
 	private void processNestedAssociations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject,
-		@Nullable String inDatabase, Set<RelationshipDescription> processedRelationshipDescriptions) {
+		@Nullable String inDatabase, Set<RelationshipDescription> processedRelationshipDescriptions, Set<Object> processedObjects) {
 
 		PersistentPropertyAccessor<?> propertyAccessor = neo4jPersistentEntity.getPropertyAccessor(parentObject);
 
@@ -419,9 +419,14 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 			NestedRelationshipContext relationshipContext = NestedRelationshipContext
 				.of(handler, propertyAccessor, neo4jPersistentEntity);
 
+			Collection<?> relatedValuesToStore = Relationships
+				.unifyRelationshipValue(relationshipContext.getInverse(), relationshipContext.getValue());
+
+			RelationshipDescription relationshipDescription = relationshipContext.getRelationship();
+			RelationshipDescription relationshipDescriptionObverse = relationshipDescription.getRelationshipObverse();
 			// break recursive procession and deletion of previously created relationships
-			RelationshipDescription relationshipObverse = relationshipContext.getRelationship().getRelationshipObverse();
-			if (hasProcessed(processedRelationshipDescriptions, relationshipObverse)) {
+			if (hasProcessed(processedRelationshipDescriptions, relationshipDescriptionObverse)
+				|| hasProcessed(processedObjects, relatedValuesToStore)) {
 				return;
 			}
 
@@ -433,7 +438,7 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 			// this avoids the usage of cache but might have significant impact on overall performance
 			if (!neo4jPersistentEntity.isNew(parentObject)) {
 				Statement relationshipRemoveQuery = cypherGenerator.createRelationshipRemoveQuery(neo4jPersistentEntity,
-					relationshipContext.getRelationship(), relationshipsToRemoveDescription);
+					relationshipDescription, relationshipsToRemoveDescription);
 
 				neo4jClient.query(renderer.render(relationshipRemoveQuery))
 					.in(inDatabase)
@@ -445,13 +450,13 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 				return;
 			}
 
-			processedRelationshipDescriptions.add(relationshipContext.getRelationship());
+			processedRelationshipDescriptions.add(relationshipDescription);
+			processedObjects.addAll(relatedValuesToStore);
 
-			for (Object relatedValue : Relationships
-				.unifyRelationshipValue(relationshipContext.getInverse(), relationshipContext.getValue())) {
+			for (Object relatedValueToStore : relatedValuesToStore) {
 
 				// here map entry is not always anymore a dynamic association
-				Object valueToBeSaved = relationshipContext.identifyAndExtractRelationshipValue(relatedValue);
+				Object valueToBeSaved = relationshipContext.identifyAndExtractRelationshipValue(relatedValueToStore);
 
 				Neo4jPersistentEntity<?> targetNodeDescription = neo4jMappingContext.getPersistentEntity(valueToBeSaved.getClass());
 
@@ -461,7 +466,7 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 					targetNodeDescription, inDatabase);
 
 				RelationshipStatementHolder statementHolder = RelationshipStatementHolder.createStatement(
-					neo4jMappingContext, neo4jPersistentEntity, relationshipContext, relatedInternalId, relatedValue);
+					neo4jMappingContext, neo4jPersistentEntity, relationshipContext, relatedInternalId, relatedValueToStore);
 
 				neo4jClient.query(renderer.render(statementHolder.getRelationshipCreationQuery()))
 					.in(inDatabase)
@@ -476,9 +481,17 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 					targetPropertyAccessor
 						.setProperty(targetNodeDescription.getRequiredIdProperty(), relatedInternalId);
 				}
-				processNestedAssociations(targetNodeDescription, valueToBeSaved, inDatabase, processedRelationshipDescriptions);
+				processNestedAssociations(targetNodeDescription, valueToBeSaved, inDatabase, processedRelationshipDescriptions, processedObjects);
 			}
 		});
+	}
+
+	private boolean hasProcessed(Set<Object> processedObjects, @Nullable Collection<?> valuesToStore) {
+		// there can be null elements in the unified collection of values to store.
+		if (valuesToStore == null) {
+			return true;
+		}
+		return processedObjects.containsAll(valuesToStore);
 	}
 
 	private boolean hasProcessed(Set<RelationshipDescription> processedRelationshipDescriptions,
