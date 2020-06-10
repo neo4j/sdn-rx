@@ -24,6 +24,7 @@ import static org.neo4j.springframework.data.test.Neo4jExtension.*;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -38,9 +39,7 @@ import org.neo4j.springframework.data.repository.config.EnableNeo4jRepositories;
 import org.neo4j.springframework.data.test.Neo4jIntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
@@ -57,13 +56,14 @@ class DefaultNeo4jConverterIT {
 	void itShouldReturnsAllTheRelatedEntities(@Autowired Entity2Repository entity2Repository) {
 		Entity1 firstEntity1 = new Entity1("1-2-3");
 		Entity1 secondEntity1 = new Entity1("4-5-6");
-		final Set<Entity1> entity1List = new HashSet<>(Arrays.asList(firstEntity1, secondEntity1));
+		Set<Entity1> entity1List = new HashSet<>(Arrays.asList(firstEntity1, secondEntity1));
 		Entity2 entity2 = new Entity2("7-8-9", entity1List);
 
 		entity2Repository.save(entity2);
-		Entity2 entity2fromDb = entity2Repository.findById(entity2.id).get();
+		Optional<Entity2> optionalEntity2 = entity2Repository.findById(entity2.id);
 
-		assertThat(entity2fromDb.entity1List).isEqualTo(entity1List);
+		assertThat(optionalEntity2).isPresent();
+		assertThat(optionalEntity2).map(e -> e.entity1List).contains(entity1List);
 	}
 
 	@Node
@@ -142,10 +142,7 @@ class DefaultNeo4jConverterIT {
 	}
 
 	@Configuration
-	@EnableNeo4jRepositories(
-		considerNestedRepositories = true,
-		includeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = Entity2Repository.class)
-	)
+	@EnableNeo4jRepositories(considerNestedRepositories = true)
 	@EnableTransactionManagement
 	static class Config extends AbstractNeo4jConfig {
 
