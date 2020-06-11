@@ -489,7 +489,7 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 	private boolean hasProcessed(Set<Object> processedObjects, @Nullable Collection<?> valuesToStore) {
 		// there can be null elements in the unified collection of values to store.
 		if (valuesToStore == null) {
-			return true;
+			return false;
 		}
 		return processedObjects.containsAll(valuesToStore);
 	}
