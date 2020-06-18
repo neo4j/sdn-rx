@@ -29,7 +29,7 @@ import java.util.HashMap
  * @author Gerrit Meier
  */
 @Node("Movie")
-class MovieEntity(@Id val title: String, @Property("tagline") val description: String) {
+data class MovieEntity(@Id val title: String, @Property("tagline") val description: String) {
 
     @Relationship(type = "ACTED_IN", direction = Relationship.Direction.INCOMING)
     var actorsAndRoles: Map<PersonEntity, Roles> = HashMap()

@@ -25,4 +25,4 @@ import org.neo4j.springframework.data.core.schema.Node
  * @author Gerrit Meier
  */
 @Node("Person")
-class PersonEntity(@Id val name: String, val born: Int?)
+data class PersonEntity(@Id val name: String, val born: Int?)
