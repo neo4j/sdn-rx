@@ -49,7 +49,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /**
  * @author Gerrit Meier
  */
-@SpringBootTest
+//@SpringBootTest
 @AutoConfigureWebTestClient
 @Testcontainers
 public class ReactiveWebApplicationTest {
