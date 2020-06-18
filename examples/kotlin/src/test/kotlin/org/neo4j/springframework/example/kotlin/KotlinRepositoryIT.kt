@@ -71,9 +71,11 @@ class KotlinRepositoryIT {
 
     companion object {
         @Container
+        @JvmStatic
         private val neo4jContainer = Neo4jContainer<Nothing>("neo4j:4.0")
 
         @DynamicPropertySource
+        @JvmStatic
         fun neo4jProperties(registry: DynamicPropertyRegistry?) {
             registry!!.add("org.neo4j.driver.uri") { neo4jContainer.boltUrl }
             registry.add("org.neo4j.driver.authentication.username") { "neo4j" }
