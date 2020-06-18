@@ -234,11 +234,11 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 
 		PersistentPropertyAccessor<T> propertyAccessor = entityMetaData.getPropertyAccessor(entityToBeSaved);
 		if (!entityMetaData.isUsingInternalIds()) {
-			processAssociations(entityMetaData, entityToBeSaved, inDatabase);
+			processRelations(entityMetaData, entityToBeSaved, inDatabase);
 			return entityToBeSaved;
 		} else {
 			propertyAccessor.setProperty(entityMetaData.getRequiredIdProperty(), optionalInternalId.get());
-			processAssociations(entityMetaData, entityToBeSaved, inDatabase);
+			processRelations(entityMetaData, entityToBeSaved, inDatabase);
 
 			return propertyAccessor.getBean();
 		}
@@ -312,9 +312,7 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 			.run();
 
 		// Save related
-		entitiesToBeSaved.forEach(entityToBeSaved -> {
-			processAssociations(entityMetaData, entityToBeSaved, databaseName);
-		});
+		entitiesToBeSaved.forEach(entityToBeSaved -> processRelations(entityMetaData, entityToBeSaved, databaseName));
 
 		SummaryCounters counters = resultSummary.counters();
 		log.debug(() -> String
@@ -401,12 +399,12 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 		return toExecutableQuery(preparedQuery);
 	}
 
-	private void processAssociations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject, @Nullable String inDatabase) {
+	private void processRelations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject, @Nullable String inDatabase) {
 
-		processNestedAssociations(neo4jPersistentEntity, parentObject, inDatabase, new NestedRelationshipProcessState());
+		processNestedRelations(neo4jPersistentEntity, parentObject, inDatabase, new NestedRelationshipProcessState());
 	}
 
-	private void processNestedAssociations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject,
+	private void processNestedRelations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject,
 		@Nullable String inDatabase, NestedRelationshipProcessState processState) {
 
 		PersistentPropertyAccessor<?> propertyAccessor = neo4jPersistentEntity.getPropertyAccessor(parentObject);
@@ -478,7 +476,7 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 					targetPropertyAccessor
 						.setProperty(targetNodeDescription.getRequiredIdProperty(), relatedInternalId);
 				}
-				processNestedAssociations(targetNodeDescription, valueToBeSaved, inDatabase, processState);
+				processNestedRelations(targetNodeDescription, valueToBeSaved, inDatabase, processState);
 			}
 		});
 	}

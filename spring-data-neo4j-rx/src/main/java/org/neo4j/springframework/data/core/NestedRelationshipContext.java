@@ -34,6 +34,7 @@ import org.springframework.lang.Nullable;
  * the algorithm.
  *
  * @author Philipp Tölle
+ * @author Gerrit Meier
  * @since 1.0
  */
 final class NestedRelationshipContext {

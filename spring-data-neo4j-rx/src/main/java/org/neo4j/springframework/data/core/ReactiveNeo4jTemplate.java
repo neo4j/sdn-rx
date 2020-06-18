@@ -247,15 +247,14 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 
 
 				if (!entityMetaData.isUsingInternalIds()) {
-					return idMono.then(processAssociations(entityMetaData, entity, inDatabase))
-						.thenReturn(entity);
+					return idMono.then(processRelations(entityMetaData, entity, inDatabase)).thenReturn(entity);
 				} else {
 					return idMono.map(internalId -> {
 						PersistentPropertyAccessor<T> propertyAccessor = entityMetaData.getPropertyAccessor(entity);
 						propertyAccessor.setProperty(entityMetaData.getRequiredIdProperty(), internalId);
 
 						return propertyAccessor.getBean();
-					}).flatMap(savedEntity -> processAssociations(entityMetaData, savedEntity, inDatabase)
+					}).flatMap(savedEntity -> processRelations(entityMetaData, savedEntity, inDatabase)
 						.thenReturn(savedEntity));
 				}
 			});
@@ -406,12 +405,12 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 		return this.toExecutableQuery(preparedQuery);
 	}
 
-	private Mono<Void> processAssociations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject, @Nullable String inDatabase) {
+	private Mono<Void> processRelations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject, @Nullable String inDatabase) {
 
-		return processNestedAssociations(neo4jPersistentEntity, parentObject, inDatabase, new NestedRelationshipProcessState());
+		return processNestedRelations(neo4jPersistentEntity, parentObject, inDatabase, new NestedRelationshipProcessState());
 	}
 
-	private Mono<Void> processNestedAssociations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject,
+	private Mono<Void> processNestedRelations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject,
 		@Nullable String inDatabase, NestedRelationshipProcessState processState) {
 
 		return Mono.defer(() -> {
@@ -490,7 +489,7 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 											.run();
 
 										return relationshipCreationMonoNested.checkpoint()
-											.then(processNestedAssociations(targetNodeDescription, valueToBeSaved, inDatabase, processState));
+											.then(processNestedRelations(targetNodeDescription, valueToBeSaved, inDatabase, processState));
 									}).checkpoint()));
 				}
 			});
