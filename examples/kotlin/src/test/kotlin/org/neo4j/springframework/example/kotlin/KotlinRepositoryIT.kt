@@ -5,9 +5,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.neo4j.driver.Driver
 import org.neo4j.springframework.boot.test.autoconfigure.data.ReactiveDataNeo4jTest
-import org.neo4j.springframework.example.kotlin.domain.Gnarf
 import org.neo4j.springframework.example.kotlin.domain.MovieRepository
-import org.neo4j.springframework.example.kotlin.domain.PersonEntity
 import org.neo4j.springframework.example.kotlin.domain.PersonRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.DynamicPropertyRegistry
