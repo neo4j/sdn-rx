@@ -30,9 +30,10 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 import org.apiguardian.api.API;
+import org.jetbrains.annotations.NotNull;
+import org.neo4j.opencypherdsl.*;
 import org.neo4j.opencypherdsl.Node;
 import org.neo4j.opencypherdsl.Relationship;
-import org.neo4j.opencypherdsl.*;
 import org.neo4j.opencypherdsl.StatementBuilder.OngoingMatchAndUpdate;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentEntity;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentProperty;
@@ -279,11 +280,11 @@ public enum CypherGenerator {
 
 	@NonNull
 	public Statement createRelationshipWithPropertiesCreationQuery(Neo4jPersistentEntity<?> neo4jPersistentEntity,
-		RelationshipDescription relationship, Long relatedInternalId) {
+		RelationshipDescription relationshipDescription, Long relatedInternalId) {
 
-		Assert.isTrue(relationship.hasRelationshipProperties(),
+		Assert.isTrue(relationshipDescription.hasRelationshipProperties(),
 			"Properties required to create a relationship with properties");
-		Assert.isTrue(!relationship.isDynamic(),
+		Assert.isTrue(!relationshipDescription.isDynamic(),
 			"Creation of relationships with properties is only supported for non-dynamic relationships");
 
 		Node startNode = anyNode(START_NODE_NAME);
@@ -292,10 +293,7 @@ public enum CypherGenerator {
 
 		Parameter idParameter = parameter(FROM_ID_PARAMETER_NAME);
 		Parameter relationshipProperties = parameter(NAME_OF_PROPERTIES_PARAM);
-		String type = relationship.getType();
-
-		Relationship relOutgoing = startNode.relationshipTo(endNode, type).named(RELATIONSHIP_NAME);
-		Relationship relIncoming = startNode.relationshipFrom(endNode, type).named(RELATIONSHIP_NAME);
+		String type = relationshipDescription.getType();
 
 		return match(startNode)
 			.where(neo4jPersistentEntity.isUsingInternalIds()
@@ -303,10 +301,7 @@ public enum CypherGenerator {
 				: startNode.property(idPropertyName).isEqualTo(idParameter))
 			.match(endNode)
 			.where(endNode.internalId().isEqualTo(literalOf(relatedInternalId)))
-			.merge(relationship.isOutgoing()
-				? relOutgoing
-				: relIncoming
-			)
+			.merge(createCypherRelationshipNamed(startNode, endNode, relationshipDescription))
 			.set(RELATIONSHIP_NAME, relationshipProperties)
 			.build();
 	}
@@ -319,23 +314,44 @@ public enum CypherGenerator {
 			: node(neo4jPersistentEntity.getPrimaryLabel(), neo4jPersistentEntity.getAdditionalLabels())
 				.named(START_NODE_NAME);
 
-		final Node endNode = node(relatedNode.getPrimaryLabel(), relatedNode.getAdditionalLabels());
+		Node endNode = node(relatedNode.getPrimaryLabel(), relatedNode.getAdditionalLabels());
 		String idPropertyName = neo4jPersistentEntity.getRequiredIdProperty().getPropertyName();
-		boolean outgoing = relationshipDescription.isOutgoing();
-
-		String relationshipType = relationshipDescription.isDynamic() ? null : relationshipDescription.getType();
-
-		String relationshipToRemoveName = "rel";
-		Relationship relationship = outgoing
-			? startNode.relationshipTo(endNode, relationshipType).named(relationshipToRemoveName)
-			: startNode.relationshipFrom(endNode, relationshipType).named(relationshipToRemoveName);
-
+		Relationship relationship = createCypherRelationshipNamed(startNode, endNode, relationshipDescription);
 		Parameter idParameter = parameter(FROM_ID_PARAMETER_NAME);
+
 		return match(relationship)
 			.where(neo4jPersistentEntity.isUsingInternalIds()
 				? startNode.internalId().isEqualTo(idParameter)
 				: startNode.property(idPropertyName).isEqualTo(idParameter))
 			.delete(relationship.getSymbolicName().get()).build();
+	}
+
+	private Relationship createCypherRelationshipUnnamed(Node startNode, Node endNode, RelationshipDescription relationshipDescription) {
+		return createCypherRelationship(startNode, endNode, relationshipDescription, false);
+	}
+
+	private Relationship createCypherRelationshipNamed(Node startNode, Node endNode, RelationshipDescription relationshipDescription) {
+		return createCypherRelationship(startNode, endNode, relationshipDescription, true);
+	}
+
+	@NotNull
+	private Relationship createCypherRelationship(Node startNode, Node endNode,
+		RelationshipDescription relationshipDescription, boolean named) {
+
+		String type = relationshipDescription.getType();
+		Relationship relationship;
+		switch (relationshipDescription.getDirection()) {
+			case OUTGOING:
+				relationship = startNode.relationshipTo(endNode, type);
+				break;
+			case INCOMING:
+				relationship =  startNode.relationshipFrom(endNode, type);
+				break;
+			case UNDIRECTED:
+			default:
+				relationship = startNode.relationshipBetween(endNode, type);
+		}
+		return named ? relationship.named(RELATIONSHIP_NAME) : relationship;
 	}
 
 	public Expression createReturnStatementForMatch(NodeDescription<?> nodeDescription) {
@@ -447,7 +463,6 @@ public enum CypherGenerator {
 	private void generateListFor(RelationshipDescription relationshipDescription, SymbolicName nodeName,
 		List<RelationshipDescription> processedRelationships, String fieldName, List<Object> mapProjectionLists) {
 
-		String relationshipType = relationshipDescription.getType();
 		String relationshipTargetName = relationshipDescription.generateRelatedNodesCollectionName();
 		String targetPrimaryLabel = relationshipDescription.getTarget().getPrimaryLabel();
 		List<String> targetAdditionalLabels = relationshipDescription.getTarget().getAdditionalLabels();
@@ -460,10 +475,7 @@ public enum CypherGenerator {
 		processedRelationships.add(relationshipDescription);
 
 		if (relationshipDescription.isDynamic()) {
-			Relationship relationship = relationshipDescription
-				.isOutgoing()
-				? startNode.relationshipTo(endNode)
-				: startNode.relationshipFrom(endNode);
+			Relationship relationship = createCypherRelationshipUnnamed(startNode, endNode, relationshipDescription);
 			relationship = relationship.named(relationshipTargetName);
 
 			addMapProjection(relationshipTargetName,
@@ -475,9 +487,7 @@ public enum CypherGenerator {
 				mapProjectionLists);
 
 		} else {
-			Relationship relationship = relationshipDescription.isOutgoing()
-				? startNode.relationshipTo(endNode, relationshipType)
-				: startNode.relationshipFrom(endNode, relationshipType);
+			Relationship relationship = createCypherRelationshipUnnamed(startNode, endNode, relationshipDescription);
 
 			MapProjection mapProjection = projectAllPropertiesAndRelationships(endNodeDescription,
 				relationshipFieldName, new ArrayList<>(processedRelationships));

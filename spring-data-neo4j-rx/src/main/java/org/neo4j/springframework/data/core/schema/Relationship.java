@@ -55,7 +55,17 @@ public @interface Relationship {
 		/**
 		 * Describes an incoming relationship.
 		 */
-		INCOMING
+		INCOMING,
+
+		/**
+		 * Describes an undirected relationship.
+		 * Please note:
+		 * a) immutable does not work
+		 * b) you are ignoring directional information in the db
+		 * c) could be slower because "wrong" direction
+		 */
+		UNDIRECTED
+
 	}
 
 	/**

@@ -54,6 +54,7 @@ import org.neo4j.springframework.data.core.convert.Neo4jConversions;
 import org.neo4j.springframework.data.integration.imperative.repositories.PersonRepository;
 import org.neo4j.springframework.data.integration.imperative.repositories.ThingRepository;
 import org.neo4j.springframework.data.integration.shared.*;
+import org.neo4j.springframework.data.integration.shared.DeepRelationships;
 import org.neo4j.springframework.data.repository.Neo4jRepository;
 import org.neo4j.springframework.data.repository.config.EnableNeo4jRepositories;
 import org.neo4j.springframework.data.repository.query.BoundingBox;
@@ -1661,6 +1662,18 @@ class RepositoryIT {
 			assertThat(people).hasSize(4);
 
 		}
+
+		@Test
+		void saveBidirectionalRelationship(@Autowired BidiRepository repository) {
+			BidirectionalThing target = new BidirectionalThing("thing1");
+			BidirectionalThing source = new BidirectionalThing("thing2");
+			source.setOthers(Collections.singleton(target));
+			target.setOthers(Collections.singleton(source));
+
+			repository.save(source);
+
+//			final List<BidirectionalThing> all = repository.findAll();
+		}
 	}
 
 	@Nested
@@ -2870,6 +2883,9 @@ class RepositoryIT {
 		}
 	}
 
+	interface BidiRepository extends Neo4jRepository<BidirectionalThing, Long> {
+	}
+
 	interface BidirectionalStartRepository extends Neo4jRepository<BidirectionalStart, Long> {
 	}
 
@@ -3015,7 +3031,7 @@ class RepositoryIT {
 
 		@Override
 		protected Collection<String> getMappingBasePackages() {
-			return singletonList(PersonWithAllConstructor.class.getPackage().getName());
+			return singletonList(DeepRelationships.class.getPackage().getName());
 		}
 
 		@Bean
