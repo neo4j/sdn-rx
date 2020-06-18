@@ -26,11 +26,9 @@ import static org.neo4j.springframework.data.core.schema.Constants.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 
 import org.apache.commons.logging.LogFactory;
@@ -403,13 +401,13 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 		return toExecutableQuery(preparedQuery);
 	}
 
-	private void processAssociations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject,
-		@Nullable String inDatabase) {
-		processNestedAssociations(neo4jPersistentEntity, parentObject, inDatabase, new HashSet<>(), new HashSet<>());
+	private void processAssociations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject, @Nullable String inDatabase) {
+
+		processNestedAssociations(neo4jPersistentEntity, parentObject, inDatabase, new NestedRelationshipProcessState());
 	}
 
 	private void processNestedAssociations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject,
-		@Nullable String inDatabase, Set<RelationshipDescription> processedRelationshipDescriptions, Set<Object> processedObjects) {
+		@Nullable String inDatabase, NestedRelationshipProcessState processState) {
 
 		PersistentPropertyAccessor<?> propertyAccessor = neo4jPersistentEntity.getPropertyAccessor(parentObject);
 
@@ -424,9 +422,9 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 
 			RelationshipDescription relationshipDescription = relationshipContext.getRelationship();
 			RelationshipDescription relationshipDescriptionObverse = relationshipDescription.getRelationshipObverse();
+
 			// break recursive procession and deletion of previously created relationships
-			if (hasProcessed(processedRelationshipDescriptions, relationshipDescriptionObverse)
-				|| hasProcessed(processedObjects, relatedValuesToStore)) {
+			if (processState.hasProcessedEither(relationshipDescriptionObverse, relatedValuesToStore)) {
 				return;
 			}
 
@@ -450,8 +448,7 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 				return;
 			}
 
-			processedRelationshipDescriptions.add(relationshipDescription);
-			processedObjects.addAll(relatedValuesToStore);
+			processState.markAsProcessed(relationshipDescription, relatedValuesToStore);
 
 			for (Object relatedValueToStore : relatedValuesToStore) {
 
@@ -481,26 +478,9 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 					targetPropertyAccessor
 						.setProperty(targetNodeDescription.getRequiredIdProperty(), relatedInternalId);
 				}
-				processNestedAssociations(targetNodeDescription, valueToBeSaved, inDatabase, processedRelationshipDescriptions, processedObjects);
+				processNestedAssociations(targetNodeDescription, valueToBeSaved, inDatabase, processState);
 			}
 		});
-	}
-
-	private boolean hasProcessed(Set<Object> processedObjects, @Nullable Collection<?> valuesToStore) {
-		// there can be null elements in the unified collection of values to store.
-		if (valuesToStore == null) {
-			return false;
-		}
-		return processedObjects.containsAll(valuesToStore);
-	}
-
-	private boolean hasProcessed(Set<RelationshipDescription> processedRelationshipDescriptions,
-		RelationshipDescription relationshipDescription) {
-
-		if (relationshipDescription != null) {
-			return processedRelationshipDescriptions.contains(relationshipDescription);
-		}
-		return false;
 	}
 
 	private <Y> Long saveRelatedNode(Object entity, Class<Y> entityType, NodeDescription targetNodeDescription, @Nullable String inDatabase) {

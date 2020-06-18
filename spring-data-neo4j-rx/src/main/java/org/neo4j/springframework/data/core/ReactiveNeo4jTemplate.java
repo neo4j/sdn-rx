@@ -23,7 +23,6 @@ import static java.util.stream.Collectors.*;
 import static org.neo4j.springframework.data.core.DatabaseSelection.*;
 import static org.neo4j.opencypherdsl.Cypher.*;
 import static org.neo4j.springframework.data.core.schema.Constants.*;
-import static org.neo4j.springframework.data.core.support.Relationships.*;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -33,10 +32,8 @@ import reactor.util.function.Tuples;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
 import org.apache.commons.logging.LogFactory;
@@ -409,14 +406,13 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 		return this.toExecutableQuery(preparedQuery);
 	}
 
-	private Mono<Void> processAssociations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject,
-		@Nullable String inDatabase) {
+	private Mono<Void> processAssociations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject, @Nullable String inDatabase) {
 
-		return processNestedAssociations(neo4jPersistentEntity, parentObject, inDatabase, new HashSet<>(), new HashSet<>());
+		return processNestedAssociations(neo4jPersistentEntity, parentObject, inDatabase, new NestedRelationshipProcessState());
 	}
 
 	private Mono<Void> processNestedAssociations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject,
-		@Nullable String inDatabase, Set<RelationshipDescription> processedRelationshipDescriptions, Set<Object> processedObjects) {
+		@Nullable String inDatabase, NestedRelationshipProcessState processState) {
 
 		return Mono.defer(() -> {
 			PersistentPropertyAccessor<?> propertyAccessor = neo4jPersistentEntity.getPropertyAccessor(parentObject);
@@ -436,7 +432,7 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 				RelationshipDescription relationshipDescriptionObverse = relationshipDescription.getRelationshipObverse();
 
 				// break recursive procession and deletion of previously created relationships
-				if (hasProcessed(processedRelationshipDescriptions, relationshipDescriptionObverse) || hasProcessed(processedObjects, relatedValuesToStore)) {
+				if (processState.hasProcessedEither(relationshipDescriptionObverse, relatedValuesToStore)) {
 					return;
 				}
 
@@ -459,8 +455,7 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 					return;
 				}
 
-				processedRelationshipDescriptions.add(relationshipDescription);
-				processedObjects.addAll(relatedValuesToStore);
+				processState.markAsProcessed(relationshipDescription, relatedValuesToStore);
 
 				for (Object relatedValueToStore : relatedValuesToStore) {
 
@@ -495,30 +490,13 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 											.run();
 
 										return relationshipCreationMonoNested.checkpoint()
-											.then(processNestedAssociations(targetNodeDescription, valueToBeSaved, inDatabase, processedRelationshipDescriptions, processedObjects));
+											.then(processNestedAssociations(targetNodeDescription, valueToBeSaved, inDatabase, processState));
 									}).checkpoint()));
 				}
 			});
 
 			return Flux.concat(relationshipCreationMonos).checkpoint().then();
 		});
-	}
-
-	private boolean hasProcessed(Set<Object> processedObjects, @Nullable Collection<?> valuesToStore) {
-		// there can be null elements in the unified collection of values to store.
-		if (valuesToStore == null) {
-			return false;
-		}
-		return processedObjects.containsAll(valuesToStore);
-	}
-
-	private boolean hasProcessed(Set<RelationshipDescription> processedRelationshipDescriptions,
-		RelationshipDescription relationshipDescription) {
-
-		if (relationshipDescription != null) {
-			return processedRelationshipDescriptions.contains(relationshipDescription);
-		}
-		return false;
 	}
 
 	private <Y> Mono<Long> saveRelatedNode(Object relatedNode, Class<Y> entityType, NodeDescription targetNodeDescription,
