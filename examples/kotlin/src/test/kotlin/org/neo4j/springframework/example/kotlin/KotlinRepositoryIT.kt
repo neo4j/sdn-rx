@@ -28,8 +28,10 @@ class KotlinRepositoryIT {
             InputStreamReader(this.javaClass.getResourceAsStream("/movies.cypher"))).use { moviesReader ->
             driver!!.session().use { session ->
                 session.run("MATCH (n) DETACH DELETE n")
-                val moviesCypher = moviesReader.lines().collect(Collectors.joining(" "))
-                session.run(moviesCypher)
+
+                val moviesCypher = moviesReader.readText()
+                // consume all results from the driver
+                session.run(moviesCypher).consume()
             }
         }
     }
@@ -79,7 +81,7 @@ class KotlinRepositoryIT {
         fun neo4jProperties(registry: DynamicPropertyRegistry?) {
             registry!!.add("org.neo4j.driver.uri") { neo4jContainer.boltUrl }
             registry.add("org.neo4j.driver.authentication.username") { "neo4j" }
-            registry.add("org.neo4j.driver.authentication.password") { neo4jContainer.getAdminPassword() }
+            registry.add("org.neo4j.driver.authentication.password") { neo4jContainer.adminPassword }
         }
     }
 }
