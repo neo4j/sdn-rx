@@ -54,6 +54,7 @@ import org.neo4j.springframework.data.core.mapping.Neo4jPersistentProperty;
 import org.neo4j.springframework.data.core.schema.CypherGenerator;
 import org.neo4j.springframework.data.core.schema.NodeDescription;
 import org.neo4j.springframework.data.core.schema.RelationshipDescription;
+import org.neo4j.springframework.data.core.support.Relationships;
 import org.neo4j.springframework.data.repository.event.ReactiveBeforeBindCallback;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -411,11 +412,11 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 	private Mono<Void> processAssociations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject,
 		@Nullable String inDatabase) {
 
-		return processNestedAssociations(neo4jPersistentEntity, parentObject, inDatabase, new HashSet<>());
+		return processNestedAssociations(neo4jPersistentEntity, parentObject, inDatabase, new HashSet<>(), new HashSet<>());
 	}
 
 	private Mono<Void> processNestedAssociations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject,
-		@Nullable String inDatabase, Set<RelationshipDescription> processedRelationshipDescriptions) {
+		@Nullable String inDatabase, Set<RelationshipDescription> processedRelationshipDescriptions, Set<Object> processedObjects) {
 
 		return Mono.defer(() -> {
 			PersistentPropertyAccessor<?> propertyAccessor = neo4jPersistentEntity.getPropertyAccessor(parentObject);
@@ -428,9 +429,14 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 				NestedRelationshipContext relationshipContext = NestedRelationshipContext
 					.of(handler, propertyAccessor, neo4jPersistentEntity);
 
+				Collection<?> relatedValuesToStore = Relationships
+					.unifyRelationshipValue(relationshipContext.getInverse(), relationshipContext.getValue());
+
+				RelationshipDescription relationshipDescription = relationshipContext.getRelationship();
+				RelationshipDescription relationshipDescriptionObverse = relationshipDescription.getRelationshipObverse();
+
 				// break recursive procession and deletion of previously created relationships
-				RelationshipDescription relationshipObverse = relationshipContext.getRelationship().getRelationshipObverse();
-				if (hasProcessed(processedRelationshipDescriptions, relationshipObverse)) {
+				if (hasProcessed(processedRelationshipDescriptions, relationshipDescriptionObverse) || hasProcessed(processedObjects, relatedValuesToStore)) {
 					return;
 				}
 
@@ -440,9 +446,7 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 				// remove all relationships before creating all new if the entity is not new
 				// this avoids the usage of cache but might have significant impact on overall performance
 				if (!neo4jPersistentEntity.isNew(parentObject)) {
-					Statement relationshipRemoveQuery = cypherGenerator
-						.createRelationshipRemoveQuery(neo4jPersistentEntity, relationshipContext.getRelationship(),
-							targetNodeDescription);
+					Statement relationshipRemoveQuery = cypherGenerator.createRelationshipRemoveQuery(neo4jPersistentEntity, relationshipDescription, targetNodeDescription);
 					relationshipCreationMonos.add(
 						neo4jClient.query(renderer.render(relationshipRemoveQuery))
 							.in(inDatabase)
@@ -455,12 +459,12 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 					return;
 				}
 
-				processedRelationshipDescriptions.add(relationshipContext.getRelationship());
+				processedRelationshipDescriptions.add(relationshipDescription);
+				processedObjects.addAll(relatedValuesToStore);
 
-				for (Object relatedValue : unifyRelationshipValue(relationshipContext.getInverse(),
-					relationshipContext.getValue())) {
+				for (Object relatedValueToStore : relatedValuesToStore) {
 
-					Object valueToBeSavedPreEvt = relationshipContext.identifyAndExtractRelationshipValue(relatedValue);
+					Object valueToBeSavedPreEvt = relationshipContext.identifyAndExtractRelationshipValue(relatedValueToStore);
 					Mono<Object> valueToBeSavedMono = eventSupport.maybeCallBeforeBind(valueToBeSavedPreEvt);
 
 					relationshipCreationMonos.add(
@@ -480,7 +484,7 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 										}
 
 										RelationshipStatementHolder statementHolder = RelationshipStatementHolder.createStatement(
-											neo4jMappingContext, neo4jPersistentEntity, relationshipContext, relatedInternalId, relatedValue);
+											neo4jMappingContext, neo4jPersistentEntity, relationshipContext, relatedInternalId, relatedValueToStore);
 
 										// in case of no properties the bind will just return an empty map
 										Mono<ResultSummary> relationshipCreationMonoNested = neo4jClient
@@ -491,13 +495,21 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 											.run();
 
 										return relationshipCreationMonoNested.checkpoint()
-											.then(processNestedAssociations(targetNodeDescription, valueToBeSaved, inDatabase, processedRelationshipDescriptions));
+											.then(processNestedAssociations(targetNodeDescription, valueToBeSaved, inDatabase, processedRelationshipDescriptions, processedObjects));
 									}).checkpoint()));
 				}
 			});
 
 			return Flux.concat(relationshipCreationMonos).checkpoint().then();
 		});
+	}
+
+	private boolean hasProcessed(Set<Object> processedObjects, @Nullable Collection<?> valuesToStore) {
+		// there can be null elements in the unified collection of values to store.
+		if (valuesToStore == null) {
+			return false;
+		}
+		return processedObjects.containsAll(valuesToStore);
 	}
 
 	private boolean hasProcessed(Set<RelationshipDescription> processedRelationshipDescriptions,
