@@ -115,6 +115,7 @@ class RelationshipsIT extends RelationshipsITBase {
 				List<MultipleRelationshipsThing> typeB = t.getTypeB();
 				List<MultipleRelationshipsThing> typeC = t.getTypeC();
 
+				assertThat(typeA).isNotNull();
 				assertThat(typeA).extracting(MultipleRelationshipsThing::getName).isEqualTo("c1");
 				assertThat(typeB).extracting(MultipleRelationshipsThing::getName).containsExactly("c2");
 				assertThat(typeC).extracting(MultipleRelationshipsThing::getName).containsExactly("c3");

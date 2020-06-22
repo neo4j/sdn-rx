@@ -36,11 +36,12 @@ import org.apiguardian.api.API;
 import org.neo4j.driver.exceptions.NoSuchRecordException;
 import org.neo4j.driver.summary.ResultSummary;
 import org.neo4j.driver.summary.SummaryCounters;
-import org.neo4j.springframework.data.core.Neo4jClient.RunnableSpecTightToDatabase;
 import org.neo4j.opencypherdsl.Condition;
 import org.neo4j.opencypherdsl.Functions;
 import org.neo4j.opencypherdsl.Statement;
 import org.neo4j.opencypherdsl.renderer.Renderer;
+import org.neo4j.springframework.data.core.Neo4jClient.RunnableSpecTightToDatabase;
+import org.neo4j.springframework.data.core.NestedRelationshipProcessStateHolder.ProcessState;
 import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentEntity;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentProperty;
@@ -399,13 +400,14 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 		return toExecutableQuery(preparedQuery);
 	}
 
-	private void processRelations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject, @Nullable String inDatabase) {
+	private void processRelations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject,
+		@Nullable String inDatabase) {
 
-		processNestedRelations(neo4jPersistentEntity, parentObject, inDatabase, new NestedRelationshipProcessState());
+		processNestedRelations(neo4jPersistentEntity, parentObject, inDatabase, new NestedRelationshipProcessStateHolder());
 	}
 
 	private void processNestedRelations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject,
-		@Nullable String inDatabase, NestedRelationshipProcessState processState) {
+		@Nullable String inDatabase, NestedRelationshipProcessStateHolder processStateHolder) {
 
 		PersistentPropertyAccessor<?> propertyAccessor = neo4jPersistentEntity.getPropertyAccessor(parentObject);
 
@@ -422,17 +424,9 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 			RelationshipDescription relationshipDescriptionObverse = relationshipDescription.getRelationshipObverse();
 
 			// break recursive procession and deletion of previously created relationships
-			if (processState.hasProcessedEither(relationshipDescriptionObverse, relatedValuesToStore)) {
+			ProcessState processState = processStateHolder.getStateOf(relationshipDescriptionObverse, relatedValuesToStore);
+			if (processState == ProcessState.PROCESSED_BOTH) {
 				return;
-
-				// if (relatedValuesToStore) proccessed and not relationshipProcess
-				// for (Object relatedValueToStore : relatedValuesToStore) {
-				// 	neo4jClient.query(renderer.render(statementHolder.getRelationshipCreationQuery()))
-				//					.in(inDatabase)
-				//					.bind(convertIdValues(fromId)).to(FROM_ID_PARAMETER_NAME)
-				//					.bindAll(statementHolder.getProperties())
-				//					.run();
-				// }
 			}
 
 			Neo4jPersistentEntity<?> relationshipsToRemoveDescription = neo4jMappingContext
@@ -455,7 +449,7 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 				return;
 			}
 
-			processState.markAsProcessed(relationshipDescription, relatedValuesToStore);
+			processStateHolder.markAsProcessed(relationshipDescription, relatedValuesToStore);
 
 			for (Object relatedValueToStore : relatedValuesToStore) {
 
@@ -485,7 +479,9 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 					targetPropertyAccessor
 						.setProperty(targetNodeDescription.getRequiredIdProperty(), relatedInternalId);
 				}
-				processNestedRelations(targetNodeDescription, valueToBeSaved, inDatabase, processState);
+				if (processState != ProcessState.PROCESSED_ALL_VALUES) {
+					processNestedRelations(targetNodeDescription, valueToBeSaved, inDatabase, processStateHolder);
+				}
 			}
 		});
 	}

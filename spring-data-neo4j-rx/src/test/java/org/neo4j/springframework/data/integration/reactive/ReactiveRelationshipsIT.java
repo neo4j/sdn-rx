@@ -24,7 +24,6 @@ import reactor.test.StepVerifier;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -119,6 +118,7 @@ class ReactiveRelationshipsIT extends RelationshipsITBase {
 				List<MultipleRelationshipsThing> typeB = loadedThing.getTypeB();
 				List<MultipleRelationshipsThing> typeC = loadedThing.getTypeC();
 
+				assertThat(typeA).isNotNull();
 				assertThat(typeA).extracting(MultipleRelationshipsThing::getName).isEqualTo("c1");
 				assertThat(typeB).extracting(MultipleRelationshipsThing::getName).containsExactly("c2");
 				assertThat(typeC).extracting(MultipleRelationshipsThing::getName).containsExactly("c3");

@@ -20,8 +20,8 @@ package org.neo4j.springframework.data.core;
 
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
-import static org.neo4j.springframework.data.core.DatabaseSelection.*;
 import static org.neo4j.opencypherdsl.Cypher.*;
+import static org.neo4j.springframework.data.core.DatabaseSelection.*;
 import static org.neo4j.springframework.data.core.schema.Constants.*;
 
 import reactor.core.publisher.Flux;
@@ -45,6 +45,7 @@ import org.neo4j.opencypherdsl.Condition;
 import org.neo4j.opencypherdsl.Functions;
 import org.neo4j.opencypherdsl.Statement;
 import org.neo4j.opencypherdsl.renderer.Renderer;
+import org.neo4j.springframework.data.core.NestedRelationshipProcessStateHolder.ProcessState;
 import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentEntity;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentProperty;
@@ -407,11 +408,11 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 
 	private Mono<Void> processRelations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject, @Nullable String inDatabase) {
 
-		return processNestedRelations(neo4jPersistentEntity, parentObject, inDatabase, new NestedRelationshipProcessState());
+		return processNestedRelations(neo4jPersistentEntity, parentObject, inDatabase, new NestedRelationshipProcessStateHolder());
 	}
 
 	private Mono<Void> processNestedRelations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject,
-		@Nullable String inDatabase, NestedRelationshipProcessState processState) {
+		@Nullable String inDatabase, NestedRelationshipProcessStateHolder processStateHolder) {
 
 		return Mono.defer(() -> {
 			PersistentPropertyAccessor<?> propertyAccessor = neo4jPersistentEntity.getPropertyAccessor(parentObject);
@@ -431,7 +432,8 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 				RelationshipDescription relationshipDescriptionObverse = relationshipDescription.getRelationshipObverse();
 
 				// break recursive procession and deletion of previously created relationships
-				if (processState.hasProcessedEither(relationshipDescriptionObverse, relatedValuesToStore)) {
+				ProcessState processState = processStateHolder.getStateOf(relationshipDescriptionObverse, relatedValuesToStore);
+				if (processState == ProcessState.PROCESSED_BOTH) {
 					return;
 				}
 
@@ -454,7 +456,7 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 					return;
 				}
 
-				processState.markAsProcessed(relationshipDescription, relatedValuesToStore);
+				processStateHolder.markAsProcessed(relationshipDescription, relatedValuesToStore);
 
 				for (Object relatedValueToStore : relatedValuesToStore) {
 
@@ -488,8 +490,13 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 											.bindAll(statementHolder.getProperties())
 											.run();
 
-										return relationshipCreationMonoNested.checkpoint()
-											.then(processNestedRelations(targetNodeDescription, valueToBeSaved, inDatabase, processState));
+										if (processState != ProcessState.PROCESSED_ALL_VALUES) {
+											return relationshipCreationMonoNested.checkpoint()
+												.then(processNestedRelations(targetNodeDescription, valueToBeSaved,
+													inDatabase, processStateHolder));
+										} else {
+											return relationshipCreationMonoNested.checkpoint().then();
+										}
 									}).checkpoint()));
 				}
 			});
