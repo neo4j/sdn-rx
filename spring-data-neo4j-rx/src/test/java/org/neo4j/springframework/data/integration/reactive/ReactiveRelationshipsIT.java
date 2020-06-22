@@ -16,9 +16,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.neo4j.springframework.data.integration.imperative;
+package org.neo4j.springframework.data.integration.reactive;
 
 import static org.assertj.core.api.Assertions.*;
+
+import reactor.test.StepVerifier;
 
 import java.util.Collections;
 import java.util.List;
@@ -29,14 +31,14 @@ import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Record;
 import org.neo4j.driver.Session;
-import org.neo4j.springframework.data.config.AbstractNeo4jConfig;
+import org.neo4j.springframework.data.config.AbstractReactiveNeo4jConfig;
 import org.neo4j.springframework.data.integration.shared.MultipleRelationshipsThing;
 import org.neo4j.springframework.data.integration.shared.RelationshipsITBase;
-import org.neo4j.springframework.data.repository.config.EnableNeo4jRepositories;
+import org.neo4j.springframework.data.repository.config.EnableReactiveNeo4jRepositories;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
@@ -44,9 +46,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  *
  * @author Michael J. Simons
  */
-class RelationshipsIT extends RelationshipsITBase {
+class ReactiveRelationshipsIT extends RelationshipsITBase {
 
-	@Autowired RelationshipsIT(Driver driver) {
+	@Autowired ReactiveRelationshipsIT(Driver driver) {
 		super(driver);
 	}
 
@@ -56,13 +58,15 @@ class RelationshipsIT extends RelationshipsITBase {
 		MultipleRelationshipsThing p = new MultipleRelationshipsThing("p");
 		p.setTypeA(new MultipleRelationshipsThing("c"));
 
-		p = repository.save(p);
-
-		Optional<MultipleRelationshipsThing> loadedThing = repository.findById(p.getId());
-		assertThat(loadedThing).isPresent()
-			.map(MultipleRelationshipsThing::getTypeA)
-			.map(MultipleRelationshipsThing::getName)
-			.hasValue("c");
+		repository.save(p)
+			.map(MultipleRelationshipsThing::getId)
+			.flatMap(repository::findById)
+			.as(StepVerifier::create)
+			.assertNext(loadedThing -> assertThat(loadedThing)
+				.extracting(MultipleRelationshipsThing::getTypeA)
+				.extracting(MultipleRelationshipsThing::getName)
+				.isEqualTo("c"))
+			.verifyComplete();
 
 		try (Session session = driver.session()) {
 			List<String> names = session.run("MATCH (n:MultipleRelationshipsThing) RETURN n.name AS name")
@@ -77,13 +81,14 @@ class RelationshipsIT extends RelationshipsITBase {
 		MultipleRelationshipsThing p = new MultipleRelationshipsThing("p");
 		p.setTypeB(Collections.singletonList(new MultipleRelationshipsThing("c")));
 
-		p = repository.save(p);
-
-		Optional<MultipleRelationshipsThing> loadedThing = repository.findById(p.getId());
-		assertThat(loadedThing).isPresent()
-			.map(MultipleRelationshipsThing::getTypeB)
-			.hasValueSatisfying(
-				l -> assertThat(l).extracting(MultipleRelationshipsThing::getName).containsExactly("c"));
+		repository.save(p)
+			.map(MultipleRelationshipsThing::getId)
+			.flatMap(repository::findById)
+			.as(StepVerifier::create)
+			.assertNext(loadedThing -> assertThat(loadedThing.getTypeB())
+				.extracting(MultipleRelationshipsThing::getName)
+				.containsExactly("c"))
+			.verifyComplete();
 
 		try (Session session = driver.session()) {
 			List<String> names = session.run("MATCH (n:MultipleRelationshipsThing) RETURN n.name AS name")
@@ -105,20 +110,20 @@ class RelationshipsIT extends RelationshipsITBase {
 		p.setTypeB(Collections.singletonList(new MultipleRelationshipsThing("c2")));
 		p.setTypeC(Collections.singletonList(new MultipleRelationshipsThing("c3")));
 
-		p = repository.save(p);
-
-		Optional<MultipleRelationshipsThing> loadedThing = repository.findById(p.getId());
-		assertThat(loadedThing).isPresent()
-			.hasValueSatisfying(t -> {
-
-				MultipleRelationshipsThing typeA = t.getTypeA();
-				List<MultipleRelationshipsThing> typeB = t.getTypeB();
-				List<MultipleRelationshipsThing> typeC = t.getTypeC();
+		repository.save(p)
+			.map(MultipleRelationshipsThing::getId)
+			.flatMap(repository::findById)
+			.as(StepVerifier::create)
+			.assertNext(loadedThing -> {
+				MultipleRelationshipsThing typeA = loadedThing.getTypeA();
+				List<MultipleRelationshipsThing> typeB = loadedThing.getTypeB();
+				List<MultipleRelationshipsThing> typeC = loadedThing.getTypeC();
 
 				assertThat(typeA).extracting(MultipleRelationshipsThing::getName).isEqualTo("c1");
 				assertThat(typeB).extracting(MultipleRelationshipsThing::getName).containsExactly("c2");
 				assertThat(typeC).extracting(MultipleRelationshipsThing::getName).containsExactly("c3");
-			});
+			})
+			.verifyComplete();
 
 		try (Session session = driver.session()) {
 
@@ -147,21 +152,22 @@ class RelationshipsIT extends RelationshipsITBase {
 		p.setTypeB(Collections.singletonList(c));
 		p.setTypeC(Collections.singletonList(c));
 
-		p = repository.save(p);
+		repository.save(p)
+			.map(MultipleRelationshipsThing::getId)
+			.flatMap(repository::findById)
+			.as(StepVerifier::create)
+			.assertNext(loadedThing -> {
 
-		Optional<MultipleRelationshipsThing> loadedThing = repository.findById(p.getId());
-		assertThat(loadedThing).isPresent()
-			.hasValueSatisfying(t -> {
-
-				MultipleRelationshipsThing typeA = t.getTypeA();
-				List<MultipleRelationshipsThing> typeB = t.getTypeB();
-				List<MultipleRelationshipsThing> typeC = t.getTypeC();
+				MultipleRelationshipsThing typeA = loadedThing.getTypeA();
+				List<MultipleRelationshipsThing> typeB = loadedThing.getTypeB();
+				List<MultipleRelationshipsThing> typeC = loadedThing.getTypeC();
 
 				assertThat(typeA).isNotNull();
 				assertThat(typeA).extracting(MultipleRelationshipsThing::getName).isEqualTo("c1");
 				assertThat(typeB).extracting(MultipleRelationshipsThing::getName).containsExactly("c1");
 				assertThat(typeC).extracting(MultipleRelationshipsThing::getName).containsExactly("c1");
-			});
+			})
+			.verifyComplete();
 
 		try (Session session = driver.session()) {
 
@@ -193,21 +199,22 @@ class RelationshipsIT extends RelationshipsITBase {
 
 		c.setTypeA(p);
 
-		p = repository.save(p);
+		repository.save(p)
+			.map(MultipleRelationshipsThing::getId)
+			.flatMap(repository::findById)
+			.as(StepVerifier::create)
+			.assertNext(loadedThing -> {
 
-		Optional<MultipleRelationshipsThing> loadedThing = repository.findById(p.getId());
-		assertThat(loadedThing).isPresent()
-			.hasValueSatisfying(t -> {
-
-				MultipleRelationshipsThing typeA = t.getTypeA();
-				List<MultipleRelationshipsThing> typeB = t.getTypeB();
-				List<MultipleRelationshipsThing> typeC = t.getTypeC();
+				MultipleRelationshipsThing typeA = loadedThing.getTypeA();
+				List<MultipleRelationshipsThing> typeB = loadedThing.getTypeB();
+				List<MultipleRelationshipsThing> typeC = loadedThing.getTypeC();
 
 				assertThat(typeA).isNotNull();
 				assertThat(typeA).extracting(MultipleRelationshipsThing::getName).isEqualTo("c1");
 				assertThat(typeB).extracting(MultipleRelationshipsThing::getName).containsExactly("c1");
 				assertThat(typeC).extracting(MultipleRelationshipsThing::getName).containsExactly("c1");
-			});
+			})
+			.verifyComplete();
 
 		try (Session session = driver.session()) {
 
@@ -226,13 +233,13 @@ class RelationshipsIT extends RelationshipsITBase {
 		}
 	}
 
-	interface MultipleRelationshipsThingRepository extends CrudRepository<MultipleRelationshipsThing, Long> {
+	interface MultipleRelationshipsThingRepository extends ReactiveCrudRepository<MultipleRelationshipsThing, Long> {
 	}
 
 	@Configuration
 	@EnableTransactionManagement
-	@EnableNeo4jRepositories(considerNestedRepositories = true)
-	static class Config extends AbstractNeo4jConfig {
+	@EnableReactiveNeo4jRepositories(considerNestedRepositories = true)
+	static class Config extends AbstractReactiveNeo4jConfig {
 
 		@Bean
 		public Driver driver() {

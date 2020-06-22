@@ -18,7 +18,10 @@
  */
 package org.neo4j.springframework.data.integration.shared;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.neo4j.driver.Driver;
+import org.neo4j.driver.Session;
+import org.neo4j.driver.Transaction;
 import org.neo4j.springframework.data.test.Neo4jExtension;
 import org.neo4j.springframework.data.test.Neo4jIntegrationTest;
 
@@ -34,5 +37,16 @@ public abstract class RelationshipsITBase {
 
 	protected RelationshipsITBase(Driver driver) {
 		this.driver = driver;
+	}
+
+	@BeforeEach
+	void setup() {
+		try (
+			Session session = driver.session();
+			Transaction transaction = session.beginTransaction()
+		) {
+			transaction.run("MATCH (n) detach delete n").consume();
+			transaction.commit();
+		}
 	}
 }
