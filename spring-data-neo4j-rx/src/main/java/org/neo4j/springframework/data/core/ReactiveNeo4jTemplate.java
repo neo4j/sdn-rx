@@ -419,11 +419,11 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 			Object fromId = propertyAccessor.getProperty(neo4jPersistentEntity.getRequiredIdProperty());
 			List<Mono<Void>> relationshipCreationMonos = new ArrayList<>();
 
-			neo4jPersistentEntity.doWithAssociations((AssociationHandler<Neo4jPersistentProperty>) handler -> {
+			neo4jPersistentEntity.doWithAssociations((AssociationHandler<Neo4jPersistentProperty>) association -> {
 
 				// create context to bundle parameters
 				NestedRelationshipContext relationshipContext = NestedRelationshipContext
-					.of(handler, propertyAccessor, neo4jPersistentEntity);
+					.of(association, propertyAccessor, neo4jPersistentEntity);
 
 				Collection<?> relatedValuesToStore = Relationships
 					.unifyRelationshipValue(relationshipContext.getInverse(), relationshipContext.getValue());
@@ -437,13 +437,13 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 					return;
 				}
 
-				Neo4jPersistentEntity<?> targetNodeDescription = (Neo4jPersistentEntity<?>) neo4jMappingContext
-					.getRequiredNodeDescription(relationshipContext.getAssociationTargetType());
-
 				// remove all relationships before creating all new if the entity is not new
 				// this avoids the usage of cache but might have significant impact on overall performance
 				if (!neo4jPersistentEntity.isNew(parentObject)) {
-					Statement relationshipRemoveQuery = cypherGenerator.createRelationshipRemoveQuery(neo4jPersistentEntity, relationshipDescription, targetNodeDescription);
+					Neo4jPersistentEntity<?> previouslyRelatedPersistentEntity = neo4jMappingContext
+						.getPersistentEntity(relationshipContext.getAssociationTargetType());
+
+					Statement relationshipRemoveQuery = cypherGenerator.createRelationshipRemoveQuery(neo4jPersistentEntity, relationshipDescription, previouslyRelatedPersistentEntity);
 					relationshipCreationMonos.add(
 						neo4jClient.query(renderer.render(relationshipRemoveQuery))
 							.in(inDatabase)
@@ -461,6 +461,8 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 				for (Object relatedValueToStore : relatedValuesToStore) {
 
 					Object valueToBeSavedPreEvt = relationshipContext.identifyAndExtractRelationshipValue(relatedValueToStore);
+					Neo4jPersistentEntity<?> targetNodeDescription = neo4jMappingContext.getPersistentEntity(valueToBeSavedPreEvt.getClass());
+
 					Mono<Object> valueToBeSavedMono = eventSupport.maybeCallBeforeBind(valueToBeSavedPreEvt);
 
 					relationshipCreationMonos.add(
