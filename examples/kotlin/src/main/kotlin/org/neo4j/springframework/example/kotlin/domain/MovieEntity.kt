@@ -29,7 +29,7 @@ import java.util.HashMap
  * @author Gerrit Meier
  */
 @Node("Movie")
-data class MovieEntity(@Id val title: String, @Property("tagline") val description: String) {
+data class MovieEntity(@Id val title: String, @Property("tagline") val description: String?, var average: Average?) {
 
     @Relationship(type = "ACTED_IN", direction = Relationship.Direction.INCOMING)
     var actorsAndRoles: Map<PersonEntity, Roles> = HashMap()
@@ -37,4 +37,10 @@ data class MovieEntity(@Id val title: String, @Property("tagline") val descripti
     @Relationship(type = "DIRECTED", direction = Relationship.Direction.INCOMING)
     var directors: List<PersonEntity> = ArrayList()
 
+}
+
+enum class Average {
+    Bad,
+    Good,
+    Na
 }
