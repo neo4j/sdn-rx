@@ -45,7 +45,7 @@ import org.neo4j.opencypherdsl.Condition;
 import org.neo4j.opencypherdsl.Functions;
 import org.neo4j.opencypherdsl.Statement;
 import org.neo4j.opencypherdsl.renderer.Renderer;
-import org.neo4j.springframework.data.core.NestedRelationshipProcessStateHolder.ProcessState;
+import org.neo4j.springframework.data.core.NestedRelationshipProcessingStateMachine.ProcessState;
 import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentEntity;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentProperty;
@@ -408,11 +408,11 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 
 	private Mono<Void> processRelations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject, @Nullable String inDatabase) {
 
-		return processNestedRelations(neo4jPersistentEntity, parentObject, inDatabase, new NestedRelationshipProcessStateHolder());
+		return processNestedRelations(neo4jPersistentEntity, parentObject, inDatabase, new NestedRelationshipProcessingStateMachine());
 	}
 
 	private Mono<Void> processNestedRelations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject,
-		@Nullable String inDatabase, NestedRelationshipProcessStateHolder processStateHolder) {
+		@Nullable String inDatabase, NestedRelationshipProcessingStateMachine stateMachine) {
 
 		return Mono.defer(() -> {
 			PersistentPropertyAccessor<?> propertyAccessor = neo4jPersistentEntity.getPropertyAccessor(parentObject);
@@ -429,10 +429,12 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 					.unifyRelationshipValue(relationshipContext.getInverse(), relationshipContext.getValue());
 
 				RelationshipDescription relationshipDescription = relationshipContext.getRelationship();
-				RelationshipDescription relationshipDescriptionObverse = relationshipDescription.getRelationshipObverse();
+				RelationshipDescription relationshipDescriptionObverse = relationshipDescription
+					.getRelationshipObverse();
 
 				// break recursive procession and deletion of previously created relationships
-				ProcessState processState = processStateHolder.getStateOf(relationshipDescriptionObverse, relatedValuesToStore);
+				ProcessState processState = stateMachine
+					.getStateOf(relationshipDescriptionObverse, relatedValuesToStore);
 				if (processState == ProcessState.PROCESSED_BOTH) {
 					return;
 				}
@@ -443,7 +445,9 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 					Neo4jPersistentEntity<?> previouslyRelatedPersistentEntity = neo4jMappingContext
 						.getPersistentEntity(relationshipContext.getAssociationTargetType());
 
-					Statement relationshipRemoveQuery = cypherGenerator.createRelationshipRemoveQuery(neo4jPersistentEntity, relationshipDescription, previouslyRelatedPersistentEntity);
+					Statement relationshipRemoveQuery = cypherGenerator
+						.createRelationshipRemoveQuery(neo4jPersistentEntity, relationshipDescription,
+							previouslyRelatedPersistentEntity);
 					relationshipCreationMonos.add(
 						neo4jClient.query(renderer.render(relationshipRemoveQuery))
 							.in(inDatabase)
@@ -456,50 +460,54 @@ public final class ReactiveNeo4jTemplate implements ReactiveNeo4jOperations, Bea
 					return;
 				}
 
-				processStateHolder.markAsProcessed(relationshipDescription, relatedValuesToStore);
+				stateMachine.markAsProcessed(relationshipDescription, relatedValuesToStore);
 
 				for (Object relatedValueToStore : relatedValuesToStore) {
 
-					Object valueToBeSavedPreEvt = relationshipContext.identifyAndExtractRelationshipValue(relatedValueToStore);
-					Neo4jPersistentEntity<?> targetNodeDescription = neo4jMappingContext.getPersistentEntity(valueToBeSavedPreEvt.getClass());
+					Object valueToBeSavedPreEvt = relationshipContext
+						.identifyAndExtractRelationshipValue(relatedValueToStore);
 
-					Mono<Object> valueToBeSavedMono = eventSupport.maybeCallBeforeBind(valueToBeSavedPreEvt);
+					Mono<Void> createRelationship = eventSupport
+						.maybeCallBeforeBind(valueToBeSavedPreEvt)
+						.flatMap(valueToBeSaved -> {
+							Neo4jPersistentEntity<?> targetNodeDescription = neo4jMappingContext
+								.getPersistentEntity(valueToBeSavedPreEvt.getClass());
+							return saveRelatedNode(valueToBeSaved, relationshipContext.getAssociationTargetType(),
+								targetNodeDescription, inDatabase)
+								.flatMap(relatedInternalId -> {
 
-					relationshipCreationMonos.add(
-						valueToBeSavedMono
-							.flatMap(valueToBeSaved ->
-								saveRelatedNode(valueToBeSaved, relationshipContext.getAssociationTargetType(),
-									targetNodeDescription, inDatabase)
-									.flatMap(relatedInternalId -> {
+									// if an internal id is used this must get set to link this entity in the next iteration
+									if (targetNodeDescription.isUsingInternalIds()) {
+										PersistentPropertyAccessor<?> targetPropertyAccessor = targetNodeDescription
+											.getPropertyAccessor(valueToBeSaved);
+										targetPropertyAccessor
+											.setProperty(targetNodeDescription.getRequiredIdProperty(),
+												relatedInternalId);
+									}
 
-										// if an internal id is used this must get set to link this entity in the next iteration
-										if (targetNodeDescription.isUsingInternalIds()) {
-											PersistentPropertyAccessor<?> targetPropertyAccessor = targetNodeDescription
-												.getPropertyAccessor(valueToBeSaved);
-											targetPropertyAccessor
-												.setProperty(targetNodeDescription.getRequiredIdProperty(),
-													relatedInternalId);
-										}
+									RelationshipStatementHolder statementHolder = RelationshipStatementHolder
+										.createStatement(
+											neo4jMappingContext, neo4jPersistentEntity, relationshipContext,
+											relatedInternalId, relatedValueToStore);
 
-										RelationshipStatementHolder statementHolder = RelationshipStatementHolder.createStatement(
-											neo4jMappingContext, neo4jPersistentEntity, relationshipContext, relatedInternalId, relatedValueToStore);
+									// in case of no properties the bind will just return an empty map
+									Mono<ResultSummary> relationshipCreationMonoNested = neo4jClient
+										.query(renderer.render(statementHolder.getRelationshipCreationQuery()))
+										.in(inDatabase)
+										.bind(convertIdValues(fromId)).to(FROM_ID_PARAMETER_NAME)
+										.bindAll(statementHolder.getProperties())
+										.run();
 
-										// in case of no properties the bind will just return an empty map
-										Mono<ResultSummary> relationshipCreationMonoNested = neo4jClient
-											.query(renderer.render(statementHolder.getRelationshipCreationQuery()))
-											.in(inDatabase)
-											.bind(convertIdValues(fromId)).to(FROM_ID_PARAMETER_NAME)
-											.bindAll(statementHolder.getProperties())
-											.run();
-
-										if (processState != ProcessState.PROCESSED_ALL_VALUES) {
-											return relationshipCreationMonoNested.checkpoint()
-												.then(processNestedRelations(targetNodeDescription, valueToBeSaved,
-													inDatabase, processStateHolder));
-										} else {
-											return relationshipCreationMonoNested.checkpoint().then();
-										}
-									}).checkpoint()));
+									if (processState != ProcessState.PROCESSED_ALL_VALUES) {
+										return relationshipCreationMonoNested.checkpoint()
+											.then(processNestedRelations(targetNodeDescription, valueToBeSaved,
+												inDatabase, stateMachine));
+									} else {
+										return relationshipCreationMonoNested.checkpoint().then();
+									}
+								}).checkpoint();
+						});
+					relationshipCreationMonos.add(createRelationship);
 				}
 			});
 

@@ -41,7 +41,7 @@ import org.neo4j.opencypherdsl.Functions;
 import org.neo4j.opencypherdsl.Statement;
 import org.neo4j.opencypherdsl.renderer.Renderer;
 import org.neo4j.springframework.data.core.Neo4jClient.RunnableSpecTightToDatabase;
-import org.neo4j.springframework.data.core.NestedRelationshipProcessStateHolder.ProcessState;
+import org.neo4j.springframework.data.core.NestedRelationshipProcessingStateMachine.ProcessState;
 import org.neo4j.springframework.data.core.mapping.Neo4jMappingContext;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentEntity;
 import org.neo4j.springframework.data.core.mapping.Neo4jPersistentProperty;
@@ -403,11 +403,11 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 	private void processRelations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject,
 		@Nullable String inDatabase) {
 
-		processNestedRelations(neo4jPersistentEntity, parentObject, inDatabase, new NestedRelationshipProcessStateHolder());
+		processNestedRelations(neo4jPersistentEntity, parentObject, inDatabase, new NestedRelationshipProcessingStateMachine());
 	}
 
 	private void processNestedRelations(Neo4jPersistentEntity<?> neo4jPersistentEntity, Object parentObject,
-		@Nullable String inDatabase, NestedRelationshipProcessStateHolder processStateHolder) {
+		@Nullable String inDatabase, NestedRelationshipProcessingStateMachine stateMachine) {
 
 		PersistentPropertyAccessor<?> propertyAccessor = neo4jPersistentEntity.getPropertyAccessor(parentObject);
 		Object fromId = propertyAccessor.getProperty(neo4jPersistentEntity.getRequiredIdProperty());
@@ -425,7 +425,8 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 			RelationshipDescription relationshipDescriptionObverse = relationshipDescription.getRelationshipObverse();
 
 			// break recursive procession and deletion of previously created relationships
-			ProcessState processState = processStateHolder.getStateOf(relationshipDescriptionObverse, relatedValuesToStore);
+			ProcessState processState = stateMachine
+				.getStateOf(relationshipDescriptionObverse, relatedValuesToStore);
 			if (processState == ProcessState.PROCESSED_BOTH) {
 				return;
 			}
@@ -449,21 +450,25 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 				return;
 			}
 
-			processStateHolder.markAsProcessed(relationshipDescription, relatedValuesToStore);
+			stateMachine.markAsProcessed(relationshipDescription, relatedValuesToStore);
 
 			for (Object relatedValueToStore : relatedValuesToStore) {
 
 				// here map entry is not always anymore a dynamic association
-				Object valueToBeSaved = relationshipContext.identifyAndExtractRelationshipValue(relatedValueToStore);
-				Neo4jPersistentEntity<?> targetNodeDescription = neo4jMappingContext.getPersistentEntity(valueToBeSaved.getClass());
+				Object valueToBeSavedPreEvt = relationshipContext
+					.identifyAndExtractRelationshipValue(relatedValueToStore);
+				valueToBeSavedPreEvt = eventSupport.maybeCallBeforeBind(valueToBeSavedPreEvt);
 
-				valueToBeSaved = eventSupport.maybeCallBeforeBind(valueToBeSaved);
+				Neo4jPersistentEntity<?> targetNodeDescription = neo4jMappingContext
+					.getPersistentEntity(valueToBeSavedPreEvt.getClass());
 
-				Long relatedInternalId = saveRelatedNode(valueToBeSaved, relationshipContext.getAssociationTargetType(),
+				Long relatedInternalId = saveRelatedNode(valueToBeSavedPreEvt,
+					relationshipContext.getAssociationTargetType(),
 					targetNodeDescription, inDatabase);
 
 				RelationshipStatementHolder statementHolder = RelationshipStatementHolder.createStatement(
-					neo4jMappingContext, neo4jPersistentEntity, relationshipContext, relatedInternalId, relatedValueToStore);
+					neo4jMappingContext, neo4jPersistentEntity, relationshipContext, relatedInternalId,
+					relatedValueToStore);
 
 				neo4jClient.query(renderer.render(statementHolder.getRelationshipCreationQuery()))
 					.in(inDatabase)
@@ -474,12 +479,12 @@ public final class Neo4jTemplate implements Neo4jOperations, BeanFactoryAware {
 				// if an internal id is used this must get set to link this entity in the next iteration
 				if (targetNodeDescription.isUsingInternalIds()) {
 					PersistentPropertyAccessor<?> targetPropertyAccessor = targetNodeDescription
-						.getPropertyAccessor(valueToBeSaved);
+						.getPropertyAccessor(valueToBeSavedPreEvt);
 					targetPropertyAccessor
 						.setProperty(targetNodeDescription.getRequiredIdProperty(), relatedInternalId);
 				}
 				if (processState != ProcessState.PROCESSED_ALL_VALUES) {
-					processNestedRelations(targetNodeDescription, valueToBeSaved, inDatabase, processStateHolder);
+					processNestedRelations(targetNodeDescription, valueToBeSavedPreEvt, inDatabase, stateMachine);
 				}
 			}
 		});

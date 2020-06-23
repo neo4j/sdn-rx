@@ -34,7 +34,7 @@ import org.springframework.lang.Nullable;
  * @author Michael J. Simons
  * @soundtrack Helge Schneider - Heart Attack No. 1
  */
-final class NestedRelationshipProcessStateHolder {
+final class NestedRelationshipProcessingStateMachine {
 
 	enum ProcessState {
 		PROCESSED_NONE,
