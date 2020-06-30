@@ -61,6 +61,11 @@ public final class Neo4jRepositoryConfigurationExtension extends RepositoryConfi
 	 */
 	static final String DEFAULT_MAPPING_CONTEXT_BEAN_NAME = "neo4jMappingContext";
 
+	public Neo4jRepositoryConfigurationExtension() {
+
+		new StartupLogger(StartupLogger.Mode.IMPERATIVE).logStarting();
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.repository.config14.RepositoryConfigurationExtension#getRepositoryFactoryBeanClassName()

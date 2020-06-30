@@ -61,6 +61,11 @@ public final class ReactiveNeo4jRepositoryConfigurationExtension extends Reposit
 	 */
 	static final String DEFAULT_MAPPING_CONTEXT_BEAN_NAME = "neo4jMappingContext";
 
+	public ReactiveNeo4jRepositoryConfigurationExtension() {
+
+		new StartupLogger(StartupLogger.Mode.REACTIVE).logStarting();
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.repository.config14.RepositoryConfigurationExtension#getRepositoryFactoryBeanClassName()
