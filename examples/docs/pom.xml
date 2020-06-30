@@ -32,7 +32,7 @@
 	<version>999-SNAPSHOT</version>
 
 	<name>SDN⚡️RX Examples (Miscellaneous for docs)</name>
-	<description>Miscellaneous examples used through the documention.</description>
+	<description>Miscellaneous examples used through the documentation.</description>
 
 	<properties>
 		<java.version>11</java.version>

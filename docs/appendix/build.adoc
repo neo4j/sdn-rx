@@ -28,7 +28,7 @@ All examples (`/examples`) and also benchmarking (`/benchmarks`) will be compile
 
 The following sections are alternatives and roughly sorted by increased effort.
 
-All builds require a local copy of the the project:
+All builds require a local copy of the project:
 
 [source,console,subs="verbatim,attributes"]
 [[checkout-sdn-rx]]
