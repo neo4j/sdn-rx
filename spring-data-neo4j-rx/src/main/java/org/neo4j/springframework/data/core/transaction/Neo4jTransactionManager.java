@@ -176,7 +176,7 @@ public class Neo4jTransactionManager extends AbstractPlatformTransactionManager 
 
 			TransactionSynchronizationManager.bindResource(this.driver, transactionHolder);
 		} catch (Exception ex) {
-			throw new TransactionSystemException(String.format("Could not open a new Neo4j session: %s", ex.getMessage()));
+			throw new TransactionSystemException(String.format("Could not open a new Neo4j session: %s", ex.getMessage()), ex);
 		}
 	}
 
