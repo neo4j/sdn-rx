@@ -1089,6 +1089,27 @@ class ReactiveRepositoryIT {
 				.verifyComplete();
 
 		}
+
+		@Test // DATAGRAPH-1350
+		void loadEntityWithRelationshipWithPropertiesFromCustomQueryIncoming(
+				@Autowired ReactiveHobbyithRelationshipWithPropertiesRepository repository) {
+
+			long personId;
+
+			try (Session session = createSession()) {
+				Record record = session.run("CREATE (n:AltPerson{name:'Freddie'}), (n)-[l1:LIKES {rating: 5}]->(h1:AltHobby{name:'Music'}) RETURN n, h1").single();
+				personId = record.get("n").asNode().id();
+			}
+
+			StepVerifier.create(repository.loadFromCustomQuery(personId)).assertNext(hobby -> {
+				assertThat(hobby.getName()).isEqualTo("Music");
+				assertThat(hobby.getLikedBy()).hasSize(1);
+				assertThat(hobby.getLikedBy().entrySet()).first().satisfies(entry -> {
+					assertThat(entry.getKey().getId()).isEqualTo(personId);
+					assertThat(entry.getValue().getRating()).isEqualTo(5);
+				});
+			}).verifyComplete();
+		}
 	}
 
 	@Nested
@@ -2354,6 +2375,13 @@ class ReactiveRepositoryIT {
 	}
 
 	interface ReactivePetRepository extends ReactiveNeo4jRepository<Pet, Long> {
+	}
+
+	interface ReactiveHobbyithRelationshipWithPropertiesRepository
+			extends ReactiveNeo4jRepository<AltHobby, Long> {
+
+		@Query("MATCH (p:AltPerson)-[l:LIKES]->(h:AltHobby) WHERE id(p) = $personId RETURN h, collect(l), collect(p)")
+		Flux<AltHobby> loadFromCustomQuery(@Param("personId") Long personId);
 	}
 
 	interface ReactiveRelationshipRepository extends ReactiveNeo4jRepository<PersonWithRelationship, Long> {

@@ -288,7 +288,7 @@ final class DefaultNeo4jConverter implements Neo4jConverter {
 			concreteNodeDescription.doWithAssociations(
 				populateFrom(queryResult, propertyAccessor, isConstructorParameter, relationships, knownObjects));
 		}
-		return instance;
+		return propertyAccessor.getBean();
 	}
 
 	/**
@@ -459,11 +459,13 @@ final class DefaultNeo4jConverter implements Neo4jConverter {
 				return Optional.empty();
 			}
 
+			Function<Relationship, Long> targetIdSelector = relationshipDescription.isOutgoing() ? Relationship::endNodeId : Relationship::startNodeId;
+
 			for (Node possibleValueNode : allNodesWithMatchingLabelInResult) {
 				long nodeId = possibleValueNode.id();
 
 				for (Relationship possibleRelationship : allMatchingTypeRelationshipsInResult) {
-					if (possibleRelationship.endNodeId() == nodeId) {
+					if (targetIdSelector.apply(possibleRelationship) == nodeId) {
 						Object mappedObject = map(possibleValueNode, concreteTargetNodeDescription, knownObjects);
 						if (relationshipDescription.hasRelationshipProperties()) {
 
