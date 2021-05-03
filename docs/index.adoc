@@ -24,8 +24,13 @@ include::{manualIncludeDir}/README.adoc[tags=properties]
 :spring-framework-docs: https://docs.spring.io/spring/docs/{springVersion}/spring-framework-reference
 :spring-framework-javadoc: https://docs.spring.io/spring/docs/{springVersion}/javadoc-api
 
-
 (C) {copyright}
+
+++++
+<div style="margin-bottom: 20px; width:100%; padding: 10px; background-color: red; color: white; font-size: 1.2em; font-weight: bold; text-align: center;">
+	SDN/RX is not maintained anymore. Please use <a rel="noopener" href="https://docs.spring.io/spring-data/neo4j/docs/current/reference/html/#reference">SDN 6+</a>.
+</div>
+++++
 
 License: link:license.html[Creative Commons 4.0]
 
